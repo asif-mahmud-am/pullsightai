@@ -1,8 +1,7 @@
 import {
     Bitbucket,
     Github,
-    Logo,
-    LogoLarge,
+    GitLab,
     StarBullet,
 } from "@/components/common/icons";
 import { Button } from "@/components/ui/button";
@@ -16,9 +15,13 @@ export default function RegisterPage() {
             <div className="grid grid-cols-12 gap-4 lg:gap-8 flex-grow">
                 <div className="col-span-6 hidden lg:block">
                     <div className="max-w-[772px] h-full py-[80px] px-[96px] bg-[var(--box-800)] rounded-[24px] flex flex-col gap-[40px] relative overflow-hidden">
-                        <div className="mb-10">
-                            <LogoLarge />
-                        </div>
+                        <Image
+                            src="/images/logo.svg"
+                            alt="pullsight logo"
+                            width={198}
+                            height={71}
+                            className="mb-10"
+                        />
                         <div className="flex flex-col gap-[32px]">
                             <h1 className="lg:text-[30px] xl:text-[36px] font-bold">
                                 Transform Your Code Reviews. Ship Better
@@ -52,9 +55,13 @@ export default function RegisterPage() {
                 <div className="col-span-4 lg:col-start-9">
                     <div className="flex flex-col gap-[40px] py-14">
                         <div className="flex flex-col gap-4">
-                            <div className="lg:hidden shrink-0 relative left-[-10px]">
-                                <Logo />
-                            </div>
+                            <Image
+                                src="/images/logo.svg"
+                                alt="pullsight logo"
+                                width={198}
+                                height={71}
+                                className="lg:hidden shrink-0 relative left-[-10px]"
+                            />
 
                             <h2 className="text-[30px] sm:text-[36px]">
                                 Create an Account
@@ -104,7 +111,7 @@ export default function RegisterPage() {
                                         // href={createOauthUrl('bitbucket')}
                                         className="flex items-center gap-2"
                                     >
-                                        <Bitbucket /> GitLab
+                                        <GitLab /> GitLab
                                     </a>
                                 </Button>
                             </div>

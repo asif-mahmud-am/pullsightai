@@ -1,0 +1,28 @@
+name: Deploy with Self-Hosted Runner
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Stop existing containers
+        run: |
+          docker-compose down || true
+
+      - name: Build and start services with Docker Compose
+        run: |
+          docker-compose up -d --build
+
+      - name: Check service health
+        run: |
+          sleep 10
+          docker-compose ps
+          docker-compose logs pullsightai-backend --tail=50

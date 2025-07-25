@@ -33,14 +33,14 @@ jobs:
 
       - name: Stop existing containers
         run: |
-          docker-compose down || true
+          docker compose down || true
 
       - name: Build and start services with Docker Compose
         run: |
-          docker-compose up -d --build
+          docker compose up -d --build
 
       - name: Check service health
         run: |
           sleep 10
-          docker-compose ps
-          docker-compose logs pullsightai-backend --tail=50
+          docker compose ps
+          docker compose logs pullsightai-backend --tail=50

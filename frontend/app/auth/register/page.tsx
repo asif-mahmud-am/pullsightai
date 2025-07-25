@@ -9,9 +9,9 @@ import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
 import Link from "next/link";
 
-export default function RegisterPage() {
+const RegisterPage = () => {
     return (
-        <div className="container min-h-screen py-12 flex flex-col">
+        <div className="min-h-screen py-12 flex flex-col">
             <div className="grid grid-cols-12 gap-4 lg:gap-8 flex-grow">
                 <div className="col-span-6 hidden lg:block">
                     <div className="max-w-[772px] h-full py-[80px] px-[96px] bg-[var(--box-800)] rounded-[24px] flex flex-col gap-[40px] relative overflow-hidden">
@@ -83,12 +83,14 @@ export default function RegisterPage() {
                                     variant="outline"
                                     className="flex-1 !bg-white !text-black hover:!bg-gray-200 rounded-2xl text-base min-h-[64px]"
                                 >
-                                    <a
+                                    <Link
                                         // href={createOauthUrl('github')}
+                                        // href={"/auth/oauth/github"}
+                                        href={"/onboarding/step-1"}
                                         className="flex items-center gap-2"
                                     >
                                         <Github /> GitHub
-                                    </a>
+                                    </Link>
                                 </Button>
                                 <Button
                                     asChild
@@ -158,10 +160,10 @@ export default function RegisterPage() {
 
                             <Separator />
 
-                            <div className="flex items-center gap-x-8">
+                            <div className="flex items-center gap-x-12">
                                 <div className="flex items-center gap-2 text-xs text-[var(--title-50)]">
                                     <Image
-                                        src="/images/soc.png"
+                                        src="/images/soc.svg"
                                         alt=""
                                         height={32}
                                         width={32}
@@ -172,7 +174,7 @@ export default function RegisterPage() {
                                 </div>
                                 <div className="flex items-center gap-2 text-xs text-[var(--title-50)]">
                                     <Image
-                                        src="/images/open-source.png"
+                                        src="/images/open-source.svg"
                                         alt=""
                                         height={32}
                                         width={32}
@@ -183,10 +185,10 @@ export default function RegisterPage() {
                                 </div>
                                 <div className="flex items-center gap-2 text-xs text-[var(--title-50)]">
                                     <Image
-                                        src="/images/ssl.png"
+                                        src="/images/ssl.svg"
                                         alt=""
                                         height={32}
-                                        width={26}
+                                        width={25}
                                     />
                                     <span>
                                         SSL <br /> Encryption
@@ -199,4 +201,6 @@ export default function RegisterPage() {
             </div>
         </div>
     );
-}
+};
+
+export default RegisterPage;

@@ -19,14 +19,14 @@ const ActionFooter: React.FC<ActionFooterProps> = ({
     isEnabled = false,
     isLoading = false,
     onClick,
-    backButtonText,
+    backButtonText = "Back",
     onBackClick,
 }) => {
     return (
         <div className="flex justify-between py-8 mt-auto w-full">
             {backButtonText && onBackClick ? (
                 <button
-                    className="text-base px-6 py-2.5 rounded-2xl flex items-center  text-[var(--subtitle-300)] hover:text-[var(--subtitle-100)] cursor-pointer"
+                    className="text-base pr-3 py-2.5 rounded-2xl flex items-center  text-[var(--subtitle-300)] hover:text-[var(--subtitle-100)] cursor-pointer"
                     onClick={onBackClick}
                 >
                     <ArrowLeftIcon className="w-5 h-5 mr-2" />

@@ -31,13 +31,13 @@ const ProgressSteps: React.FC<ProgressStepsProps> = ({
                 const isIncomplete = status === "incomplete";
 
                 const bar = isComplete ? (
-                    <div className="h-3 bg-primary w-full rounded"></div>
+                    <div className="h-3 bg-primary w-full rounded-full"></div>
                 ) : isCurrent && icons.progressBar ? (
-                    <div className="h-3 w-full rounded relative overflow-hidden">
+                    <div className="h-3 w-full rounded-full relative overflow-hidden">
                         {icons.progressBar}
                     </div>
                 ) : (
-                    <div className="h-3 bg-[var(--box-800)] w-full rounded"></div>
+                    <div className="h-3 bg-[var(--box-800)] w-full rounded-full"></div>
                 );
 
                 const textColor = isComplete

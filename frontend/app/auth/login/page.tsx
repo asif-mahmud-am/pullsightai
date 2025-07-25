@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 
-export default function LoginPage() {
+const LoginPage = () => {
     return (
-        <div className="container min-h-screen py-12 flex flex-col">
+        <div className="min-h-screen py-12 flex flex-col">
             <div className="grid grid-cols-12 gap-4 lg:gap-8 flex-grow">
                 <div className="col-span-6 hidden lg:block">
                     <div className="max-w-[772px] h-full py-[80px] px-[96px] bg-[var(--box-800)] rounded-[24px] flex flex-col gap-[40px] relative overflow-hidden">
@@ -56,7 +56,7 @@ export default function LoginPage() {
                                 </Link>
                             </p>
                         </div>
-                        <div className="flex flex-col gap-[32px]">
+                        <div className="flex gap-[32px]">
                             <Button
                                 asChild
                                 variant="outline"
@@ -99,4 +99,6 @@ export default function LoginPage() {
             </div>
         </div>
     );
-}
+};
+
+export default LoginPage;

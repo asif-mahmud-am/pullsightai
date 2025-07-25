@@ -4,6 +4,7 @@ import { Organization } from "@/types/organization";
 import ActionFooter from "../ActionFooter";
 import SelectableList from "../SelectableList";
 import { useState } from "react";
+import { redirect } from "next/navigation";
 
 const organizations: Organization[] = [
     {
@@ -26,27 +27,31 @@ const organizations: Organization[] = [
     },
 ];
 
-export default function Step1Page() {
-    const [selectedOrg, setSelectedOrg] = useState<string>("");
+const Step4Page = () => {
+    const onStepComplete = () => {
+        // You can add your API call or navigation logic here
+
+        redirect(`/onboarding/step-5`);
+    };
 
     return (
-        <div className="flex flex-col gap-5 mx-auto justify-between mt-[64px]">
-            <div className="flex gap-5 justify-between flex-wrap lg:flex-nowrap">
+        <>
+            <div className="grid grid-cols-12 gap-4 lg:gap-8">
                 {/* Left column */}
-                <div className="max-w-sm">
+                <div className="col-span-4 xl:pr-16">
                     <h2 className="text-4xl font-medium text-[var(--title-50)] mb-4 leading-[45px]">
-                        Connect Your Organization
+                        Generate your first AI-powered review
                     </h2>
                     <p className="text-base font-medium text-[var(--subtitle-400)] mb-6">
-                        To analyze your Pull Requests and provide smart
-                        feedback, PullSight needs access to your
-                        organization&apos;s repositories. This is a secure,
-                        standard connection via OAuth.
+                        Please wait a moment. Our AI is now deeply analyzing PR
+                        Improve database query performance to identify potential
+                        bugs, performance bottlenecks, security flaws, and style
+                        inconsistencies.
                     </p>
                 </div>
 
                 {/* Right column */}
-                <div className="w-full">
+                <div className="col-span-8">
                     <div className="mb-4">
                         <h3 className="text-[var(--title-50)] font-medium mb-4 text-lg">
                             Organizations list
@@ -73,8 +78,8 @@ export default function Step1Page() {
                                     avatar: org.avatar_url,
                                     updatedAt: org.updated_at,
                                 }))}
-                                selectedId={selectedOrg}
-                                onSelect={(id) => setSelectedOrg(id)}
+                                // selectedId={selectedOrg}
+                                // onSelect={(id) => setSelectedOrg(id)}
                             />
                         )}
                     </div>
@@ -83,11 +88,14 @@ export default function Step1Page() {
 
             {/* Footer with action button */}
             <ActionFooter
-                buttonText="Connect Organization"
-                // isEnabled={Boolean(selectedOrg) && !isPending}
+                buttonText="Invite team members"
+                isEnabled={true}
                 // isLoading={isPending}
-                // onClick={handleConnectOrganization}
+                onClick={onStepComplete}
+                onBackClick={() => redirect("/onboarding/step-3")}
             />
-        </div>
+        </>
     );
-}
+};
+
+export default Step4Page;

@@ -21,11 +21,11 @@ export const metadata: Metadata = {
     description: "AI-powered code insights for your pull requests.",
 };
 
-export default function RootLayout({
+const RootLayout = ({
     children,
 }: Readonly<{
     children: React.ReactNode;
-}>) {
+}>) => {
     return (
         <html lang="en" className={`${inter.className} dark`}>
             <body
@@ -37,4 +37,6 @@ export default function RootLayout({
             </body>
         </html>
     );
-}
+};
+
+export default RootLayout;

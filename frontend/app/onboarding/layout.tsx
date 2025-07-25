@@ -10,6 +10,7 @@ import { LogOutIcon } from "lucide-react";
 import { ReactNode } from "react";
 import ProgressSteps from "./ProgressSteps";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 const stepsData = [
     {
@@ -40,16 +41,15 @@ const stepsData = [
     {
         index: 5,
         id: "invite",
-        label: "Manage Repositories",
+        label: "Invite Team Members",
     },
 ];
 
-export default function OnboardingLayout({
-    children,
-}: {
-    children: ReactNode;
-}) {
-    const currentStep = 2;
+const OnboardingLayout = ({ children }: { children: ReactNode }) => {
+    const pathname = usePathname();
+    // step number from pathname
+    const stepMatch = pathname.match(/step-(\d+)/);
+    const currentStep = stepMatch ? parseInt(stepMatch[1]) : 1;
 
     const steps = stepsData.map((step) => ({
         ...step,
@@ -76,7 +76,10 @@ export default function OnboardingLayout({
     }
 
     return (
-        <div className="py-12">
+        <div
+            className="py-12 min-h-screen bg-no-repeat bg-cover bg-center"
+            style={{ backgroundImage: "url('/images/gradient-bg.svg')" }}
+        >
             <div className="container">
                 <div className="mb-12">
                     <div className="flex justify-between">
@@ -124,8 +127,12 @@ export default function OnboardingLayout({
                         />
                     )}
                 </div>
-                <div className="">{children}</div>
+                <div className="flex flex-col gap-5 mx-auto justify-between mt-[64px] min-h-[calc(100vh-300px)]">
+                    {children}
+                </div>
             </div>
         </div>
     );
-}
+};
+
+export default OnboardingLayout;

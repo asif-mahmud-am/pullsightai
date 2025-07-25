@@ -22,15 +22,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
     ): Observable<Response<T>> {
         const ctx = context.switchToHttp()
         const response = ctx.getResponse()
-        console.log('response======', response)
-        console.log(
-            'response.headersSent',
-            response.headersSent,
-            response.statusCode
-        )
-        if ([301, 302, 303, 307, 308].includes(response.statusCode)) {
-            return EMPTY
-        }
+       
         response.status(HttpStatus.OK)
         return next.handle().pipe(
             map((data) => {
@@ -41,7 +33,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
                         sameSite: 'lax',
                         maxAge: 7 * 24 * 60 * 60 * 1000 // 7days
                     })
-                    return response.redirect(data.url)
+                    return response.redirect(data.redirect)
                 }
                 return {
                     success: true,

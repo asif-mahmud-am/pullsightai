@@ -13,6 +13,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Create .env file
+        run: |
+          cd backend
+          cat << EOF > .env
+          NODE_ENV=${{ vars.NODE_ENV }}
+          PORT=${{ vars.PORT }}
+          MONGODB_URI=${{ secrets.MONGODB_URI }}
+          CLIENT_URL=${{ vars.CLIENT_URL }}
+          BASE_URL=${{ vars.BASE_URL }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          GITLAB_CLIENT_ID=${{ secrets.GITLAB_CLIENT_ID }}
+          GITLAB_CLIENT_SECRET=${{ secrets.GITLAB_CLIENT_SECRET }}
+          BITBUCKET_CLIENT_ID=${{ secrets.BITBUCKET_CLIENT_ID }}
+          BITBUCKET_CLIENT_SECRET=${{ secrets.BITBUCKET_CLIENT_SECRET }}
+          GITHUB_CLIENT_ID=${{ secrets.GIT_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET=${{ secrets.GIT_CLIENT_SECRET }}
+          EOF
+
       - name: Stop existing containers
         run: |
           docker-compose down || true

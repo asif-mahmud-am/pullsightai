@@ -47,4 +47,13 @@ export class AuthService {
         }
         return this.jwtService.sign(payload, { expiresIn: '7d' })
     }
+
+    async getProfile(user: any) {
+        return await this.dataService.users.findOne(
+            {
+                _id: user.sub
+            },
+            'providerId provider username displayName email avatarUrl'
+        )
+    }
 }

@@ -59,10 +59,10 @@ export class AuthController {
 
     @UseGuards(AuthGuard('jwt-cookie'))
     @Get('profile')
-    getProfile(@Req() req) {
+    async getProfile(@Req() req) {
         return {
             message: SUCCESS,
-            result: req.user
+            result: await this.authService.getProfile(req.user)
         }
     }
 }

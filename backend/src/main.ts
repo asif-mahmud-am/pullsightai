@@ -8,7 +8,12 @@ import { AppModule } from './app.module'
 async function bootstrap() {
     const app = await NestFactory.create(AppModule)
     const options = {
-        origin: '*',
+        origin: [
+            'http://localhost:3000',
+            'http://localhost:3001',
+            'http://34.118.55.176:3000',
+            'http://34.118.55.176:3001'
+        ],
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
         preflightContinue: false,
         optionsSuccessStatus: 204,

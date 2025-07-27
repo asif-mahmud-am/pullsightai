@@ -33,8 +33,8 @@ const ProgressSteps: React.FC<ProgressStepsProps> = ({
                 const bar = isComplete ? (
                     <div className="h-3 bg-primary w-full rounded-full"></div>
                 ) : isCurrent && icons.progressBar ? (
-                    <div className="h-3 w-full rounded-full relative overflow-hidden">
-                        {icons.progressBar}
+                    <div className="h-3 w-full rounded-full relative overflow-hidden bg-primary bg-stripes bg-size-[1rem_1rem] animate-stripes">
+                        {/* {icons.progressBar} */}
                     </div>
                 ) : (
                     <div className="h-3 bg-[var(--box-800)] w-full rounded-full"></div>

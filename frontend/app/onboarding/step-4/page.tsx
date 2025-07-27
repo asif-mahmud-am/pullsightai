@@ -54,34 +54,9 @@ const Step4Page = () => {
                 <div className="col-span-8">
                     <div className="mb-4">
                         <h3 className="text-[var(--title-50)] font-medium mb-4 text-lg">
-                            Organizations list
+                            PR Summary
                         </h3>
-
-                        {false && (
-                            <p className="text-[var(--subtitle-400)]">
-                                Loading organizations...
-                            </p>
-                        )}
-                        {false && (
-                            <p className="text-[var(--subtitle-400)]">
-                                Error loading organizations. Please try again.
-                            </p>
-                        )}
-
-                        {organizations.length > 0 && (
-                            <SelectableList
-                                items={organizations.map((org) => ({
-                                    id: String(org.slug),
-                                    title: org.name,
-                                    subtitle: org.author,
-                                    timestamp: org.time,
-                                    avatar: org.avatar_url,
-                                    updatedAt: org.updated_at,
-                                }))}
-                                // selectedId={selectedOrg}
-                                // onSelect={(id) => setSelectedOrg(id)}
-                            />
-                        )}
+                        <div className="bg-dark-900 border border-dashed py-25 rounded-xl"></div>
                     </div>
                 </div>
             </div>
@@ -93,6 +68,7 @@ const Step4Page = () => {
                 // isLoading={isPending}
                 onClick={onStepComplete}
                 onBackClick={() => redirect("/onboarding/step-3")}
+                onSkipClick={() => redirect("/dashboard")}
             />
         </>
     );

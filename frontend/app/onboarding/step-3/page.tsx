@@ -100,8 +100,8 @@ const Step3Page = () => {
                 buttonText={false ? "Analyzing..." : "Analyze Pull Request"}
                 isEnabled={Boolean(selectedPR) && !false}
                 onClick={onStepComplete}
-                // backButtonText="Back"
                 onBackClick={() => redirect("/onboarding/step-2")}
+                onSkipClick={() => redirect("/dashboard")}
             />
         </>
     );

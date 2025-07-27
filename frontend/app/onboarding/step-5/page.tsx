@@ -95,6 +95,7 @@ const Step5Page = () => {
                 // isLoading={isPending}
                 onClick={onStepComplete}
                 onBackClick={() => redirect("/onboarding/step-4")}
+                onSkipClick={() => redirect("/dashboard")}
             />
         </>
     );

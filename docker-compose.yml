@@ -1,0 +1,11 @@
+services:
+  pullsightai-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: pullsightai-backend
+    ports:
+      - "3001:3001"
+    container_name: pullsightai-backend
+    volumes:
+      - /app/node_modules

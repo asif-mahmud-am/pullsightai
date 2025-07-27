@@ -5,7 +5,7 @@ import {
     Injectable,
     NestInterceptor
 } from '@nestjs/common'
-import { EMPTY, Observable } from 'rxjs'
+import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 export interface Response<T> {
@@ -22,7 +22,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
     ): Observable<Response<T>> {
         const ctx = context.switchToHttp()
         const response = ctx.getResponse()
-       
+
         response.status(HttpStatus.OK)
         return next.handle().pipe(
             map((data) => {
@@ -30,7 +30,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
                     response.status(HttpStatus.FOUND)
                     response.cookie('accessToken', data.token, {
                         httpOnly: true,
-                        sameSite: 'lax',
+                        sameSite: 'none',
                         maxAge: 7 * 24 * 60 * 60 * 1000 // 7days
                     })
                     return response.redirect(data.redirect)

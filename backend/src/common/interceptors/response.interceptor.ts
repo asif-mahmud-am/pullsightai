@@ -30,7 +30,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
                     response.status(HttpStatus.FOUND)
                     response.cookie('accessToken', data.token, {
                         httpOnly: true,
-                        sameSite: 'none',
+                        sameSite: 'lax',
                         maxAge: 7 * 24 * 60 * 60 * 1000 // 7days
                     })
                     return response.redirect(data.redirect)

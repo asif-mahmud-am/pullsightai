@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "../styles/globals.css";
 
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { TanstackProvider } from "@/providers/TanstackProvider";
+import AuthInitializer from "@/components/auth/AuthInitializer";
 
 const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ["latin"] });
 
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
     description: "AI-powered code insights for your pull requests.",
 };
 
-const RootLayout = ({
+const RootLayout = async ({
     children,
 }: Readonly<{
     children: React.ReactNode;
@@ -19,9 +20,13 @@ const RootLayout = ({
     return (
         <html lang="en" className={`${plusJakartaSans.className} dark`}>
             <body className={`antialiased `}>
-                <div className="bg-[var(--body-900)] min-h-screen text-white">
-                    {children}
-                </div>
+                <AuthInitializer>
+                    <TanstackProvider>
+                        <div className="bg-[var(--body-900)] min-h-screen text-white">
+                            {children}
+                        </div>
+                    </TanstackProvider>
+                </AuthInitializer>
             </body>
         </html>
     );

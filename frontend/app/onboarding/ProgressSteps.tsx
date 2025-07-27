@@ -1,3 +1,11 @@
+"use client";
+
+import {
+    CheckedIcon,
+    CircleIcon,
+    StepOnProgressIcon,
+} from "@/components/common/icons";
+import { usePathname } from "next/navigation";
 import React from "react";
 
 interface Step {
@@ -7,21 +15,72 @@ interface Step {
 }
 
 interface ProgressStepsProps {
-    steps: Step[];
     onStepClick?: (stepId: string) => void;
-    icons: {
-        complete: React.ReactNode; // checked icon (e.g., CheckedIcon)
-        current: React.ReactNode; // current icon (e.g., CircleIcon filled with title color)
-        incomplete: React.ReactNode; // incomplete icon (e.g., CircleIcon with gray)
-        progressBar?: React.ReactNode; // optional custom progress bar (used in current)
-    };
 }
 
-const ProgressSteps: React.FC<ProgressStepsProps> = ({
-    steps,
-    onStepClick,
-    icons,
-}) => {
+const stepsData = [
+    {
+        index: 0,
+        id: "git",
+        label: "Git connected",
+    },
+    {
+        index: 1,
+        id: "org",
+        label: "Connect Organization",
+    },
+    {
+        index: 2,
+        id: "repos",
+        label: "Choose Repositories",
+    },
+    {
+        index: 3,
+        id: "prs",
+        label: "Choose Pull Requests",
+    },
+    {
+        index: 4,
+        id: "ai",
+        label: "Generate AI Analysis on PR",
+    },
+    {
+        index: 5,
+        id: "invite",
+        label: "Invite Team Members",
+    },
+];
+
+const ProgressSteps: React.FC<ProgressStepsProps> = ({ onStepClick }) => {
+    const pathname = usePathname();
+    // step number from pathname
+    const stepMatch = pathname.match(/step-(\d+)/);
+    const currentStep = stepMatch ? parseInt(stepMatch[1]) : 1;
+
+    const steps = stepsData.map((step) => ({
+        ...step,
+        status:
+            step.index < currentStep
+                ? "complete"
+                : step.index === currentStep
+                ? "current"
+                : "incomplete",
+    })) as Array<{
+        index: number;
+        id: string;
+        label: string;
+        status: "complete" | "current" | "incomplete";
+    }>;
+
+    const icons = {
+        complete: <CheckedIcon size={15} className="fill-primary" />,
+        current: <CircleIcon size={15} className="fill-[var(--title-50)]" />,
+        incomplete: (
+            <CircleIcon size={15} className="fill-[var(--overbox-600)]" />
+        ),
+        progressBar: <StepOnProgressIcon />, // only used on current
+    };
+
     return (
         <div className="flex items-start gap-5 mt-12 max-h-full overflow-hidden overflow-x-auto">
             {steps.map((step) => {

@@ -6,6 +6,7 @@ import {
 } from "@/components/common/icons";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { getAuthUrl } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -91,9 +92,7 @@ const LoginPage = () => {
                                     size={"xl"}
                                 >
                                     <Link
-                                        // href={createOauthUrl('github')}
-                                        // href={"/auth/oauth/github"}
-                                        href={"/onboarding/step-1"}
+                                        href={getAuthUrl("github")}
                                         className="flex items-center gap-2"
                                     >
                                         <Github /> GitHub
@@ -105,7 +104,7 @@ const LoginPage = () => {
                                     size={"xl"}
                                 >
                                     <a
-                                        // href={createOauthUrl('bitbucket')}
+                                        href={getAuthUrl("bitbucket")}
                                         className="flex items-center gap-2"
                                     >
                                         <Bitbucket /> BitBucket
@@ -117,7 +116,7 @@ const LoginPage = () => {
                                     size={"xl"}
                                 >
                                     <a
-                                        // href={createOauthUrl('bitbucket')}
+                                        href={getAuthUrl("gitlab")}
                                         className="flex items-center gap-2"
                                     >
                                         <GitLab /> GitLab

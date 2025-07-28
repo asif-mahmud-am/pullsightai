@@ -8,6 +8,7 @@ import { ResponseInterceptor } from 'src/common/interceptors/response.intercepto
 import { DatabaseModule } from 'src/database/database.module'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
+import { GithubModule } from './github/github.module';
 
 @Module({
     imports: [
@@ -16,7 +17,8 @@ import { AppService } from './app.service'
             isGlobal: true
         }),
         DatabaseModule,
-        AuthModule
+        AuthModule,
+        GithubModule
     ],
     controllers: [AppController],
     providers: [

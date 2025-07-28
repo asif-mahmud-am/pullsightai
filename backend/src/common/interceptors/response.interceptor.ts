@@ -28,12 +28,20 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
             map((data) => {
                 if (data?.redirect) {
                     response.status(HttpStatus.FOUND)
-                    response.cookie('accessToken', data.token, {
-                        httpOnly: true,
-                        sameSite: 'lax',
-                        maxAge: 7 * 24 * 60 * 60 * 1000 // 7days
-                    })
+                    if (data?.token) {
+                        response.cookie('accessToken', data.token, {
+                            httpOnly: true,
+                            sameSite: 'lax',
+                            maxAge: 7 * 24 * 60 * 60 * 1000 // 7days
+                        })
+                    }
                     return response.redirect(data.redirect)
+                }
+                if (data?.logout) {
+                    response.clearCookie('accessToken', {
+                        httpOnly: true,
+                        sameSite: 'lax'
+                    })
                 }
                 return {
                     success: true,

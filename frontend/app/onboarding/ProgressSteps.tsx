@@ -6,7 +6,7 @@ import {
     StepOnProgressIcon,
 } from "@/components/common/icons";
 import { usePathname } from "next/navigation";
-import React from "react";
+import React, { FC } from "react";
 
 interface Step {
     id: string;
@@ -51,7 +51,7 @@ const stepsData = [
     },
 ];
 
-const ProgressSteps: React.FC<ProgressStepsProps> = ({ onStepClick }) => {
+const ProgressSteps: FC<ProgressStepsProps> = ({ onStepClick }) => {
     const pathname = usePathname();
     // step number from pathname
     const stepMatch = pathname.match(/step-(\d+)/);

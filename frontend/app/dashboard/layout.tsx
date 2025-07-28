@@ -1,7 +1,8 @@
 import AuthGuardClient from "@/components/auth/AuthGuardClient";
 import { AuthGuardServer } from "@/components/auth/AuthGuardServer";
+import { ReactNode } from "react";
 
-const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
+const DashboardLayout = ({ children }: { children: ReactNode }) => {
     return (
         <AuthGuardServer>
             <AuthGuardClient>

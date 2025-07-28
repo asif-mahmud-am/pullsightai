@@ -1,12 +1,11 @@
+import { FC } from "react";
+
 interface IconProps {
     size?: number;
     className?: string;
 }
 
-export const BitbucketIcon: React.FC<IconProps> = ({
-    size = 24,
-    className = "",
-}) => {
+export const BitbucketIcon: FC<IconProps> = ({ size = 24, className = "" }) => {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -25,7 +24,7 @@ export const BitbucketIcon: React.FC<IconProps> = ({
     );
 };
 
-export const ArrowRightIcon: React.FC<IconProps> = ({ className = "" }) => {
+export const ArrowRightIcon: FC<IconProps> = ({ className = "" }) => {
     return (
         <svg
             className={className}
@@ -43,7 +42,7 @@ export const ArrowRightIcon: React.FC<IconProps> = ({ className = "" }) => {
     );
 };
 
-export const RightBarArrowIcon: React.FC<IconProps> = ({ className = "" }) => {
+export const RightBarArrowIcon: FC<IconProps> = ({ className = "" }) => {
     return (
         <svg
             className={className}
@@ -61,7 +60,7 @@ export const RightBarArrowIcon: React.FC<IconProps> = ({ className = "" }) => {
     );
 };
 
-export const ArrowLeftIcon: React.FC<IconProps> = ({ className = "" }) => {
+export const ArrowLeftIcon: FC<IconProps> = ({ className = "" }) => {
     return (
         <svg
             className={className}
@@ -79,7 +78,7 @@ export const ArrowLeftIcon: React.FC<IconProps> = ({ className = "" }) => {
     );
 };
 
-export const StepOnProgressIcon: React.FC<IconProps> = ({}) => {
+export const StepOnProgressIcon: FC<IconProps> = ({}) => {
     return (
         <svg
             width="242"
@@ -265,10 +264,7 @@ export const StepOnProgressIcon: React.FC<IconProps> = ({}) => {
     );
 };
 
-export const CircleIcon: React.FC<IconProps> = ({
-    size = 14,
-    className = "",
-}) => {
+export const CircleIcon: FC<IconProps> = ({ size = 14, className = "" }) => {
     return (
         <svg
             width={size}
@@ -285,10 +281,7 @@ export const CircleIcon: React.FC<IconProps> = ({
         </svg>
     );
 };
-export const CheckedIcon: React.FC<IconProps> = ({
-    size = 14,
-    className = "",
-}) => {
+export const CheckedIcon: FC<IconProps> = ({ size = 14, className = "" }) => {
     return (
         <svg
             width={size}
@@ -306,10 +299,7 @@ export const CheckedIcon: React.FC<IconProps> = ({
     );
 };
 
-export const JiraIcon: React.FC<IconProps> = ({
-    size = 24,
-    className = "",
-}) => {
+export const JiraIcon: FC<IconProps> = ({ size = 24, className = "" }) => {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -332,7 +322,7 @@ export const JiraIcon: React.FC<IconProps> = ({
     );
 };
 
-export const LogoWhiteSymbol: React.FC<IconProps> = () => {
+export const LogoWhiteSymbol: FC<IconProps> = () => {
     return (
         <svg
             width="204"
@@ -434,7 +424,7 @@ export const LogoWhiteSymbol: React.FC<IconProps> = () => {
     );
 };
 
-export const StarBullet: React.FC<IconProps> = () => {
+export const StarBullet: FC<IconProps> = () => {
     return (
         <svg
             width="20"
@@ -529,7 +519,7 @@ export const StarBullet: React.FC<IconProps> = () => {
     );
 };
 
-export const Bitbucket: React.FC<IconProps> = () => {
+export const Bitbucket: FC<IconProps> = () => {
     return (
         <svg
             width="27"
@@ -546,7 +536,7 @@ export const Bitbucket: React.FC<IconProps> = () => {
     );
 };
 
-export const Github: React.FC<IconProps> = () => {
+export const Github: FC<IconProps> = () => {
     return (
         <svg
             width="25"
@@ -577,7 +567,7 @@ export const Github: React.FC<IconProps> = () => {
     );
 };
 
-export const GitLab: React.FC<IconProps> = () => {
+export const GitLab: FC<IconProps> = () => {
     return (
         <svg
             width="25"
@@ -618,7 +608,7 @@ export const GitLab: React.FC<IconProps> = () => {
     );
 };
 
-export const LoadingIcon: React.FC<IconProps> = ({ className = "" }) => {
+export const LoadingIcon: FC<IconProps> = ({ className = "" }) => {
     return (
         <svg
             className={`animate-spin ${className}`}

@@ -1,14 +1,8 @@
-import {
-    Bitbucket,
-    Github,
-    GitLab,
-    StarBullet,
-} from "@/components/common/icons";
-import { Button } from "@/components/ui/button";
+import { StarBullet } from "@/components/common/icons";
 import { Separator } from "@/components/ui/separator";
-import { getAuthUrl } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
+import OauthButtons from "../OauthButtons";
 
 const LoginPage = () => {
     return (
@@ -85,45 +79,7 @@ const LoginPage = () => {
                         </div>
 
                         <div className="flex flex-col gap-[32px] mt-10">
-                            <div className="flex gap-x-4 w-full">
-                                <Button
-                                    asChild
-                                    className="flex-1 !bg-white !text-black hover:!bg-gray-200 text-base"
-                                    size={"xl"}
-                                >
-                                    <Link
-                                        href={getAuthUrl("github")}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <Github /> GitHub
-                                    </Link>
-                                </Button>
-                                <Button
-                                    asChild
-                                    className="flex-1 !bg-white !text-black hover:!bg-gray-200 text-base"
-                                    size={"xl"}
-                                >
-                                    <a
-                                        href={getAuthUrl("bitbucket")}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <Bitbucket /> BitBucket
-                                    </a>
-                                </Button>
-                                <Button
-                                    asChild
-                                    className="flex-1 !bg-white !text-black hover:!bg-gray-200 text-base"
-                                    size={"xl"}
-                                >
-                                    <a
-                                        href={getAuthUrl("gitlab")}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <GitLab /> GitLab
-                                    </a>
-                                </Button>
-                            </div>
-
+                            <OauthButtons />
                             <Separator />
 
                             <ul className="space-y-4">

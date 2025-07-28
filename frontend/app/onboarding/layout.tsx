@@ -1,8 +1,3 @@
-import {
-    CheckedIcon,
-    CircleIcon,
-    StepOnProgressIcon,
-} from "@/components/common/icons";
 import { Button } from "@/components/ui/button";
 import { LogOutIcon } from "lucide-react";
 import { ReactNode } from "react";
@@ -10,17 +5,9 @@ import ProgressSteps from "./ProgressSteps";
 import Image from "next/image";
 import AuthGuardClient from "@/components/auth/AuthGuardClient";
 import { AuthGuardServer } from "@/components/auth/AuthGuardServer";
+import LogoutHandler from "@/components/auth/LogoutHandler";
 
 const OnboardingLayout = ({ children }: { children: ReactNode }) => {
-    async function handleLogout(event: React.MouseEvent) {
-        // try {
-        //   await Api.post('/api/logout')
-        //   window.location.reload()
-        // } catch (error) {
-        //   console.error('Logout failed:', error)
-        // }
-    }
-
     return (
         <AuthGuardServer>
             <AuthGuardClient>
@@ -40,14 +27,15 @@ const OnboardingLayout = ({ children }: { children: ReactNode }) => {
                                     height={40}
                                     className=""
                                 />
-                                <Button
-                                    variant="outline"
-                                    className="text-white text-sm border-0 cursor-pointer hover:underline underline-offset-4"
-                                    onClick={handleLogout}
-                                >
-                                    <LogOutIcon />
-                                    Logout
-                                </Button>
+                                <LogoutHandler asChild>
+                                    <Button
+                                        variant="outline"
+                                        className="text-white text-sm border-0 cursor-pointer hover:underline underline-offset-4"
+                                    >
+                                        <LogOutIcon />
+                                        Logout
+                                    </Button>
+                                </LogoutHandler>
                             </div>
 
                             {!false && <ProgressSteps />}

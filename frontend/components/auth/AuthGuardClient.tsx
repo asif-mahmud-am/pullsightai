@@ -1,24 +1,42 @@
 // components/auth/AuthGuard.tsx
 "use client";
 
-import { redirect } from "next/navigation";
-import { useEffect } from "react";
+import { redirect, usePathname } from "next/navigation";
+import { ReactNode, useEffect } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
 import Image from "next/image";
 
-export default function AuthGuardClient({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+export default function AuthGuardClient({ children }: { children: ReactNode }) {
+    const pathname = usePathname();
     const user = useAuthStore((s) => s.user);
     const hydrated = useAuthStore((s) => s.hydrated);
 
     useEffect(() => {
-        if (!user && hydrated) {
+        if (hydrated && !user) {
             redirect(ROUTE_CONSTANTS.LOGIN);
             // Alternatively, you can use router.push(ROUTE_CONSTANTS.LOGIN);
+        }
+        if (
+            hydrated &&
+            user &&
+            user.onboardingStep !== null &&
+            !pathname.includes(ROUTE_CONSTANTS.ONBOARDING)
+        ) {
+            const onboardingStep = user.onboardingStep;
+            if (onboardingStep === 1) {
+                redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_1);
+            } else if (onboardingStep === 2) {
+                redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_2);
+            } else if (onboardingStep === 3) {
+                redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_3);
+            } else if (onboardingStep === 4) {
+                redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_4);
+            } else if (onboardingStep === 5) {
+                redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_5);
+            } else {
+                redirect(ROUTE_CONSTANTS.DASHBOARD);
+            }
         }
     }, [user, hydrated]);
 

@@ -2,12 +2,9 @@ import { getUserFromServer } from "@/api/auth/endpoints";
 import { AUTH_CONSTANTS } from "@/lib/constants";
 import { headers } from "next/headers";
 import HydrateUser from "./HydrateUser";
+import { FC, ReactNode } from "react";
 
-const AuthInitializer = async ({
-    children,
-}: Readonly<{
-    children: React.ReactNode;
-}>) => {
+const AuthInitializer: FC<{ children: ReactNode }> = async ({ children }) => {
     const headersList = headers();
     const cookie = (await headersList).get("cookie");
     const token = cookie

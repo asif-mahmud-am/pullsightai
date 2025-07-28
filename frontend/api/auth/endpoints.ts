@@ -1,6 +1,5 @@
 // src/api/auth/endpoints.ts
 import axios from "@/lib/axios";
-import { AUTH_CONSTANTS } from "@/lib/constants";
 
 export const getMe = async () => {
     const res = await axios.get("/auth/profile");

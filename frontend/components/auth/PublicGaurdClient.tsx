@@ -2,12 +2,12 @@
 "use client";
 
 import { redirect } from "next/navigation";
-import { useEffect } from "react";
+import { ReactNode, useEffect } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
 import Image from "next/image";
 
-const PublicGuardClient = ({ children }: { children: React.ReactNode }) => {
+const PublicGuardClient = ({ children }: { children: ReactNode }) => {
     const user = useAuthStore((s) => s.user);
     const hydrated = useAuthStore((s) => s.hydrated);
 

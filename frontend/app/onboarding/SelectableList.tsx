@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { FC } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import Image from "next/image";
@@ -31,7 +31,7 @@ interface SelectableListProps {
     className?: string;
 }
 
-const SelectableList: React.FC<SelectableListProps> = ({
+const SelectableList: FC<SelectableListProps> = ({
     items,
     selectedId,
     onSelect,

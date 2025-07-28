@@ -1,4 +1,4 @@
-import React from "react";
+import React, { FC } from "react";
 import {
     ArrowRightIcon,
     LoadingIcon,
@@ -18,7 +18,7 @@ interface ActionFooterProps {
     onSkipClick?: () => void;
 }
 
-const ActionFooter: React.FC<ActionFooterProps> = ({
+const ActionFooter: FC<ActionFooterProps> = ({
     buttonText,
     onClick,
     isEnabled = false,

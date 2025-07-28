@@ -4,6 +4,7 @@ import "../styles/globals.css";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { TanstackProvider } from "@/providers/TanstackProvider";
 import AuthInitializer from "@/components/auth/AuthInitializer";
+import { FC, ReactNode } from "react";
 
 const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ["latin"] });
 
@@ -12,11 +13,7 @@ export const metadata: Metadata = {
     description: "AI-powered code insights for your pull requests.",
 };
 
-const RootLayout = async ({
-    children,
-}: Readonly<{
-    children: React.ReactNode;
-}>) => {
+const RootLayout: FC<{ children: ReactNode }> = async ({ children }) => {
     return (
         <html lang="en" className={`${plusJakartaSans.className} dark`}>
             <body className={`antialiased `}>

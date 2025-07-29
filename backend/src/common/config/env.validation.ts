@@ -49,6 +49,12 @@ class EnvironmentVariables {
     GITHUB_CLIENT_SECRET: string
 
     @IsString()
+    GITHUB_APP_ID: string
+
+    @IsString()
+    GITHUB_PRIVATE_KEY_PATH: string
+
+    @IsString()
     CLIENT_URL: string
 
     @IsString()

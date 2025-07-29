@@ -59,6 +59,9 @@ class EnvironmentVariables {
 
     @IsString()
     JWT_SECRET: string
+
+    @IsString()
+    AI_AGENT_PR_POST_URL: string
 }
 
 export function validate(config: Record<string, unknown>) {

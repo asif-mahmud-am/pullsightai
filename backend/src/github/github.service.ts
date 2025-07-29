@@ -1,51 +1,23 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { createAppAuth } from '@octokit/auth-app'
 import { Octokit } from '@octokit/rest'
-import * as fs from 'fs'
-import * as path from 'path'
+import { HttpService } from 'src/common/http/http.service'
+import { StructuredPRData } from 'src/common/interfaces/pr.interface'
+import { Repository } from 'src/common/interfaces/repository.interface'
 import { DatabaseService } from 'src/database/database.service'
 import { Workspace } from 'src/database/schemas/workspace.schema'
+import { GithubEventService } from 'src/github/github-events.service'
 
-export interface Organization {
-    name: string
-    id: number
-    nodeId: string
-    url: string
-    reposUrl: string
-    avatarUrl: string
-    createdAt: string
-    updatedAt: string
-    type: string
-}
-
-export interface Repository {
-    id: number
-    nodeId: string
-    name: string
-    fullName: string
-    private: boolean
-    author: {
-        name: string
-        avatarUrl: string
-    }
-    pushedAt: string
-    openIssues: number
-}
 @Injectable()
 export class GithubService {
     private octokit: Octokit
-    private privateKey: string
 
     constructor(
         private readonly dataService: DatabaseService,
-        private readonly configService: ConfigService
-    ) {
-        const pemPath = path.resolve(
-            this.configService.get<string>('GITHUB_PRIVATE_KEY_PATH') || ''
-        )
-        this.privateKey = fs.readFileSync(pemPath, 'utf8')
-    }
+        private readonly configService: ConfigService,
+        private readonly githubEventService: GithubEventService,
+        private readonly httpService: HttpService
+    ) {}
 
     async getUserOrganizations(user: any): Promise<Workspace[]> {
         await this.initOctokit(user)
@@ -93,23 +65,9 @@ export class GithubService {
         return this.octokit
     }
 
-    async getInstallationAccessToken(installationId: number): Promise<string> {
-        const auth = createAppAuth({
-            appId: Number(this.configService.get<string>('GITHUB_APP_ID')),
-            privateKey: this.privateKey,
-            clientId: this.configService.get<string>('GITHUB_CLIENT_ID'),
-            clientSecret: this.configService.get<string>('GITHUB_CLIENT_SECRET')
-        })
-        const installationAuth = await auth({
-            type: 'installation',
-            installationId
-        })
-        return installationAuth.token
-    }
-
     async listInstallationRepositories(installationId: number) {
-        const token = await this.getInstallationAccessToken(installationId)
-        const octokit = new Octokit({ auth: token })
+        const octokit =
+            await this.githubEventService.initOctokitApp(installationId)
 
         const { data } =
             await octokit.rest.apps.listReposAccessibleToInstallation()
@@ -129,8 +87,8 @@ export class GithubService {
     }
 
     async listOrgRepositories(name: string, installationId: number) {
-        const token = await this.getInstallationAccessToken(installationId)
-        const octokit = new Octokit({ auth: token })
+        const octokit =
+            await this.githubEventService.initOctokitApp(installationId)
 
         const { data } = await octokit.rest.repos.listForOrg({
             org: name,
@@ -154,5 +112,27 @@ export class GithubService {
                 }) as Repository
         )
         return repositories
+    }
+
+    async processGithubEvent(event: any, payload: any) {
+        console.log('Processing GitHub event:', event)
+        let pullRequestFormatedData: StructuredPRData | boolean
+        switch (event) {
+            case 'pull_request':
+                pullRequestFormatedData =
+                    await this.githubEventService.handleGitHubPullRequest(
+                        payload
+                    )
+                break
+            default:
+                pullRequestFormatedData = false
+        }
+        if (pullRequestFormatedData) {
+            await this.httpService.post(
+                this.configService.get('AI_AGENT_PR_POST_URL') as string,
+                pullRequestFormatedData
+            )
+        }
+        return pullRequestFormatedData
     }
 }

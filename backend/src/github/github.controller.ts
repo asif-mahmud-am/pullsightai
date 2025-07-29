@@ -1,7 +1,17 @@
-import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common'
+import {
+    Body,
+    Controller,
+    Get,
+    Post,
+    Query,
+    Req,
+    UseGuards
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { AuthGuard } from '@nestjs/passport'
 import { InstallRepoDto } from 'src/github/dto/install-repo.dto'
+import { PostReviewDto } from 'src/github/dto/post-review.dto'
+import { GithubEventService } from 'src/github/github-events.service'
 import { GithubService } from './github.service'
 
 @Controller({
@@ -11,6 +21,7 @@ import { GithubService } from './github.service'
 export class GithubController {
     constructor(
         private readonly githubService: GithubService,
+        private readonly githubEventService: GithubEventService,
         private readonly configService: ConfigService
     ) {}
 
@@ -41,6 +52,7 @@ export class GithubController {
         return { redirect }
     }
 
+    @UseGuards(AuthGuard('jwt-cookie'))
     @Get('org-repos')
     async getOrgRepos(
         @Query('name') name: string,
@@ -53,6 +65,55 @@ export class GithubController {
         return {
             message: 'Repositories fetched successfully',
             result: repos
+        }
+    }
+
+    @Post('events')
+    async githubEvents(@Body() body: any, @Req() req) {
+        console.log('Received GitHub event:')
+        const event = req.headers['x-github-event']
+        return {
+            message: 'GitHub events processed successfully',
+            result: await this.githubService.processGithubEvent(event, body)
+        }
+    }
+
+    @Post('reviews')
+    async postReview(@Body() postReviewDto: PostReviewDto) {
+        return {
+            message: 'Review posted successfully',
+            result: await this.githubEventService.addPRReviewComments(
+                postReviewDto.owner,
+                postReviewDto.repo,
+                postReviewDto.prNumber,
+                postReviewDto.comments,
+                postReviewDto.installationId
+            )
+        }
+    }
+
+    @Post('summery')
+    async postSummery(@Body() postSummery: any) {
+        return {
+            message: 'Summary posted successfully',
+            result: {}
+        }
+    }
+
+    @Post('suggestions')
+    async postSuggestions(@Body() name: string) {
+        return {
+            message: 'Suggestions posted successfully',
+            result: {}
+        }
+    }
+
+    @Post('post-pr')
+    async postPr(@Body() body: string) {
+        console.log('Post PR body:', body)
+        return {
+            message: 'Post Pr successfully',
+            result: {}
         }
     }
 }

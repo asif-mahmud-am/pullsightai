@@ -1,52 +1,37 @@
 import { Injectable } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { Octokit } from '@octokit/rest'
+import { HttpService } from 'src/common/http/http.service'
+import { StructuredPRData } from 'src/common/interfaces/pr.interface'
+import { Repository } from 'src/common/interfaces/repository.interface'
 import { DatabaseService } from 'src/database/database.service'
+import { Workspace } from 'src/database/schemas/workspace.schema'
+import { GithubEventService } from 'src/github/github-events.service'
 
-export interface Organization {
-    name: string
-    id: number
-    nodeId: string
-    url: string
-    reposUrl: string
-    avatarUrl: string
-    createdAt: string
-    updatedAt: string
-    type: string
-}
-
-export interface Repository {
-    id: number
-    nodeId: string
-    name: string
-    fullName: string
-    private: boolean
-    author: {
-        name: string
-        avatarUrl: string
-    }
-    pushedAt: string
-    openIssues: number
-}
 @Injectable()
 export class GithubService {
     private octokit: Octokit
 
-    constructor(private readonly dataService: DatabaseService) {}
+    constructor(
+        private readonly dataService: DatabaseService,
+        private readonly configService: ConfigService,
+        private readonly githubEventService: GithubEventService,
+        private readonly httpService: HttpService
+    ) {}
 
-    async getUserOrganizations(user: any): Promise<Organization[]> {
+    async getUserOrganizations(user: any): Promise<Workspace[]> {
         await this.initOctokit(user)
         const userRepoData = await this.octokit.rest.users.getAuthenticated()
         const response = await this.octokit.rest.orgs.listForAuthenticatedUser()
-        const organizations: Organization[] = []
+        console.log('User Repo Data:', response.data)
+        const organizations: Workspace[] = []
         organizations.push({
             name: userRepoData.data.login,
-            id: userRepoData.data.id,
+            id: userRepoData.data.id.toString(),
             nodeId: userRepoData.data.node_id,
             url: userRepoData.data.url,
             reposUrl: userRepoData.data.repos_url,
             avatarUrl: userRepoData.data.avatar_url,
-            createdAt: userRepoData.data.created_at,
-            updatedAt: userRepoData.data.updated_at,
             type: userRepoData.data.type
         })
         for (const org of response.data) {
@@ -54,14 +39,12 @@ export class GithubService {
                 org: org.login
             })
             organizations.push({
+                id: details.data.id.toString(),
                 name: details.data.login,
-                id: details.data.id,
                 nodeId: details.data.node_id,
                 url: details.data.url,
                 reposUrl: details.data.repos_url,
                 avatarUrl: details.data.avatar_url,
-                createdAt: details.data.created_at,
-                updatedAt: details.data.updated_at,
                 type: details.data.type
             })
         }
@@ -82,13 +65,37 @@ export class GithubService {
         return this.octokit
     }
 
-    async getOrgRepositories(org: string, user: any): Promise<Repository[]> {
-        await this.initOctokit(user)
-        const response = await this.octokit.rest.repos.listForOrg({
-            org,
+    async listInstallationRepositories(installationId: number) {
+        const octokit =
+            await this.githubEventService.initOctokitApp(installationId)
+
+        const { data } =
+            await octokit.rest.apps.listReposAccessibleToInstallation()
+        if (data.repositories.length === 1) {
+            const org = data.repositories[0].owner
+            await this.dataService.workspaces.create({
+                id: org.id.toString(),
+                name: org.login,
+                nodeId: org.node_id,
+                url: org.url,
+                reposUrl: org.repos_url,
+                avatarUrl: org.avatar_url,
+                type: org.type
+            })
+        }
+        return data.repositories[0].owner.login
+    }
+
+    async listOrgRepositories(name: string, installationId: number) {
+        const octokit =
+            await this.githubEventService.initOctokitApp(installationId)
+
+        const { data } = await octokit.rest.repos.listForOrg({
+            org: name,
             type: 'all'
         })
-        const repositories: Repository[] = response.data.map(
+
+        const repositories: Repository[] = data.map(
             (repo) =>
                 ({
                     id: repo.id,
@@ -107,9 +114,25 @@ export class GithubService {
         return repositories
     }
 
-    async getUserRepositories() {
-        const response =
-            await this.octokit.rest.repos.listForAuthenticatedUser()
-        return response.data
+    async processGithubEvent(event: any, payload: any) {
+        console.log('Processing GitHub event:', event)
+        let pullRequestFormatedData: StructuredPRData | boolean
+        switch (event) {
+            case 'pull_request':
+                pullRequestFormatedData =
+                    await this.githubEventService.handleGitHubPullRequest(
+                        payload
+                    )
+                break
+            default:
+                pullRequestFormatedData = false
+        }
+        if (pullRequestFormatedData) {
+            await this.httpService.post(
+                this.configService.get('AI_AGENT_PR_POST_URL') as string,
+                pullRequestFormatedData
+            )
+        }
+        return pullRequestFormatedData
     }
 }

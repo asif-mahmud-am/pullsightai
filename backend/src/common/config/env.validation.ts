@@ -49,10 +49,19 @@ class EnvironmentVariables {
     GITHUB_CLIENT_SECRET: string
 
     @IsString()
+    GITHUB_APP_ID: string
+
+    @IsString()
+    GITHUB_PRIVATE_KEY_PATH: string
+
+    @IsString()
     CLIENT_URL: string
 
     @IsString()
     JWT_SECRET: string
+
+    @IsString()
+    AI_AGENT_PR_POST_URL: string
 }
 
 export function validate(config: Record<string, unknown>) {

@@ -3,6 +3,7 @@ import {
     Controller,
     Get,
     Patch,
+    Post,
     Req,
     Res,
     UseGuards
@@ -36,8 +37,8 @@ export class AuthController {
     githubLogin() {}
 
     @UseGuards(AuthGuard('jwt-cookie'))
-    @Get('logout')
-    async logout(@Req() req) {
+    @Post('logout')
+    async logout() {
         return {
             message: LOGOUT,
             logout: true

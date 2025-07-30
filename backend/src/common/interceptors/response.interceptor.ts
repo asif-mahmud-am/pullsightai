@@ -32,6 +32,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
                         response.cookie('accessToken', data.token, {
                             httpOnly: true,
                             sameSite: 'lax',
+                            domain: '.pullsight.ai', // Add domain
                             maxAge: 7 * 24 * 60 * 60 * 1000 // 7days
                         })
                     }
@@ -40,7 +41,8 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
                 if (data?.logout) {
                     response.clearCookie('accessToken', {
                         httpOnly: true,
-                        sameSite: 'lax'
+                        sameSite: 'lax',
+                        domain: '.pullsight.ai' // Same domain as when setting
                     })
                 }
                 return {

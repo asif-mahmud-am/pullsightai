@@ -34,6 +34,7 @@ jobs:
           GITHUB_PRIVATE_KEY_PATH=${{ secrets.GIT_PRIVATE_KEY_PATH }}
           GITHUB_APP_SLUG=${{ secrets.GIT_APP_SLUG }}
           GITHUB_APP_ID=${{ secrets.GIT_APP_ID }}
+          DOMAIN=${{ vars.DOMAIN }}
           EOF
 
       - name: create pem file

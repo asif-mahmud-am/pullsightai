@@ -62,6 +62,9 @@ class EnvironmentVariables {
 
     @IsString()
     AI_AGENT_PR_POST_URL: string
+
+    @IsString()
+    DOMAIN: string
 }
 
 export function validate(config: Record<string, unknown>) {

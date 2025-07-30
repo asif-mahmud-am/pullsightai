@@ -41,12 +41,6 @@ jobs:
           echo "${{ secrets.GIT_PRIVATE_KEY }}" > backend/app.private-key.pem
           chmod 600 backend/app.private-key.pem
 
-      - name: Build frontend
-        run: |
-          cd frontend
-          npm ci --only=production
-          npm run build
-
       - name: Stop existing containers
         run: |
           docker compose down || true

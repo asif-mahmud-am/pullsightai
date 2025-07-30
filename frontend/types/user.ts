@@ -6,5 +6,6 @@ export interface User {
     provider: string;
     providerId: string;
     avatarUrl: string;
+    currentWorkspace: string | null;
     onboardingStep: number | null;
 }

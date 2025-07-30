@@ -31,21 +31,26 @@ const stepsData = [
     },
     {
         index: 2,
+        id: "install",
+        label: "Install PullSight",
+    },
+    {
+        index: 3,
         id: "repos",
         label: "Choose Repositories",
     },
     {
-        index: 3,
+        index: 4,
         id: "prs",
         label: "Choose Pull Requests",
     },
     {
-        index: 4,
+        index: 5,
         id: "ai",
         label: "Generate AI Analysis on PR",
     },
     {
-        index: 5,
+        index: 6,
         id: "invite",
         label: "Invite Team Members",
     },

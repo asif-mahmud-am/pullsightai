@@ -40,6 +40,7 @@ const Step2Page = () => {
 
         redirect(`/onboarding/step-3`);
     };
+    
 
     return (
         <>

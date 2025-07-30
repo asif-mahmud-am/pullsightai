@@ -4,37 +4,60 @@ import { Organization } from "@/types/organization";
 import ActionFooter from "../ActionFooter";
 import SelectableList from "../SelectableList";
 import { useState } from "react";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useOrganizationQuery } from "@/api/queries/organization";
+import { useUpdateUserMutation } from "@/api/queries/auth";
+import { ROUTE_CONSTANTS } from "@/lib/constants";
+import { useAuthStore } from "@/store/authStore";
 
 const organizations: Organization[] = [
     {
-        id: 44993145,
-        name: "sroy-dev",
-        slug: "sroy-dev",
-        provider: "github",
-        avatar_url: "https://avatars.githubusercontent.com/u/44993145?v=4",
-        created_at: "2018-11-13T05:37:17Z",
-        updated_at: "2025-07-24T03:25:52Z",
+        "name": "sroy-dev",
+        "id": "44993145",
+        "nodeId": "MDQ6VXNlcjQ0OTkzMTQ1",
+        "url": "https://api.github.com/users/sroy-dev",
+        "reposUrl": "https://api.github.com/users/sroy-dev/repos",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/44993145?v=4",
+        "type": "User"
     },
     {
-        id: 165650485,
-        name: "TeamChickenHQ",
-        slug: "TeamChickenHQ",
-        provider: "github",
-        avatar_url: "https://avatars.githubusercontent.com/u/165650485?v=4",
-        created_at: "2024-04-01T08:49:11Z",
-        updated_at: "2024-04-01T09:36:02Z",
-    },
-];
+        "id": "165650485",
+        "name": "TeamChickenHQ",
+        "nodeId": "O_kgDOCd-gNQ",
+        "url": "https://api.github.com/orgs/TeamChickenHQ",
+        "reposUrl": "https://api.github.com/orgs/TeamChickenHQ/repos",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/165650485?v=4",
+        "type": "Organization"
+    }
+]
 
 const Step1Page = () => {
     const [selectedOrg, setSelectedOrg] = useState<string>("");
+    const user = useAuthStore((s) => s.user);
+    const provider = user?.provider || "github"; // Default to GitHub if not set
+    
+    const router = useRouter();
 
-    const onStepComplete = () => {
+    const {
+        data: organizations = [],
+        isLoading
+    } = useOrganizationQuery({ provider });
+
+    const {
+        mutateAsync: updateUser,
+        isPending: isUpdatingUser
+    } = useUpdateUserMutation();
+
+    const onStepComplete = async () => {
         if (!selectedOrg) return;
-        // You can add your API call or navigation logic here
-
-        redirect(`/onboarding/step-2`);
+        updateUser({
+            currentWorkspace: selectedOrg,
+            onboardingStep: 2
+        }).then(() => {
+            router.push(ROUTE_CONSTANTS.ONBOARDING_STEP_2);
+        }).catch((error) => {
+            console.error("Error updating user:", error);
+        });
     };
 
     return (
@@ -71,15 +94,13 @@ const Step1Page = () => {
                             </p>
                         )}
 
-                        {organizations.length > 0 && (
+                        {organizations?.data?.length > 0 && (
                             <SelectableList
-                                items={organizations.map((org) => ({
-                                    id: String(org.slug),
+                                items={organizations?.data?.map((org : Organization) => ({
+                                    id: String(org.id),
                                     title: org.name,
-                                    subtitle: org.author,
-                                    timestamp: org.time,
-                                    avatar: org.avatar_url,
-                                    updatedAt: org.updated_at,
+                                    subtitle: org.name,
+                                    avatar: org.avatarUrl,
                                 }))}
                                 selectedId={selectedOrg}
                                 onSelect={(id) => setSelectedOrg(id)}
@@ -93,7 +114,7 @@ const Step1Page = () => {
             <ActionFooter
                 buttonText="Connect Organization"
                 isEnabled={Boolean(selectedOrg) && !false}
-                // isLoading={isPending}
+                isLoading={isLoading || isUpdatingUser}
                 onClick={onStepComplete}
             />
         </>

@@ -38,8 +38,8 @@ jobs:
 
       - name: create pem file
         run: |
-          echo "${{ secrets.GIT_PRIVATE_KEY }}" > backend/github_private_key.pem
-          chmod 600 backend/github_private_key.pem
+          echo "${{ secrets.GIT_PRIVATE_KEY }}" > backend/app.private-key.pem
+          chmod 600 backend/app.private-key.pem
 
       - name: Stop existing containers
         run: |

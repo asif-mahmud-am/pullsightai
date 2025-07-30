@@ -29,7 +29,17 @@ jobs:
           BITBUCKET_CLIENT_SECRET=${{ secrets.BITBUCKET_CLIENT_SECRET }}
           GITHUB_CLIENT_ID=${{ secrets.GIT_CLIENT_ID }}
           GITHUB_CLIENT_SECRET=${{ secrets.GIT_CLIENT_SECRET }}
+          AI_AGENT_PR_POST_URL=${{ vars.AI_AGENT_PR_POST_URL }}
+          GITHUB_WEBHOOK_SECRET=${{ secrets.GIT_WEBHOOK_SECRET }}
+          GITHUB_PRIVATE_KEY_PATH=${{ secrets.GIT_PRIVATE_KEY_PATH }}
+          GITHUB_APP_SLUG=${{ secrets.GIT_APP_SLUG }}
+          GITHUB_APP_ID=${{ secrets.GIT_APP_ID }}
           EOF
+
+      - name: create pem file
+        run: |
+          echo "${{ secrets.GIT_PRIVATE_KEY }}" > backend/github_private_key.pem
+          chmod 600 backend/github_private_key.pem
 
       - name: Stop existing containers
         run: |

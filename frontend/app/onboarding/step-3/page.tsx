@@ -4,77 +4,91 @@ import { Organization } from "@/types/organization";
 import ActionFooter from "../ActionFooter";
 import SelectableList from "../SelectableList";
 import { useState } from "react";
+import { PullRequest } from "@/types/pullRequest";
+import { redirect } from "next/navigation";
 
-const organizations: Organization[] = [
+const pullRequests: PullRequest[] = [
     {
-        id: 44993145,
-        name: "sroy-dev",
-        slug: "sroy-dev",
+        external_id: 1,
+        title: "Web app init",
+        number: 1,
+        state: "closed",
+        merged: false,
+        user: {
+            login: "khairul111010",
+            avatar_url: "https://avatars.githubusercontent.com/u/44225180?v=4",
+        },
+        html_url: "https://github.com/TeamChickenHQ/icchamoto/pull/1",
+        created_at: "2024-04-01T09:45:51.000000Z",
+        additions: 0,
+        deletions: 0,
+        changed_files: 0,
         provider: "github",
-        avatar_url: "https://avatars.githubusercontent.com/u/44993145?v=4",
-        created_at: "2018-11-13T05:37:17Z",
-        updated_at: "2025-07-24T03:25:52Z",
-    },
-    {
-        id: 165650485,
-        name: "TeamChickenHQ",
-        slug: "TeamChickenHQ",
-        provider: "github",
-        avatar_url: "https://avatars.githubusercontent.com/u/165650485?v=4",
-        created_at: "2024-04-01T08:49:11Z",
-        updated_at: "2024-04-01T09:36:02Z",
     },
 ];
 
-export default function Step1Page() {
-    const [selectedOrg, setSelectedOrg] = useState<string>("");
+const Step3Page = () => {
+    const [selectedPR, setSelectedPR] = useState<string>("");
+
+    const onStepComplete = () => {
+        if (!selectedPR) return;
+        // You can add your API call or navigation logic here
+
+        redirect(`/onboarding/step-4`);
+    };
 
     return (
-        <div className="flex flex-col gap-5 mx-auto justify-between mt-[64px]">
-            <div className="flex gap-5 justify-between flex-wrap lg:flex-nowrap">
+        <>
+            <div className="grid grid-cols-12 gap-4 lg:gap-8">
                 {/* Left column */}
-                <div className="max-w-sm">
+                <div className="col-span-4 xl:pr-16">
                     <h2 className="text-4xl font-medium text-[var(--title-50)] mb-4 leading-[45px]">
-                        Connect Your Organization
+                        Let&apos;s See the AI in Action on Your Code
                     </h2>
                     <p className="text-base font-medium text-[var(--subtitle-400)] mb-6">
-                        To analyze your Pull Requests and provide smart
-                        feedback, PullSight needs access to your
-                        organization&apos;s repositories. This is a secure,
-                        standard connection via OAuth.
+                        We&apos;ve identified active Pull Requests in your
+                        selected repositories. Choose one to generate your very
+                        first AI-powered analysis right now!
                     </p>
                 </div>
 
                 {/* Right column */}
-                <div className="w-full">
+                <div className="col-span-8">
                     <div className="mb-4">
                         <h3 className="text-[var(--title-50)] font-medium mb-4 text-lg">
-                            Organizations list
+                            PRs list
                         </h3>
 
                         {false && (
                             <p className="text-[var(--subtitle-400)]">
-                                Loading organizations...
+                                Loading pull requests...
                             </p>
                         )}
                         {false && (
                             <p className="text-[var(--subtitle-400)]">
-                                Error loading organizations. Please try again.
+                                Error loading pull requests. Please try again.
                             </p>
                         )}
 
-                        {organizations.length > 0 && (
+                        {pullRequests.length > 0 && (
                             <SelectableList
-                                items={organizations.map((org) => ({
-                                    id: String(org.slug),
-                                    title: org.name,
-                                    subtitle: org.author,
-                                    timestamp: org.time,
-                                    avatar: org.avatar_url,
-                                    updatedAt: org.updated_at,
+                                items={pullRequests.map((pr) => ({
+                                    id: String(pr.id),
+                                    title: pr.title,
+                                    timestamp: pr.time,
+                                    avatar: pr.avatar_url,
+                                    subtitle: pr.user.login,
+                                    status: {
+                                        label: pr.state,
+                                        colorClass:
+                                            pr.state === "closed"
+                                                ? "bg-red-500 text-white"
+                                                : "bg-green-500 text-white",
+                                    },
+                                    updatedAt: pr.updated_at,
                                 }))}
-                                selectedId={selectedOrg}
-                                onSelect={(id) => setSelectedOrg(id)}
+                                selectedId={selectedPR}
+                                onSelect={(id) => setSelectedPR(id)}
                             />
                         )}
                     </div>
@@ -83,11 +97,14 @@ export default function Step1Page() {
 
             {/* Footer with action button */}
             <ActionFooter
-                buttonText="Connect Organization"
-                // isEnabled={Boolean(selectedOrg) && !isPending}
-                // isLoading={isPending}
-                // onClick={handleConnectOrganization}
+                buttonText={false ? "Analyzing..." : "Analyze Pull Request"}
+                isEnabled={Boolean(selectedPR) && !false}
+                onClick={onStepComplete}
+                onBackClick={() => redirect("/onboarding/step-2")}
+                onSkipClick={() => redirect("/dashboard")}
             />
-        </div>
+        </>
     );
-}
+};
+
+export default Step3Page;

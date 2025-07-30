@@ -27,14 +27,13 @@ const organizations: Organization[] = [
     },
 ];
 
-const Step1Page = () => {
+const Step5Page = () => {
     const [selectedOrg, setSelectedOrg] = useState<string>("");
 
     const onStepComplete = () => {
-        if (!selectedOrg) return;
         // You can add your API call or navigation logic here
 
-        redirect(`/onboarding/step-2`);
+        redirect(`/dashboard`);
     };
 
     return (
@@ -43,13 +42,13 @@ const Step1Page = () => {
                 {/* Left column */}
                 <div className="col-span-4 col-start-2 xl:pr-16">
                     <h2 className="text-4xl font-medium text-[var(--title-50)] mb-4 leading-[45px]">
-                        Connect Your Organization
+                        Collaborate & Scale Your Code Quality
                     </h2>
                     <p className="text-base font-medium text-[var(--subtitle-400)] mb-6">
-                        To analyze your Pull Requests and provide smart
-                        feedback, PullSight needs access to your
-                        organization&apos;s repositories. This is a secure,
-                        standard connection via OAuth.
+                        You&apos;ve seen the power of AI-driven feedback! Now,
+                        invite your team members to experience faster reviews
+                        and higher code quality together. The more, the merrier
+                        (and smarter!).
                     </p>
                 </div>
 
@@ -57,7 +56,7 @@ const Step1Page = () => {
                 <div className="col-span-6">
                     <div className="mb-4">
                         <h3 className="text-[var(--title-50)] font-medium mb-4 text-lg">
-                            Organizations list
+                            Team members lists
                         </h3>
 
                         {false && (
@@ -91,13 +90,15 @@ const Step1Page = () => {
 
             {/* Footer with action button */}
             <ActionFooter
-                buttonText="Connect Organization"
-                isEnabled={Boolean(selectedOrg) && !false}
+                buttonText="Send invites & go to Dashboard"
+                isEnabled={true}
                 // isLoading={isPending}
                 onClick={onStepComplete}
+                onBackClick={() => redirect("/onboarding/step-4")}
+                onSkipClick={() => redirect("/dashboard")}
             />
         </>
     );
 };
 
-export default Step1Page;
+export default Step5Page;

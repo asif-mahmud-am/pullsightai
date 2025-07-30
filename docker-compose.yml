@@ -21,6 +21,6 @@ services:
     # depends_on:
     #   - pullsightai-backend
     environment:
-      - NODE_ENV=production
-      - NEXT_TELEMETRY_DISABLED=1
-      - NEXT_PUBLIC_API_URL=https://dev-api.pullsight.ai
+      - NODE_ENV=${NEXT_NODE_ENV}
+      - NEXT_TELEMETRY_DISABLED=${NEXT_TELEMETRY_DISABLED}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}

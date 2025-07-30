@@ -9,3 +9,18 @@ services:
     container_name: pullsightai-backend
     volumes:
       - /app/node_modules
+  pullsightai-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    container_name: pullsightai-frontend
+    volumes:
+      - /app/node_modules
+    # depends_on:
+    #   - pullsightai-backend
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      - NEXT_PUBLIC_API_URL=http://localhost:3001

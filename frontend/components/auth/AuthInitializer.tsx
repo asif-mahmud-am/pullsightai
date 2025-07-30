@@ -1,8 +1,8 @@
-import { getUserFromServer } from "@/api/auth/endpoints";
 import { AUTH_CONSTANTS } from "@/lib/constants";
 import { headers } from "next/headers";
 import HydrateUser from "./HydrateUser";
 import { FC, ReactNode } from "react";
+import { authEndpoints } from "@/api/auth/endpoints";
 
 const AuthInitializer: FC<{ children: ReactNode }> = async ({ children }) => {
     const headersList = headers();
@@ -14,7 +14,7 @@ const AuthInitializer: FC<{ children: ReactNode }> = async ({ children }) => {
 
     if (token) {
         try {
-            const data = await getUserFromServer(token);
+            const data = await authEndpoints.getUserFromServer(token);
             user = data.data;
         } catch (error) {
             console.error("Error fetching user:", error);

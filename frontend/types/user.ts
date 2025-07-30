@@ -1,6 +1,10 @@
 export interface User {
-    id: string;
-    name: string;
+    _id: string;
+    username: string;
+    displayName: string;
     email: string;
+    provider: string;
+    providerId: string;
+    avatarUrl: string;
     onboardingStep: number | null;
 }

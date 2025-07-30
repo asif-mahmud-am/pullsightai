@@ -41,16 +41,25 @@ jobs:
           echo "${{ secrets.GIT_PRIVATE_KEY }}" > backend/app.private-key.pem
           chmod 600 backend/app.private-key.pem
 
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm ci --only=production
+          npm run build
+
       - name: Stop existing containers
         run: |
           docker compose down || true
 
-      - name: Build and start services with Docker Compose
+      - name: Build and start all services with Docker Compose
         run: |
           docker compose up -d --build
 
       - name: Check service health
         run: |
-          sleep 10
+          sleep 15
           docker compose ps
+          echo "=== Backend Logs ==="
           docker compose logs pullsightai-backend --tail=50
+          echo "=== Frontend Logs ==="
+          docker compose logs pullsightai-frontend --tail=50

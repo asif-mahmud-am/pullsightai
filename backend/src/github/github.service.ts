@@ -115,24 +115,23 @@ export class GithubService {
     }
 
     async processGithubEvent(event: any, payload: any) {
-        console.log('Processing GitHub event:', event)
-        let pullRequestFormatedData: StructuredPRData | boolean
+        let pullRequestFormattedData: StructuredPRData | boolean
         switch (event) {
             case 'pull_request':
-                pullRequestFormatedData =
+                pullRequestFormattedData =
                     await this.githubEventService.handleGitHubPullRequest(
                         payload
                     )
                 break
             default:
-                pullRequestFormatedData = false
+                pullRequestFormattedData = false
         }
-        if (pullRequestFormatedData) {
+        if (pullRequestFormattedData) {
             await this.httpService.post(
                 this.configService.get('AI_AGENT_PR_POST_URL') as string,
-                pullRequestFormatedData
+                pullRequestFormattedData
             )
         }
-        return pullRequestFormatedData
+        return pullRequestFormattedData
     }
 }

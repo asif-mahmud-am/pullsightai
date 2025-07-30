@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config'
 import { AuthGuard } from '@nestjs/passport'
 import { InstallRepoDto } from 'src/github/dto/install-repo.dto'
 import { PostReviewDto } from 'src/github/dto/post-review.dto'
+import { PostSummeryDto } from 'src/github/dto/post-summery.dto'
 import { GithubEventService } from 'src/github/github-events.service'
 import { GithubService } from './github.service'
 
@@ -83,20 +84,16 @@ export class GithubController {
         return {
             message: 'Review posted successfully',
             result: await this.githubEventService.addPRReviewComments(
-                postReviewDto.owner,
-                postReviewDto.repo,
-                postReviewDto.prNumber,
-                postReviewDto.comments,
-                postReviewDto.installationId
+                postReviewDto
             )
         }
     }
 
-    @Post('summery')
-    async postSummery(@Body() postSummery: any) {
+    @Post('summary')
+    async postSummary(@Body() postSummery: PostSummeryDto) {
         return {
             message: 'Summary posted successfully',
-            result: {}
+            result: await this.githubEventService.addPRSummery(postSummery)
         }
     }
 

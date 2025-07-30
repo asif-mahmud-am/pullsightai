@@ -5,8 +5,10 @@ import {
     Injectable,
     NestInterceptor
 } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { extractDomainFromUrl } from 'src/common/helpers/coversion.helper'
 
 export interface Response<T> {
     statusCode: number
@@ -16,6 +18,7 @@ export interface Response<T> {
 
 @Injectable()
 export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
+    constructor(private readonly configService: ConfigService) {}
     intercept(
         context: ExecutionContext,
         next: CallHandler
@@ -32,17 +35,26 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
                         response.cookie('accessToken', data.token, {
                             httpOnly: true,
                             sameSite: 'lax',
-                            domain: '.pullsight.ai', // Add domain
+                            domain: `.${extractDomainFromUrl(
+                                this.configService.get<string>(
+                                    'CLIENT_URL'
+                                ) as string
+                            )}`,
                             maxAge: 7 * 24 * 60 * 60 * 1000 // 7days
                         })
                     }
                     return response.redirect(data.redirect)
                 }
+
                 if (data?.logout) {
                     response.clearCookie('accessToken', {
                         httpOnly: true,
                         sameSite: 'lax',
-                        domain: '.pullsight.ai' // Same domain as when setting
+                        domain: `.${extractDomainFromUrl(
+                            this.configService.get<string>(
+                                'CLIENT_URL'
+                            ) as string
+                        )}`
                     })
                 }
                 return {

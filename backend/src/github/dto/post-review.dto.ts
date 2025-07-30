@@ -1,5 +1,11 @@
 import { Type } from 'class-transformer'
-import { IsArray, IsNumber, IsString, ValidateNested } from 'class-validator'
+import {
+    IsArray,
+    IsNotEmpty,
+    IsNumber,
+    IsString,
+    ValidateNested
+} from 'class-validator'
 
 export class ReviewComment {
     @IsString()
@@ -14,12 +20,15 @@ export class ReviewComment {
 
 export class PostReviewDto {
     @IsString()
+    @IsNotEmpty()
     owner: string
 
     @IsString()
+    @IsNotEmpty()
     repo: string
 
     @IsNumber()
+    @IsNotEmpty()
     prNumber: number
 
     @IsArray()
@@ -28,5 +37,6 @@ export class PostReviewDto {
     comments: ReviewComment[]
 
     @IsNumber()
+    @IsNotEmpty()
     installationId: number
 }

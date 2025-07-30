@@ -8,7 +8,6 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { extractDomainFromUrl } from 'src/common/helpers/coversion.helper'
 
 export interface Response<T> {
     statusCode: number
@@ -35,11 +34,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
                         response.cookie('accessToken', data.token, {
                             httpOnly: true,
                             sameSite: 'lax',
-                            domain: `.${extractDomainFromUrl(
-                                this.configService.get<string>(
-                                    'CLIENT_URL'
-                                ) as string
-                            )}`,
+                            domain: `.${this.configService.get<string>('DOMAIN')}`,
                             maxAge: 7 * 24 * 60 * 60 * 1000 // 7days
                         })
                     }
@@ -50,11 +45,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
                     response.clearCookie('accessToken', {
                         httpOnly: true,
                         sameSite: 'lax',
-                        domain: `.${extractDomainFromUrl(
-                            this.configService.get<string>(
-                                'CLIENT_URL'
-                            ) as string
-                        )}`
+                        domain: `.${this.configService.get<string>('DOMAIN')}`
                     })
                 }
                 return {

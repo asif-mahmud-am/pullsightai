@@ -24,4 +24,16 @@ export const githubEndpoints = {
                 params: { repo: id },
             })
             .then((res) => res.data),
+    reviewPr: ({
+        prId,
+        repoId,
+    }: {
+        prId: string;
+        repoId: string;
+    }): Promise<ApiResponse<void>> =>
+        apiClient
+            .get(`/github/review-pr`, {
+                params: { prNumber: prId, repo: repoId },
+            })
+            .then((res) => res.data),
 };

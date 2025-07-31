@@ -10,7 +10,7 @@ import { useRepositoryQuery } from "@/api/queries/repository";
 import { useUpdateUserMutation } from "@/api/queries/auth";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
 
-const Step2Page = () => {
+const Step3Page = () => {
     const [selectedRepo, setSelectedRepo] = useState<string>("");
 
     const router = useRouter();
@@ -109,4 +109,4 @@ const Step2Page = () => {
     );
 };
 
-export default Step2Page;
+export default Step3Page;

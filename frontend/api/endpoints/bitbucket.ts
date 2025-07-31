@@ -20,8 +20,21 @@ export const bitbucketEndpoints = {
             .then((res) => res.data),
     getPRs: (id: string) =>
         apiClient
-            .get(`/github/repos-pr-list`, {
+            .get(`/bitbucket/repos-pr-list`, {
                 params: { repo: id },
+            })
+            .then((res) => res.data),
+    reviewPr: ({
+        prId,
+        repoId,
+    }: {
+        prId: string;
+        repoId: string;
+    }): Promise<ApiResponse<void>> =>
+        apiClient
+            .post(`/bitbucket/review-pr`, {
+                prNumber: prId,
+                repo: repoId,
             })
             .then((res) => res.data),
 };

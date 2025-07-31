@@ -8,26 +8,26 @@ import { redirect } from "next/navigation";
 
 const organizations: Organization[] = [
     {
-        id: 44993145,
         name: "sroy-dev",
-        slug: "sroy-dev",
-        provider: "github",
-        avatar_url: "https://avatars.githubusercontent.com/u/44993145?v=4",
-        created_at: "2018-11-13T05:37:17Z",
-        updated_at: "2025-07-24T03:25:52Z",
+        id: "44993145",
+        nodeId: "MDQ6VXNlcjQ0OTkzMTQ1",
+        url: "https://api.github.com/users/sroy-dev",
+        reposUrl: "https://api.github.com/users/sroy-dev/repos",
+        avatarUrl: "https://avatars.githubusercontent.com/u/44993145?v=4",
+        type: "User",
     },
     {
-        id: 165650485,
+        id: "165650485",
         name: "TeamChickenHQ",
-        slug: "TeamChickenHQ",
-        provider: "github",
-        avatar_url: "https://avatars.githubusercontent.com/u/165650485?v=4",
-        created_at: "2024-04-01T08:49:11Z",
-        updated_at: "2024-04-01T09:36:02Z",
+        nodeId: "O_kgDOCd-gNQ",
+        url: "https://api.github.com/orgs/TeamChickenHQ",
+        reposUrl: "https://api.github.com/orgs/TeamChickenHQ/repos",
+        avatarUrl: "https://avatars.githubusercontent.com/u/165650485?v=4",
+        type: "Organization",
     },
 ];
 
-const Step5Page = () => {
+const Step6Page = () => {
     const [selectedOrg, setSelectedOrg] = useState<string>("");
 
     const onStepComplete = () => {
@@ -73,12 +73,9 @@ const Step5Page = () => {
                         {organizations.length > 0 && (
                             <SelectableList
                                 items={organizations.map((org) => ({
-                                    id: String(org.slug),
+                                    id: String(org.id),
                                     title: org.name,
                                     subtitle: org.author,
-                                    timestamp: org.time,
-                                    avatar: org.avatar_url,
-                                    updatedAt: org.updated_at,
                                 }))}
                                 selectedId={selectedOrg}
                                 onSelect={(id) => setSelectedOrg(id)}
@@ -101,4 +98,4 @@ const Step5Page = () => {
     );
 };
 
-export default Step5Page;
+export default Step6Page;

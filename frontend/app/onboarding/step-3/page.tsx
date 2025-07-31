@@ -4,41 +4,41 @@ import ActionFooter from "../ActionFooter";
 import SelectableList from "../SelectableList";
 import { useState } from "react";
 import { Repository } from "@/types/repository";
-import { redirect } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
+import { useRepositoryQuery } from "@/api/queries/repository";
+import { useUpdateUserMutation } from "@/api/queries/auth";
+import { ROUTE_CONSTANTS } from "@/lib/constants";
 
-const repositories: Repository[] = [
-    {
-        external_id: 1024379966,
-        name: "icchamoto-web",
-        slug: "icchamoto-web",
-        provider: "github",
-        owner_name: "TeamChickenHQ",
-        owner_avatar: "https://avatars.githubusercontent.com/u/165650485?v=4",
-        avatar_url: null,
-        created_at: "2025-07-22T15:54:03Z",
-        updated_at: "2025-07-22T15:54:03Z",
-    },
-    {
-        external_id: 780344021,
-        name: "icchamoto",
-        slug: "icchamoto",
-        provider: "github",
-        owner_name: "TeamChickenHQ",
-        owner_avatar: "https://avatars.githubusercontent.com/u/165650485?v=4",
-        avatar_url: null,
-        created_at: "2024-04-01T09:18:10Z",
-        updated_at: "2024-04-01T09:18:10Z",
-    },
-];
 
 const Step2Page = () => {
     const [selectedRepo, setSelectedRepo] = useState<string>("");
 
+    const user = useAuthStore((s) => s.user);
+    const provider = user?.provider || "github"; // Default to GitHub if not set
+    
+    const router = useRouter();
+
+    const {
+        data: repositories = [],
+        isLoading,
+        error,
+    } = useRepositoryQuery({ provider });
+
+    const {
+        mutateAsync: updateUser,
+        isPending: isUpdatingUser
+    } = useUpdateUserMutation();
+
     const onStepComplete = () => {
         if (!selectedRepo) return;
-        // You can add your API call or navigation logic here
-
-        redirect(`/onboarding/step-3`);
+        updateUser({
+            onboardingStep: 4
+        }).then(() => {
+            router.push(ROUTE_CONSTANTS.ONBOARDING_STEP_4);
+        }).catch((error) => {
+            console.error("Error updating user:", error);
+        });
     };
 
     return (
@@ -64,12 +64,12 @@ const Step2Page = () => {
                             Repositories list
                         </h3>
 
-                        {false && (
+                        {isLoading && (
                             <p className="text-[var(--subtitle-400)]">
                                 Loading repositories...
                             </p>
                         )}
-                        {false && (
+                        {error && (
                             <p className="text-[var(--subtitle-400)]">
                                 Error loading repositories. Please try again.
                             </p>
@@ -78,12 +78,11 @@ const Step2Page = () => {
                         {repositories.length > 0 && (
                             <SelectableList
                                 items={repositories.map((repo) => ({
-                                    id: String(repo.slug),
+                                    id: String(repo.id),
                                     title: repo.name,
-                                    subtitle: repo.author,
-                                    timestamp: repo.time,
+                                    subtitle: repo.author?.name,
+                                    timestamp: repo.pushedAt,
                                     avatar: repo.avatar_url,
-                                    updatedAt: repo.updated_at,
                                 }))}
                                 selectedId={selectedRepo}
                                 onSelect={(id) => setSelectedRepo(id)}
@@ -98,8 +97,7 @@ const Step2Page = () => {
                 buttonText="Select Repository"
                 isEnabled={Boolean(selectedRepo) && !false}
                 onClick={onStepComplete}
-                // isLoading={isPending}
-                // backButtonText="Back"
+                isLoading={isUpdatingUser || isLoading}
                 onBackClick={() => redirect("/onboarding/step-1")}
             />
         </>

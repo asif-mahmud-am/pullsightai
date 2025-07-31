@@ -94,9 +94,9 @@ const Step1Page = () => {
                             </p>
                         )}
 
-                        {organizations?.data?.length > 0 && (
+                        {organizations?.length > 0 && (
                             <SelectableList
-                                items={organizations?.data?.map((org : Organization) => ({
+                                items={organizations?.map((org : Organization) => ({
                                     id: String(org.id),
                                     title: org.name,
                                     subtitle: org.name,

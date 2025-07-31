@@ -248,13 +248,12 @@ export class GithubService {
             )
 
         const response = await this.httpService.post(
-            this.configService.get('AI_AGENT_PR_POST_URL') as string,
+            this.configService.get('AI_AGENT_PR_REVIEW_URL') as string,
             pullRequestFormattedData
         )
-
         return {
             ...pullRequestFormattedData,
-            ...response.data
+            ...response
         }
     }
 

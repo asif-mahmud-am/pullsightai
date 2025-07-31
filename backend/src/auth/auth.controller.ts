@@ -1,8 +1,22 @@
-import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common'
+import {
+    Body,
+    Controller,
+    Get,
+    Patch,
+    Post,
+    Req,
+    Res,
+    UseGuards
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { AuthGuard } from '@nestjs/passport'
 import { Response } from 'express'
-import { SUCCESS } from 'src/common/utils/response-message.util'
+import { UpdateOnboardingStepDto } from 'src/auth/dto/update-onboarding-step.dto'
+import {
+    LOGOUT,
+    SUCCESS,
+    UPDATED
+} from 'src/common/utils/response-message.util'
 import { AuthService } from './auth.service'
 
 @Controller({
@@ -21,6 +35,15 @@ export class AuthController {
     @Get('github')
     @UseGuards(AuthGuard('github'))
     githubLogin() {}
+
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Post('logout')
+    async logout() {
+        return {
+            message: LOGOUT,
+            logout: true
+        }
+    }
 
     @Get('github/callback')
     @UseGuards(AuthGuard('github'))
@@ -59,10 +82,25 @@ export class AuthController {
 
     @UseGuards(AuthGuard('jwt-cookie'))
     @Get('profile')
-    getProfile(@Req() req) {
+    async getProfile(@Req() req) {
         return {
             message: SUCCESS,
-            result: req.user
+            result: await this.authService.getProfile(req.user)
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Patch('update-profile')
+    async updateProfile(
+        @Req() req,
+        @Body() updateProfileDto: UpdateOnboardingStepDto
+    ) {
+        return {
+            message: UPDATED,
+            result: await this.authService.updateProfile(
+                req.user,
+                updateProfileDto
+            )
         }
     }
 }

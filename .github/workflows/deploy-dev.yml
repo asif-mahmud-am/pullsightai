@@ -1,0 +1,66 @@
+name: Deploy with Self-Hosted Runner
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Create .env file
+        run: |
+          cd backend
+          cat << EOF > .env
+          NODE_ENV=${{ vars.NODE_ENV }}
+          PORT=${{ vars.PORT }}
+          MONGODB_URI=${{ secrets.MONGODB_URI }}
+          CLIENT_URL=${{ vars.CLIENT_URL }}
+          BASE_URL=${{ vars.BASE_URL }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          GITLAB_CLIENT_ID=${{ secrets.GITLAB_CLIENT_ID }}
+          GITLAB_CLIENT_SECRET=${{ secrets.GITLAB_CLIENT_SECRET }}
+          BITBUCKET_CLIENT_ID=${{ secrets.BITBUCKET_CLIENT_ID }}
+          BITBUCKET_CLIENT_SECRET=${{ secrets.BITBUCKET_CLIENT_SECRET }}
+          GITHUB_CLIENT_ID=${{ secrets.GIT_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET=${{ secrets.GIT_CLIENT_SECRET }}
+          AI_AGENT_PR_POST_URL=${{ vars.AI_AGENT_PR_POST_URL }}
+          GITHUB_WEBHOOK_SECRET=${{ secrets.GIT_WEBHOOK_SECRET }}
+          GITHUB_PRIVATE_KEY_PATH=${{ secrets.GIT_PRIVATE_KEY_PATH }}
+          GITHUB_APP_SLUG=${{ secrets.GIT_APP_SLUG }}
+          GITHUB_APP_ID=${{ secrets.GIT_APP_ID }}
+          DOMAIN=${{ vars.DOMAIN }}
+          EOF
+
+      - name: create pem file
+        run: |
+          echo "${{ secrets.GIT_PRIVATE_KEY }}" > backend/app.private-key.pem
+          chmod 600 backend/app.private-key.pem
+
+      - name: Set frontend environment variables
+        run: |
+          echo "NEXT_NODE_ENV=${{ vars.NEXT_NODE_ENV }}" >> $GITHUB_ENV
+          echo "NEXT_TELEMETRY_DISABLED=${{ vars.NEXT_TELEMETRY_DISABLED }}" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}" >> $GITHUB_ENV
+
+      - name: Stop existing containers
+        run: |
+          docker compose down || true
+
+      - name: Build and start all services with Docker Compose
+        run: |
+          docker compose up -d --build
+
+      - name: Check service health
+        run: |
+          sleep 15
+          docker compose ps
+          echo "=== Backend Logs ==="
+          docker compose logs pullsightai-backend --tail=50
+          echo "=== Frontend Logs ==="
+          docker compose logs pullsightai-frontend --tail=50

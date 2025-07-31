@@ -4,6 +4,7 @@ import { Organization } from "@/types/organization";
 import ActionFooter from "../ActionFooter";
 import SelectableList from "../SelectableList";
 import { useState } from "react";
+import { redirect } from "next/navigation";
 
 const organizations: Organization[] = [
     {
@@ -26,14 +27,21 @@ const organizations: Organization[] = [
     },
 ];
 
-export default function Step1Page() {
+const Step1Page = () => {
     const [selectedOrg, setSelectedOrg] = useState<string>("");
 
+    const onStepComplete = () => {
+        if (!selectedOrg) return;
+        // You can add your API call or navigation logic here
+
+        redirect(`/onboarding/step-2`);
+    };
+
     return (
-        <div className="flex flex-col gap-5 mx-auto justify-between mt-[64px]">
-            <div className="flex gap-5 justify-between flex-wrap lg:flex-nowrap">
+        <>
+            <div className="grid grid-cols-12 gap-4 lg:gap-8">
                 {/* Left column */}
-                <div className="max-w-sm">
+                <div className="col-span-4 col-start-2 xl:pr-16">
                     <h2 className="text-4xl font-medium text-[var(--title-50)] mb-4 leading-[45px]">
                         Connect Your Organization
                     </h2>
@@ -46,7 +54,7 @@ export default function Step1Page() {
                 </div>
 
                 {/* Right column */}
-                <div className="w-full">
+                <div className="col-span-6">
                     <div className="mb-4">
                         <h3 className="text-[var(--title-50)] font-medium mb-4 text-lg">
                             Organizations list
@@ -84,10 +92,12 @@ export default function Step1Page() {
             {/* Footer with action button */}
             <ActionFooter
                 buttonText="Connect Organization"
-                // isEnabled={Boolean(selectedOrg) && !isPending}
+                isEnabled={Boolean(selectedOrg) && !false}
                 // isLoading={isPending}
-                // onClick={handleConnectOrganization}
+                onClick={onStepComplete}
             />
-        </div>
+        </>
     );
-}
+};
+
+export default Step1Page;

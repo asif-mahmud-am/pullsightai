@@ -1,131 +1,53 @@
-"use client";
-
-import {
-    CheckedIcon,
-    CircleIcon,
-    StepOnProgressIcon,
-} from "@/components/common/icons";
 import { Button } from "@/components/ui/button";
 import { LogOutIcon } from "lucide-react";
 import { ReactNode } from "react";
 import ProgressSteps from "./ProgressSteps";
 import Image from "next/image";
+import AuthGuardClient from "@/components/auth/AuthGuardClient";
+import { AuthGuardServer } from "@/components/auth/AuthGuardServer";
+import LogoutHandler from "@/components/auth/LogoutHandler";
 
-const stepsData = [
-    {
-        index: 0,
-        id: "git",
-        label: "Git connected",
-    },
-    {
-        index: 1,
-        id: "org",
-        label: "Connect Organization",
-    },
-    {
-        index: 2,
-        id: "repos",
-        label: "Choose Repositories",
-    },
-    {
-        index: 3,
-        id: "prs",
-        label: "Choose Pull Requests",
-    },
-    {
-        index: 4,
-        id: "ai",
-        label: "Generate AI Analysis on PR",
-    },
-    {
-        index: 5,
-        id: "invite",
-        label: "Manage Repositories",
-    },
-];
-
-export default function OnboardingLayout({
-    children,
-}: {
-    children: ReactNode;
-}) {
-    const currentStep = 2;
-
-    const steps = stepsData.map((step) => ({
-        ...step,
-        status:
-            step.index < currentStep
-                ? "complete"
-                : step.index === currentStep
-                ? "current"
-                : "incomplete",
-    })) as Array<{
-        index: number;
-        id: string;
-        label: string;
-        status: "complete" | "current" | "incomplete";
-    }>;
-
-    async function handleLogout(event: React.MouseEvent) {
-        // try {
-        //   await Api.post('/api/logout')
-        //   window.location.reload()
-        // } catch (error) {
-        //   console.error('Logout failed:', error)
-        // }
-    }
-
+const OnboardingLayout = ({ children }: { children: ReactNode }) => {
     return (
-        <div className="py-12">
-            <div className="container">
-                <div className="mb-12">
-                    <div className="flex justify-between">
-                        <Image
-                            src="/images/logo.svg"
-                            alt="pullsight logo"
-                            width={112}
-                            height={40}
-                            className=""
-                        />
-                        <Button
-                            variant="outline"
-                            className="text-white text-sm border-0 cursor-pointer hover:underline underline-offset-4"
-                            onClick={handleLogout}
-                        >
-                            <LogOutIcon />
-                            Logout
-                        </Button>
-                    </div>
+        <AuthGuardServer>
+            <AuthGuardClient>
+                <div
+                    className="py-12 min-h-screen bg-no-repeat bg-cover bg-center"
+                    style={{
+                        backgroundImage: "url('/images/gradient-bg.svg')",
+                    }}
+                >
+                    <div className="container">
+                        <div className="mb-12">
+                            <div className="flex justify-between">
+                                <Image
+                                    src="/images/logo.svg"
+                                    alt="pullsight logo"
+                                    width={112}
+                                    height={40}
+                                    className=""
+                                />
+                                <LogoutHandler asChild>
+                                    <Button
+                                        variant="outline"
+                                        className="text-white text-sm border-0 cursor-pointer hover:underline underline-offset-4"
+                                    >
+                                        <LogOutIcon />
+                                        Logout
+                                    </Button>
+                                </LogoutHandler>
+                            </div>
 
-                    {!false && (
-                        <ProgressSteps
-                            steps={steps}
-                            icons={{
-                                complete: (
-                                    <CheckedIcon
-                                        size={15}
-                                        className="fill-primary"
-                                    />
-                                ),
-                                current: (
-                                    <CircleIcon
-                                        size={15}
-                                        className="fill-[var(--title-50)]"
-                                    />
-                                ),
-                                incomplete: (
-                                    <CircleIcon
-                                        size={15}
-                                        className="fill-[var(--overbox-600)]"
-                                    />
-                                ),
-                                progressBar: <StepOnProgressIcon />, // only used on current
-                            }}
-                        />
-                    )}
+                            {!false && <ProgressSteps />}
+                        </div>
+                        <div className="flex flex-col gap-5 mx-auto justify-between mt-[64px] min-h-[calc(100vh-300px)]">
+                            {children}
+                        </div>
+                    </div>
                 </div>
-                <div className="">{children}</div>
-            </div>
-        </div>
+            </AuthGuardClient>
+        </AuthGuardServer>
     );
-}
+};
+
+export default OnboardingLayout;

@@ -1,4 +1,3 @@
-// jwt-cookie.strategy.ts
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PassportStrategy } from '@nestjs/passport'
@@ -6,7 +5,14 @@ import { Request } from 'express'
 import { Strategy } from 'passport-jwt'
 
 const cookieExtractor = (req: Request): string | null => {
-    return req.cookies?.accessToken || null
+    const cookieHeader = req.headers.cookie
+    if (cookieHeader) {
+        const match = cookieHeader.match(/accessToken=([^;]+)/)
+        if (match) {
+            return match[1]
+        }
+    }
+    return null
 }
 
 @Injectable()

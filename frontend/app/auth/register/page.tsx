@@ -1,33 +1,33 @@
-import {
-    Bitbucket,
-    Github,
-    GitLab,
-    StarBullet,
-} from "@/components/common/icons";
-import { Button } from "@/components/ui/button";
+import { StarBullet } from "@/components/common/icons";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
 import Link from "next/link";
+import OauthButtons from "../OauthButtons";
 
-export default function RegisterPage() {
+const RegisterPage = () => {
     return (
-        <div className="container min-h-screen py-12 flex flex-col">
+        <div className="min-h-screen py-12 flex flex-col">
             <div className="grid grid-cols-12 gap-4 lg:gap-8 flex-grow">
                 <div className="col-span-6 hidden lg:block">
-                    <div className="max-w-[772px] h-full py-[80px] px-[96px] bg-[var(--box-800)] rounded-[24px] flex flex-col gap-[40px] relative overflow-hidden">
+                    <div
+                        className="max-w-[772px] h-full py-[80px] px-[96px] bg-[var(--box-800)] rounded-[24px] flex flex-col gap-[100px] relative overflow-hidden"
+                        style={{
+                            backgroundImage: "url(/images/dot-pattern.svg)",
+                        }}
+                    >
                         <Image
                             src="/images/logo.svg"
                             alt="pullsight logo"
                             width={198}
                             height={71}
-                            className="mb-10"
+                            className=""
                         />
                         <div className="flex flex-col gap-[32px]">
                             <h1 className="lg:text-[30px] xl:text-[36px] font-bold">
                                 Transform Your Code Reviews. Ship Better
                                 Software, Faster.
                             </h1>
-                            <p className="text-[var(--subtitle-300)] max-w-[554px]">
+                            <p className="text-gray-300 max-w-[554px]">
                                 AI-powered code insights for your pull requests.
                                 Catch bugs, improve quality, and accelerate
                                 development cycles before senior eyes even touch
@@ -36,25 +36,25 @@ export default function RegisterPage() {
                         </div>
 
                         <Image
-                            src="/images/star-left.png"
+                            src="/images/star-left.svg"
                             alt=""
-                            width={400}
-                            height={492}
-                            className="absolute left-0 bottom-0 w-[150px]"
+                            width={600}
+                            height={735}
+                            className="absolute left-0 bottom-0 w-1/2"
                         />
                         <Image
-                            src="/images/star-right.png"
+                            src="/images/star-right.svg"
                             alt=""
                             width={219}
                             height={335}
-                            className="absolute right-0 top-0 w-[150px]"
+                            className="absolute right-0 top-0 w-[250px]"
                         />
                     </div>
                 </div>
 
                 <div className="col-span-4 lg:col-start-9">
                     <div className="flex flex-col gap-[40px] py-14">
-                        <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-3">
                             <Image
                                 src="/images/logo.svg"
                                 alt="pullsight logo"
@@ -63,7 +63,7 @@ export default function RegisterPage() {
                                 className="lg:hidden shrink-0 relative left-[-10px]"
                             />
 
-                            <h2 className="text-[30px] sm:text-[36px]">
+                            <h2 className="text-[30px] sm:text-[36px] font-medium">
                                 Create an Account
                             </h2>
 
@@ -77,44 +77,7 @@ export default function RegisterPage() {
                         </div>
 
                         <div className="flex flex-col gap-[32px] mt-10">
-                            <div className="flex gap-x-4 w-full">
-                                <Button
-                                    asChild
-                                    variant="outline"
-                                    className="flex-1 !bg-white !text-black hover:!bg-gray-200 rounded-2xl text-base min-h-[64px]"
-                                >
-                                    <a
-                                        // href={createOauthUrl('github')}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <Github /> GitHub
-                                    </a>
-                                </Button>
-                                <Button
-                                    asChild
-                                    variant="outline"
-                                    className="flex-1 h-full !bg-white !text-black hover:!bg-gray-200 rounded-2xl text-base min-h-[64px]"
-                                >
-                                    <a
-                                        // href={createOauthUrl('bitbucket')}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <Bitbucket /> BitBucket
-                                    </a>
-                                </Button>
-                                <Button
-                                    asChild
-                                    variant="outline"
-                                    className="flex-1 h-full !bg-white !text-black hover:!bg-gray-200 rounded-2xl text-base min-h-[64px]"
-                                >
-                                    <a
-                                        // href={createOauthUrl('bitbucket')}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <GitLab /> GitLab
-                                    </a>
-                                </Button>
-                            </div>
+                            <OauthButtons />
 
                             <Separator />
 
@@ -158,10 +121,10 @@ export default function RegisterPage() {
 
                             <Separator />
 
-                            <div className="flex items-center gap-x-8">
+                            <div className="flex items-center gap-x-12">
                                 <div className="flex items-center gap-2 text-xs text-[var(--title-50)]">
                                     <Image
-                                        src="/images/soc.png"
+                                        src="/images/soc.svg"
                                         alt=""
                                         height={32}
                                         width={32}
@@ -172,7 +135,7 @@ export default function RegisterPage() {
                                 </div>
                                 <div className="flex items-center gap-2 text-xs text-[var(--title-50)]">
                                     <Image
-                                        src="/images/open-source.png"
+                                        src="/images/open-source.svg"
                                         alt=""
                                         height={32}
                                         width={32}
@@ -183,10 +146,10 @@ export default function RegisterPage() {
                                 </div>
                                 <div className="flex items-center gap-2 text-xs text-[var(--title-50)]">
                                     <Image
-                                        src="/images/ssl.png"
+                                        src="/images/ssl.svg"
                                         alt=""
                                         height={32}
-                                        width={26}
+                                        width={25}
                                     />
                                     <span>
                                         SSL <br /> Encryption
@@ -199,4 +162,6 @@ export default function RegisterPage() {
             </div>
         </div>
     );
-}
+};
+
+export default RegisterPage;

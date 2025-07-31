@@ -1,5 +1,3 @@
-// src/schemas/user.schema.ts
-
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { Document } from 'mongoose'
 import * as mongoosePaginate from 'mongoose-paginate-v2'
@@ -35,6 +33,12 @@ export class User {
 
     @Prop({ required: false })
     raw?: string
+
+    @Prop({ required: false, default: 1 })
+    onboardingStep: number
+
+    @Prop({ required: false, type: String })
+    currentWorkspace?: string
 }
 
 const schema = SchemaFactory.createForClass(User)

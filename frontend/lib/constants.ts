@@ -15,6 +15,7 @@ export const ROUTE_CONSTANTS = {
     ONBOARDING_STEP_3: "/onboarding/step-3",
     ONBOARDING_STEP_4: "/onboarding/step-4",
     ONBOARDING_STEP_5: "/onboarding/step-5",
+    ONBOARDING_STEP_6: "/onboarding/step-6",
 
     // Dashboard routes
     DASHBOARD: "/dashboard",

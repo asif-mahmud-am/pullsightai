@@ -1,12 +1,15 @@
 export interface Repository {
+    id: string;
     external_id: number;
     name: string;
-    owner_name: string;
+    author?: {
+        name: string;
+        avatarUrl: string;
+    };
     slug: string;
-    created_at: string;
+    pushedAt: string;
     owner_avatar: string | null;
     avatar_url?: string | null;
-    author?: string;
     time?: string;
     updated_at?: string;
     provider: "github" | "gitlab" | "bitbucket";

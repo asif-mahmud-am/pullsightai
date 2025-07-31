@@ -11,6 +11,9 @@ const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ["latin"] });
 export const metadata: Metadata = {
     title: "PullSight - Developer Performance Dashboard",
     description: "AI-powered code insights for your pull requests.",
+    icons: {
+        icon: "/favicon.png",
+    },
 };
 
 const RootLayout: FC<{ children: ReactNode }> = async ({ children }) => {

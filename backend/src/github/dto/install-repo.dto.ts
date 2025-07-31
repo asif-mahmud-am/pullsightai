@@ -13,3 +13,19 @@ export class InstallRepoDto {
     @IsNotEmpty()
     type: string
 }
+
+export class GetPRDto {
+    @IsString()
+    @IsNotEmpty()
+    repo: string
+}
+
+export class PRReviewDto {
+    @IsString()
+    @IsNotEmpty()
+    repo: string
+
+    @IsString()
+    @IsNotEmpty()
+    prNumber: string
+}

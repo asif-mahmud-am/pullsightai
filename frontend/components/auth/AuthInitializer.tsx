@@ -2,7 +2,7 @@ import { AUTH_CONSTANTS } from "@/lib/constants";
 import { headers } from "next/headers";
 import HydrateUser from "./HydrateUser";
 import { FC, ReactNode } from "react";
-import { authEndpoints } from "@/api/auth/endpoints";
+import { authEndpoints } from "@/api/endpoints/auth";
 
 const AuthInitializer: FC<{ children: ReactNode }> = async ({ children }) => {
     const headersList = headers();

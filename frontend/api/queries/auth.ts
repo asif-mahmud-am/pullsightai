@@ -1,7 +1,7 @@
 // src/api/auth/queries.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
-import { authEndpoints } from "./endpoints";
+import { authEndpoints } from "../endpoints/auth";
 
 export const useUserQuery = () => {
     const setUser = useAuthStore((s) => s.setUser);
@@ -29,3 +29,17 @@ export const useLogoutMutation = () => {
         },
     });
 };
+
+
+export const useUpdateUserMutation = () => {
+    const queryClient = useQueryClient();
+    const setUser = useAuthStore((s) => s.setUser);
+
+    return useMutation({
+        mutationFn: authEndpoints.updateUser,
+        onSuccess: (data) => {
+            setUser(data);
+            queryClient.invalidateQueries({ queryKey: ["user"] });
+        },
+    });
+}

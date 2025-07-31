@@ -1,5 +1,5 @@
 "use client";
-import { useLogoutMutation } from "@/api/auth/queries";
+import { useLogoutMutation } from "@/api/queries/auth";
 import { Slot } from "@radix-ui/react-slot";
 import { ComponentProps, MouseEvent } from "react";
 

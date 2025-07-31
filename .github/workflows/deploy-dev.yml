@@ -47,6 +47,15 @@ jobs:
           BACKEND_REVIEW_ENDPOINT=${{ vars.BACKEND_REVIEW_ENDPOINT }}
           EOF
 
+      - name: Create Frontend .env file
+        run: |
+          cd frontend
+          cat << EOF > .env
+          NODE_ENV=${{ vars.NEXT_NODE_ENV }}
+          NEXT_TELEMETRY_DISABLED=${{ vars.NEXT_TELEMETRY_DISABLED }}
+          NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+          EOF
+
       - name: create pem file
         run: |
           echo "${{ secrets.GIT_PRIVATE_KEY }}" > backend/app.private-key.pem

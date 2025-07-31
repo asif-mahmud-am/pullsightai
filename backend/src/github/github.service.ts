@@ -1,11 +1,20 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Octokit } from '@octokit/rest'
+import { Types } from 'mongoose'
 import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
-import { Repository } from 'src/common/interfaces/repository.interface'
+import {
+    PullRequestResponse,
+    Repository
+} from 'src/common/interfaces/repository.interface'
 import { DatabaseService } from 'src/database/database.service'
 import { Workspace } from 'src/database/schemas/workspace.schema'
+import {
+    GetPRDto,
+    InstallRepoDto,
+    PRReviewDto
+} from 'src/github/dto/install-repo.dto'
 import { GithubEventService } from 'src/github/github-events.service'
 
 @Injectable()
@@ -23,7 +32,6 @@ export class GithubService {
         await this.initOctokit(user)
         const userRepoData = await this.octokit.rest.users.getAuthenticated()
         const response = await this.octokit.rest.orgs.listForAuthenticatedUser()
-        console.log('User Repo Data:', response.data)
         const organizations: Workspace[] = []
         organizations.push({
             name: userRepoData.data.login,
@@ -32,25 +40,57 @@ export class GithubService {
             url: userRepoData.data.url,
             reposUrl: userRepoData.data.repos_url,
             avatarUrl: userRepoData.data.avatar_url,
-            type: userRepoData.data.type
+            type: userRepoData.data.type,
+            provider: 'github'
         })
-        for (const org of response.data) {
-            const details = await this.octokit.rest.orgs.get({
-                org: org.login
-            })
+        for (const details of response.data) {
             organizations.push({
-                id: details.data.id.toString(),
-                name: details.data.login,
-                nodeId: details.data.node_id,
-                url: details.data.url,
-                reposUrl: details.data.repos_url,
-                avatarUrl: details.data.avatar_url,
-                type: details.data.type
+                id: details.id.toString(),
+                name: details.login,
+                nodeId: details.node_id,
+                url: details.url,
+                reposUrl: details.repos_url,
+                avatarUrl: details.avatar_url,
+                provider: 'github'
             })
         }
         return organizations
     }
 
+    async createWorkspace(user: any, installRepoDto: InstallRepoDto) {
+        await this.initOctokit(user)
+        let workspace = await this.dataService.workspaces.findOne({
+            id: installRepoDto.id,
+            provider: 'github',
+            ownerId: new Types.ObjectId(user.sub)
+        })
+        if (!workspace) {
+            const { data: org } = await this.octokit.rest.orgs.get({
+                org: installRepoDto.name
+            })
+
+            workspace = await this.dataService.workspaces.create({
+                id: org.id.toString(),
+                name: org.login,
+                nodeId: org.node_id,
+                url: org.url,
+                reposUrl: org.repos_url,
+                avatarUrl: org.avatar_url,
+                type: org.type,
+                provider: 'github',
+                ownerId: user.sub
+            })
+        }
+        await this.dataService.users.updateOne(
+            { _id: user.sub },
+            {
+                $set: {
+                    currentWorkspace: workspace._id
+                }
+            }
+        )
+        return workspace
+    }
     async initOctokit(user: any) {
         const userData = await this.dataService.users.findOne(
             { _id: user.sub },
@@ -71,27 +111,94 @@ export class GithubService {
 
         const { data } =
             await octokit.rest.apps.listReposAccessibleToInstallation()
-        if (data.repositories.length === 1) {
+        if (data.repositories.length) {
             const org = data.repositories[0].owner
-            await this.dataService.workspaces.create({
+            const workspace = await this.dataService.workspaces.findOne({
                 id: org.id.toString(),
-                name: org.login,
-                nodeId: org.node_id,
-                url: org.url,
-                reposUrl: org.repos_url,
-                avatarUrl: org.avatar_url,
-                type: org.type
+                provider: 'github'
             })
+            if (workspace) {
+                await this.dataService.workspaces.updateOne(
+                    {
+                        _id: workspace._id
+                    },
+                    {
+                        installationId: installationId.toString()
+                    }
+                )
+            }
         }
         return data.repositories[0].owner.login
     }
 
-    async listOrgRepositories(name: string, installationId: number) {
-        const octokit =
-            await this.githubEventService.initOctokitApp(installationId)
+    async listRepoPullRequests(user: any, getPRDto: GetPRDto) {
+        const userData = await this.dataService.users
+            .findOne({ _id: user.sub })
+            .populate('currentWorkspace')
+        if (
+            !userData ||
+            !userData?.currentWorkspace ||
+            !userData?.currentWorkspace['installationId']
+        ) {
+            throw new Error(
+                'User or current workspace not found or installation ID missing'
+            )
+        }
+        const octokit = await this.githubEventService.initOctokitApp(
+            Number(userData.currentWorkspace['installationId'])
+        )
+
+        const query: any = {
+            owner: userData.currentWorkspace['name'],
+            repo: getPRDto.repo,
+            state: 'all',
+            per_page: 100
+        }
+
+        const { data: pullRequests } = await octokit.rest.pulls.list(query)
+        const prList: PullRequestResponse[] = []
+        pullRequests.map((pr) => {
+            prList.push({
+                id: pr.id,
+                nodeId: pr.node_id,
+                prNumber: pr.number,
+                title: pr.title,
+                status: pr.state,
+                user: {
+                    username: pr.user?.login || 'Unknown',
+                    avatarUrl: pr.user?.avatar_url || ''
+                },
+                createdAt: pr.created_at,
+                updatedAt: pr.updated_at,
+                closedAt: pr.closed_at,
+                mergedAt: pr.merged_at,
+                url: pr.html_url
+            })
+        })
+
+        return prList
+    }
+
+    async listOrgRepositories(user: any) {
+        const userData = await this.dataService.users
+            .findOne({ _id: user.sub })
+            .populate('currentWorkspace')
+        if (
+            !userData ||
+            !userData?.currentWorkspace ||
+            !userData?.currentWorkspace['installationId']
+        ) {
+            throw new Error(
+                'User or current workspace not found or installation ID missing'
+            )
+        }
+
+        const octokit = await this.githubEventService.initOctokitApp(
+            Number(userData.currentWorkspace['installationId'])
+        )
 
         const { data } = await octokit.rest.repos.listForOrg({
-            org: name,
+            org: userData.currentWorkspace['name'],
             type: 'all'
         })
 
@@ -112,6 +219,43 @@ export class GithubService {
                 }) as Repository
         )
         return repositories
+    }
+
+    async makePRReview(user: any, prReviewDto: PRReviewDto) {
+        const userData = await this.dataService.users
+            .findOne({ _id: user.sub })
+            .populate('currentWorkspace')
+        if (
+            !userData ||
+            !userData?.currentWorkspace ||
+            !userData?.currentWorkspace['installationId']
+        ) {
+            throw new Error(
+                'User or current workspace not found or installation ID missing'
+            )
+        }
+
+        const octokit = await this.githubEventService.initOctokitApp(
+            Number(userData.currentWorkspace['installationId'])
+        )
+
+        let pullRequestFormattedData: StructuredPRData =
+            await this.githubEventService.createComprehensivePRAnalysis(
+                userData.currentWorkspace['name'],
+                prReviewDto.repo,
+                +prReviewDto.prNumber,
+                userData.currentWorkspace['installationId']
+            )
+
+        const response = await this.httpService.post(
+            this.configService.get('AI_AGENT_PR_POST_URL') as string,
+            pullRequestFormattedData
+        )
+
+        return {
+            ...pullRequestFormattedData,
+            ...response.data
+        }
     }
 
     async processGithubEvent(event: any, payload: any) {

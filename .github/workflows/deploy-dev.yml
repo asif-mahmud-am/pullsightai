@@ -37,10 +37,46 @@ jobs:
           DOMAIN=${{ vars.DOMAIN }}
           EOF
 
+      - name: Create AI Agent .env file
+        run: |
+          cd ai_agent
+          cat << EOF > .env
+          CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }}
+          BACKEND_SUMMARY_ENDPOINT=${{ vars.BACKEND_SUMMARY_ENDPOINT }}
+          BACKEND_REVIEW_ENDPOINT=${{ vars.BACKEND_REVIEW_ENDPOINT }}
+          EOF
+
       - name: create pem file
         run: |
           echo "${{ secrets.GIT_PRIVATE_KEY }}" > backend/app.private-key.pem
           chmod 600 backend/app.private-key.pem
+
+      - name: Set environment variables for Docker Compose
+        run: |
+          echo "NODE_ENV=${{ vars.NODE_ENV }}" >> $GITHUB_ENV
+          echo "PORT=${{ vars.PORT }}" >> $GITHUB_ENV
+          echo "MONGODB_URI=${{ secrets.MONGODB_URI }}" >> $GITHUB_ENV
+          echo "CLIENT_URL=${{ vars.CLIENT_URL }}" >> $GITHUB_ENV
+          echo "BASE_URL=${{ vars.BASE_URL }}" >> $GITHUB_ENV
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> $GITHUB_ENV
+          echo "GITLAB_CLIENT_ID=${{ secrets.GITLAB_CLIENT_ID }}" >> $GITHUB_ENV
+          echo "GITLAB_CLIENT_SECRET=${{ secrets.GITLAB_CLIENT_SECRET }}" >> $GITHUB_ENV
+          echo "BITBUCKET_CLIENT_ID=${{ secrets.BITBUCKET_CLIENT_ID }}" >> $GITHUB_ENV
+          echo "BITBUCKET_CLIENT_SECRET=${{ secrets.BITBUCKET_CLIENT_SECRET }}" >> $GITHUB_ENV
+          echo "GITHUB_CLIENT_ID=${{ secrets.GIT_CLIENT_ID }}" >> $GITHUB_ENV
+          echo "GITHUB_CLIENT_SECRET=${{ secrets.GIT_CLIENT_SECRET }}" >> $GITHUB_ENV
+          echo "AI_AGENT_PR_POST_URL=${{ vars.AI_AGENT_PR_POST_URL }}" >> $GITHUB_ENV
+          echo "GITHUB_WEBHOOK_SECRET=${{ secrets.GIT_WEBHOOK_SECRET }}" >> $GITHUB_ENV
+          echo "GITHUB_PRIVATE_KEY_PATH=${{ secrets.GIT_PRIVATE_KEY_PATH }}" >> $GITHUB_ENV
+          echo "GITHUB_APP_SLUG=${{ secrets.GIT_APP_SLUG }}" >> $GITHUB_ENV
+          echo "GITHUB_APP_ID=${{ secrets.GIT_APP_ID }}" >> $GITHUB_ENV
+          echo "DOMAIN=${{ vars.DOMAIN }}" >> $GITHUB_ENV
+          echo "CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }}" >> $GITHUB_ENV
+          echo "BACKEND_SUMMARY_ENDPOINT=${{ vars.BACKEND_SUMMARY_ENDPOINT }}" >> $GITHUB_ENV
+          echo "BACKEND_REVIEW_ENDPOINT=${{ vars.BACKEND_REVIEW_ENDPOINT }}" >> $GITHUB_ENV
+          echo "NEXT_NODE_ENV=${{ vars.NEXT_NODE_ENV }}" >> $GITHUB_ENV
+          echo "NEXT_TELEMETRY_DISABLED=${{ vars.NEXT_TELEMETRY_DISABLED }}" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}" >> $GITHUB_ENV
 
       - name: Set frontend environment variables
         run: |
@@ -64,3 +100,5 @@ jobs:
           docker compose logs pullsightai-backend --tail=50
           echo "=== Frontend Logs ==="
           docker compose logs pullsightai-frontend --tail=50
+          echo "=== AI Agent Logs ==="
+          docker compose logs pullsightai-ai-agent --tail=50

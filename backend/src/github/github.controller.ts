@@ -9,7 +9,11 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { AuthGuard } from '@nestjs/passport'
-import { InstallRepoDto } from 'src/github/dto/install-repo.dto'
+import {
+    GetPRDto,
+    InstallRepoDto,
+    PRReviewDto
+} from 'src/github/dto/install-repo.dto'
 import { PostReviewDto } from 'src/github/dto/post-review.dto'
 import { PostSummeryDto } from 'src/github/dto/post-summery.dto'
 import { GithubEventService } from 'src/github/github-events.service'
@@ -35,10 +39,18 @@ export class GithubController {
         }
     }
 
+    @UseGuards(AuthGuard('jwt-cookie'))
     @Get('install')
-    redirectToGitHubApp(@Query() installRepoDto: InstallRepoDto) {
+    async redirectToGitHubApp(
+        @Query() installRepoDto: InstallRepoDto,
+        @Req() req
+    ) {
+        const org = await this.githubService.createWorkspace(
+            req.user,
+            installRepoDto
+        )
         const appSlug = this.configService.get<string>('GITHUB_APP_SLUG')
-        const redirect = `https://github.com/apps/${appSlug}/installations/new/permissions?target_id=${installRepoDto.id}&target_type=${installRepoDto.type}&redirect_url=${this.configService.get<string>('BASE_URL')}/v1/github/callback`
+        const redirect = `https://github.com/apps/${appSlug}/installations/new/permissions?target_id=${installRepoDto.id}&target_type=${installRepoDto.type}`
         return {
             redirect
         }
@@ -49,23 +61,43 @@ export class GithubController {
         const org = await this.githubService.listInstallationRepositories(
             Number(installationId)
         )
-        const redirect = `${this.configService.get<string>('CLIENT_URL')}/repositories?name=${org}&installationId=${installationId}`
+        const redirect = `${this.configService.get<string>('CLIENT_URL')}/onboarding/step-3?name=${org}&installationId=${installationId}`
         return { redirect }
     }
 
     @UseGuards(AuthGuard('jwt-cookie'))
     @Get('org-repos')
-    async getOrgRepos(
-        @Query('name') name: string,
-        @Query('installationId') installationId: string
-    ) {
-        const repos = await this.githubService.listOrgRepositories(
-            name,
-            Number(installationId)
+    async getOrgRepos(@Req() req: any) {
+        const repos = await this.githubService.listOrgRepositories(req.user)
+        return {
+            message: 'Repositories fetched successfully',
+            result: repos
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('repos-pr-list')
+    async getRepoPRList(@Req() req: any, @Query() getPRDto: GetPRDto) {
+        const repos = await this.githubService.listRepoPullRequests(
+            req.user,
+            getPRDto
         )
         return {
             message: 'Repositories fetched successfully',
             result: repos
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('review-pr')
+    async reviewPR(@Req() req: any, @Query() prReviewDto: PRReviewDto) {
+        const reviewData = await this.githubService.makePRReview(
+            req.user,
+            prReviewDto
+        )
+        return {
+            message: 'Pull request reviewed successfully',
+            result: reviewData
         }
     }
 
@@ -81,6 +113,7 @@ export class GithubController {
 
     @Post('reviews')
     async postReview(@Body() postReviewDto: PostReviewDto) {
+        console.log('========Post Review DTO:==========', postReviewDto)
         return {
             message: 'Review posted successfully',
             result: await this.githubEventService.addPRReviewComments(

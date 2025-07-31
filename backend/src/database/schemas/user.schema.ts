@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import { Document } from 'mongoose'
+import { Document, Types } from 'mongoose'
 import * as mongoosePaginate from 'mongoose-paginate-v2'
 import * as uniqueValidator from 'mongoose-unique-validator'
 
@@ -37,8 +37,16 @@ export class User {
     @Prop({ required: false, default: 1 })
     onboardingStep: number
 
-    @Prop({ required: false, type: String })
-    currentWorkspace?: string
+    @Prop({
+        required: false,
+        type: Types.ObjectId,
+        ref: 'Workspace',
+        set: (value) =>
+            Types.ObjectId.isValid(value)
+                ? value
+                : Types.ObjectId.createFromHexString(value)
+    })
+    currentWorkspace?: Types.ObjectId
 }
 
 const schema = SchemaFactory.createForClass(User)

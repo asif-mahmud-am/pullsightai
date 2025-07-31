@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import { Document } from 'mongoose'
+import { Document, Types } from 'mongoose'
 import * as mongoosePaginate from 'mongoose-paginate-v2'
 import * as uniqueValidator from 'mongoose-unique-validator'
 
@@ -14,6 +14,9 @@ export class Workspace {
     name: string
 
     @Prop({ required: true, trim: true })
+    provider: string
+
+    @Prop({ required: true, trim: true })
     url: string
 
     @Prop({ required: true, trim: true })
@@ -23,7 +26,7 @@ export class Workspace {
     avatarUrl: string
 
     @Prop({ required: true, trim: true })
-    type: string
+    type?: string
 
     @Prop({ required: true, trim: true })
     nodeId: string
@@ -31,8 +34,19 @@ export class Workspace {
     @Prop({ required: false })
     description?: string
 
-    @Prop({ required: true, trim: true })
+    @Prop({ required: false, trim: true })
     installationId?: string
+
+    @Prop({
+        required: true,
+        type: Types.ObjectId,
+        ref: 'User',
+        set: (value) =>
+            Types.ObjectId.isValid(value)
+                ? value
+                : Types.ObjectId.createFromHexString(value)
+    })
+    ownerId?: Types.ObjectId
 }
 
 const schema = SchemaFactory.createForClass(Workspace)

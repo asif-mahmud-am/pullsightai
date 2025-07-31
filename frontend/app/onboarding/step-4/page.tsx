@@ -30,7 +30,7 @@ const pullRequests: PullRequest[] = [
     },
 ];
 
-const Step3Page = () => {
+const Step4Page = () => {
     const [selectedPR, setSelectedPR] = useState<string>("");
 
     const router = useRouter();
@@ -132,4 +132,4 @@ const Step3Page = () => {
     );
 };
 
-export default Step3Page;
+export default Step4Page;

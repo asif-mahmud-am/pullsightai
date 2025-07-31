@@ -41,7 +41,10 @@ export class Workspace {
         required: true,
         type: Types.ObjectId,
         ref: 'User',
-        set: (value) => Types.ObjectId.createFromHexString(value)
+        set: (value) =>
+            Types.ObjectId.isValid(value)
+                ? value
+                : Types.ObjectId.createFromHexString(value)
     })
     ownerId?: Types.ObjectId
 }

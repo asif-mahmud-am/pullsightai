@@ -51,12 +51,14 @@ export class AuthService {
     }
 
     async getProfile(user: any) {
-        return await this.dataService.users.findOne(
-            {
-                _id: user.sub
-            },
-            'providerId provider username displayName email avatarUrl onboardingStep'
-        )
+        return await this.dataService.users
+            .findOne(
+                {
+                    _id: user.sub
+                },
+                'providerId provider username displayName email avatarUrl onboardingStep'
+            )
+            .populate('currentWorkspace')
     }
 
     async updateProfile(user: any, updateProfileDto: UpdateOnboardingStepDto) {

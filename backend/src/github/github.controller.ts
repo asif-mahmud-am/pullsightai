@@ -35,10 +35,18 @@ export class GithubController {
         }
     }
 
+    @UseGuards(AuthGuard('jwt-cookie'))
     @Get('install')
-    redirectToGitHubApp(@Query() installRepoDto: InstallRepoDto) {
+    async redirectToGitHubApp(
+        @Query() installRepoDto: InstallRepoDto,
+        @Req() req
+    ) {
+        const org = await this.githubService.createWorkspace(
+            req.user,
+            installRepoDto
+        )
         const appSlug = this.configService.get<string>('GITHUB_APP_SLUG')
-        const redirect = `https://github.com/apps/${appSlug}/installations/new/permissions?target_id=${installRepoDto.id}&target_type=${installRepoDto.type}&redirect_url=${this.configService.get<string>('BASE_URL')}/v1/github/callback`
+        const redirect = `https://github.com/apps/${appSlug}/installations/new/permissions?target_id=${installRepoDto.id}&target_type=${installRepoDto.type}`
         return {
             redirect
         }
@@ -81,6 +89,7 @@ export class GithubController {
 
     @Post('reviews')
     async postReview(@Body() postReviewDto: PostReviewDto) {
+        console.log('========Post Review DTO:==========', postReviewDto)
         return {
             message: 'Review posted successfully',
             result: await this.githubEventService.addPRReviewComments(

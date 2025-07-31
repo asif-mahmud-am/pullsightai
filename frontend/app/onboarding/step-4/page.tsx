@@ -5,7 +5,10 @@ import ActionFooter from "../ActionFooter";
 import SelectableList from "../SelectableList";
 import { useState } from "react";
 import { PullRequest } from "@/types/pullRequest";
-import { redirect } from "next/navigation";
+import { redirect, useRouter, useSearchParams } from "next/navigation";
+import { usePullRequestQuery } from "@/api/queries/pullRequest";
+import { useAuthStore } from "@/store/authStore";
+import { ROUTE_CONSTANTS } from "@/lib/constants";
 
 const pullRequests: PullRequest[] = [
     {
@@ -30,11 +33,30 @@ const pullRequests: PullRequest[] = [
 const Step3Page = () => {
     const [selectedPR, setSelectedPR] = useState<string>("");
 
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const user = useAuthStore((s) => s.user);
+
+    const repoId = searchParams.get("repoId") as string;
+
+    if (!repoId) {
+        redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_3);
+    }
+
+    const {
+        data: pullRequests,
+        isLoading,
+        error,
+    } = usePullRequestQuery({
+        provider: user?.provider || "github", // Default to GitHub if not set
+        repoId,
+    });
+
     const onStepComplete = () => {
         if (!selectedPR) return;
         // You can add your API call or navigation logic here
 
-        redirect(`/onboarding/step-4`);
+        redirect(`/onboarding/step-5?prId=${selectedPR}&repoId=${repoId}`);
     };
 
     return (
@@ -59,34 +81,36 @@ const Step3Page = () => {
                             PRs list
                         </h3>
 
-                        {false && (
+                        {isLoading && (
                             <p className="text-[var(--subtitle-400)]">
                                 Loading pull requests...
                             </p>
                         )}
-                        {false && (
+                        {error && (
                             <p className="text-[var(--subtitle-400)]">
                                 Error loading pull requests. Please try again.
                             </p>
                         )}
 
-                        {pullRequests.length > 0 && (
+                        {pullRequests && pullRequests?.length > 0 && (
                             <SelectableList
-                                items={pullRequests.map((pr) => ({
-                                    id: String(pr.id),
-                                    title: pr.title,
-                                    timestamp: pr.time,
-                                    avatar: pr.avatar_url,
-                                    subtitle: pr.user.login,
-                                    status: {
-                                        label: pr.state,
-                                        colorClass:
-                                            pr.state === "closed"
-                                                ? "bg-red-500 text-white"
-                                                : "bg-green-500 text-white",
-                                    },
-                                    updatedAt: pr.updated_at,
-                                }))}
+                                items={
+                                    pullRequests?.map((pr) => ({
+                                        id: String(pr.id),
+                                        title: pr.title,
+                                        timestamp: pr.time,
+                                        avatar: pr.avatar_url,
+                                        subtitle: pr.user.login,
+                                        status: {
+                                            label: pr.state,
+                                            colorClass:
+                                                pr.state === "closed"
+                                                    ? "bg-red-500 text-white"
+                                                    : "bg-green-500 text-white",
+                                        },
+                                        updatedAt: pr.updated_at,
+                                    })) || []
+                                }
                                 selectedId={selectedPR}
                                 onSelect={(id) => setSelectedPR(id)}
                             />
@@ -98,7 +122,8 @@ const Step3Page = () => {
             {/* Footer with action button */}
             <ActionFooter
                 buttonText={false ? "Analyzing..." : "Analyze Pull Request"}
-                isEnabled={Boolean(selectedPR) && !false}
+                isEnabled={Boolean(selectedPR) && !isLoading}
+                isLoading={isLoading}
                 onClick={onStepComplete}
                 onBackClick={() => redirect("/onboarding/step-2")}
                 onSkipClick={() => redirect("/dashboard")}

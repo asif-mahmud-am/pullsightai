@@ -18,6 +18,10 @@ export const bitbucketEndpoints = {
                 params: { workspace: orgName },
             })
             .then((res) => res.data),
-    getPR: (id: string) =>
-        apiClient.get(`/bitbucket/pr/${id}`).then((res) => res.data),
+    getPRs: (id: string) =>
+        apiClient
+            .get(`/github/repos-pr-list`, {
+                params: { repo: id },
+            })
+            .then((res) => res.data),
 };

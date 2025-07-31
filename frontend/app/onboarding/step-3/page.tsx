@@ -17,8 +17,12 @@ const Step2Page = () => {
     const searchParams = useSearchParams();
     const user = useAuthStore((s) => s.user);
     const provider = user?.provider || "github"; // Default to GitHub if not set
-    const orgName = searchParams.get("name") as string;
-    const installationId = searchParams.get("installationId") as string;
+    const orgName =
+        searchParams.get("name") || user?.currentWorkspace?.name || "";
+    const installationId =
+        searchParams.get("installationId") ||
+        user?.currentWorkspace?.installationId ||
+        "";
 
     // if (!orgName && !installationId) {
     //     redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_1);
@@ -34,18 +38,12 @@ const Step2Page = () => {
         ...(user?.provider === "github" ? { installationId } : {}),
     });
 
-    const { mutateAsync: updateUser, isPending: isUpdatingUser } =
-        useUpdateUserMutation();
-
     const onStepComplete = () => {
         if (!selectedRepo) return;
-        // updateUser({
-        //     onboardingStep: 4
-        // }).then(() => {
-        //     router.push(ROUTE_CONSTANTS.ONBOARDING_STEP_4
-        // }).catch((error) => {
-        //     console.error("Error updating user:", error);
-        // });
+        router.push(
+            ROUTE_CONSTANTS.ONBOARDING_STEP_4 +
+                `?repoId=${selectedRepo}&orgName=${orgName}`
+        );
     };
 
     return (
@@ -85,7 +83,7 @@ const Step2Page = () => {
                         {repositories.length > 0 && (
                             <SelectableList
                                 items={repositories.map((repo) => ({
-                                    id: String(repo.id),
+                                    id: String(repo.name),
                                     title: repo.name,
                                     subtitle: repo.author?.name,
                                     timestamp: repo.pushedAt,
@@ -104,7 +102,7 @@ const Step2Page = () => {
                 buttonText="Select Repository"
                 isEnabled={Boolean(selectedRepo) && !false}
                 onClick={onStepComplete}
-                isLoading={isUpdatingUser || isLoading}
+                isLoading={isLoading}
                 onBackClick={() => redirect("/onboarding/step-1")}
             />
         </>

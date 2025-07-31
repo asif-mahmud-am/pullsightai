@@ -7,4 +7,5 @@ export interface Organization {
     reposUrl?: string;
     type?: "Organization" | "User";
     author?: string;
+    installationId?: string;
 }

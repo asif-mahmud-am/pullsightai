@@ -46,14 +46,17 @@ const Step1Page = () => {
 
     const onStepComplete = async () => {
         if (!selectedOrg) return;
-        if (provider === "github") {
+        if (
+            provider === "github" &&
+            user?.currentWorkspace?.id !== selectedOrg.id
+        ) {
             router.push(
                 ROUTE_CONSTANTS.ONBOARDING_STEP_2 +
                     `?orgId=${selectedOrg.id}&type=${
                         selectedOrg.type ?? "Organization"
                     }&name=${selectedOrg.name}`
             );
-        } else if (provider === "bitbucket") {
+        } else {
             router.push(
                 ROUTE_CONSTANTS.ONBOARDING_STEP_3 +
                     `?orgId=${selectedOrg.name}&type=${

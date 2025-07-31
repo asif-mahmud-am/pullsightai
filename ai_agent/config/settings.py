@@ -5,8 +5,8 @@ load_dotenv()
 
 class Settings:
     CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
-    BACKEND_SUMMARY_ENDPOINT = os.getenv("BACKEND_SUMMARY_ENDPOINT")
-    BACKEND_REVIEW_ENDPOINT = os.getenv("BACKEND_REVIEW_ENDPOINT")
+    BACKEND_SUMMARY_ENDPOINT = os.getenv("BACKEND_SUMMARY_ENDPOINT", "http://backend/v1/github/summary")
+    BACKEND_REVIEW_ENDPOINT = os.getenv("BACKEND_REVIEW_ENDPOINT", "http://backend/v1/github/reviews")
 
 
 settings = Settings()

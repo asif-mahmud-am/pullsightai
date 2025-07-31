@@ -13,7 +13,7 @@ class ClaudeService(BaseLLMService):
     async def generate_pr_summary(self, prompt: str) -> str:
         try:
             response = await self.client.messages.create(
-                model="claude-3-opus-20240229",
+                model="claude-sonnet-4-20250514",
                 max_tokens=512,
                 temperature=0.5,
                 system="You are a code review assistant. Summarize the pull request for a developer audience.",
@@ -27,7 +27,7 @@ class ClaudeService(BaseLLMService):
     async def generate_code_review(self, prompt: str) -> str:
         try:
             response = await self.client.messages.create(
-                model="claude-3-opus-20240229",
+                model="claude-sonnet-4-20250514",
                 max_tokens=1024,
                 temperature=0.7,
                 system="You are a code review assistant. Provide actionable, line-by-line feedback on code changes.",

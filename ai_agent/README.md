@@ -41,7 +41,7 @@ An AI-powered Pull Request reviewer that automatically analyzes code changes and
    ```env
    CLAUDE_API_KEY=your_claude_api_key_here
    BACKEND_SUMMARY_ENDPOINT=http://localhost:8001/test/summary
-   BACKEND_REVIEW_ENDPOINT=http://localhost:8001/test/review
+   BACKEND_REVIEW_ENDPOINT=http://localhost:8001/v1/github/reviews
    ```
 
 ### Option 2: Docker Deployment
@@ -57,7 +57,7 @@ An AI-powered Pull Request reviewer that automatically analyzes code changes and
    ```env
    CLAUDE_API_KEY=your_claude_api_key_here
    BACKEND_SUMMARY_ENDPOINT=http://test-receiver:8001/test/summary
-   BACKEND_REVIEW_ENDPOINT=http://test-receiver:8001/test/review
+   BACKEND_REVIEW_ENDPOINT=http://test-receiver:8001/v1/github/reviews
    ```
 
 3. **Run with Docker Compose**
@@ -78,6 +78,45 @@ docker-compose up
 ```
 
 The application will be available at `http://localhost:8000`
+
+## Review Format
+
+The AI agent now sends reviews in the following format to the backend endpoint:
+
+```json
+{
+    "owner": "Noor-Service-Limited",
+    "repo": "demo-repository", 
+    "prNumber": 3,
+    "comments": [
+        {
+            "path": "index.html",
+            "position": 2,
+            "body": "🌐 **File Review: `index.html`**\n\n**Overall Score:** 85/100\n\n🚨 **Critical Issues:**\n- Issue description here\n\n🔒 **Security Issues:**\n- Security issue description\n\n💡 **Suggestions:**\n- Improvement suggestions"
+        },
+        {
+            "path": "post.html", 
+            "position": 3,
+            "body": "🌐 **File Review: `post.html`**\n\n**Overall Score:** 90/100\n\n📝 **Code Quality Issues:**\n- Quality issue description\n\n💡 **Suggestions:**\n- Improvement suggestions"
+        }
+    ],
+    "installationId": 78170117
+}
+```
+
+### Review Comment Structure
+
+Each comment in the `comments` array contains:
+- **path**: The file path being reviewed
+- **position**: Line position for the comment (currently defaults to 1)
+- **body**: Formatted markdown review content including:
+  - Overall score
+  - Critical issues (🚨)
+  - Security issues (🔒) 
+  - Performance issues (⚡)
+  - Code quality issues (📝)
+  - Suggestions (💡)
+  - Metrics (📊)
 
 ## API Endpoints
 

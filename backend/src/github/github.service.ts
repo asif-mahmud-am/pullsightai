@@ -4,10 +4,13 @@ import { Octokit } from '@octokit/rest'
 import { Types } from 'mongoose'
 import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
-import { Repository } from 'src/common/interfaces/repository.interface'
+import {
+    PullRequestResponse,
+    Repository
+} from 'src/common/interfaces/repository.interface'
 import { DatabaseService } from 'src/database/database.service'
 import { Workspace } from 'src/database/schemas/workspace.schema'
-import { InstallRepoDto } from 'src/github/dto/install-repo.dto'
+import { GetPRDto, InstallRepoDto } from 'src/github/dto/install-repo.dto'
 import { GithubEventService } from 'src/github/github-events.service'
 
 @Injectable()
@@ -124,6 +127,56 @@ export class GithubService {
         return data.repositories[0].owner.login
     }
 
+    async listRepoPullRequests(user: any, getPRDto: GetPRDto) {
+        const userData = await this.dataService.users
+            .findOne({ _id: user.sub })
+            .populate('currentWorkspace')
+        if (
+            !userData ||
+            !userData?.currentWorkspace ||
+            !userData?.currentWorkspace['installationId']
+        ) {
+            throw new Error(
+                'User or current workspace not found or installation ID missing'
+            )
+        }
+        const octokit = await this.githubEventService.initOctokitApp(
+            Number(userData.currentWorkspace['installationId'])
+        )
+
+        const query = {
+            owner: userData.currentWorkspace['name'],
+            repo: getPRDto.repo,
+            per_page: 100
+        }
+        if (getPRDto.status) {
+            query['state'] = getPRDto.status
+        }
+        const { data: pullRequests } = await octokit.rest.pulls.list(query)
+        const prList: PullRequestResponse[] = []
+        pullRequests.map((pr) => {
+            prList.push({
+                id: pr.id,
+                nodeId: pr.node_id,
+                prNumber: pr.number,
+                title: pr.title,
+                state: pr.state,
+                status: pr.state,
+                user: {
+                    username: pr.user?.login || 'Unknown',
+                    avatarUrl: pr.user?.avatar_url || ''
+                },
+                createdAt: pr.created_at,
+                updatedAt: pr.updated_at,
+                closedAt: pr.closed_at,
+                mergedAt: pr.merged_at,
+                url: pr.html_url
+            })
+        })
+
+        return prList
+    }
+
     async listOrgRepositories(user: any) {
         const userData = await this.dataService.users
             .findOne({ _id: user.sub })
@@ -184,6 +237,7 @@ export class GithubService {
                 pullRequestFormattedData
             )
         }
+        console.log('Processed GitHub event:', pullRequestFormattedData)
         return pullRequestFormattedData
     }
 }

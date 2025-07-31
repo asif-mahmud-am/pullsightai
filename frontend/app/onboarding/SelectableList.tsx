@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { FC } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import Image from "next/image";
@@ -20,7 +20,7 @@ export interface SelectableItem {
     subtitle?: string;
     timestamp?: string;
     updatedAt?: string;
-    avatar?: string;
+    avatar?: string | null; // optional avatar URL
     status?: { label: string; colorClass: string }; // optional badge (Merged, Active etc.)
 }
 
@@ -31,7 +31,7 @@ interface SelectableListProps {
     className?: string;
 }
 
-const SelectableList: React.FC<SelectableListProps> = ({
+const SelectableList: FC<SelectableListProps> = ({
     items,
     selectedId,
     onSelect,
@@ -41,7 +41,7 @@ const SelectableList: React.FC<SelectableListProps> = ({
     const hasStatusItems = items.some((item) => item.status);
     const hasUpdatedAtItems = items.some((item) => item.updatedAt);
     return (
-        <div className="w-full">
+        <div className="w-full bg-[var(--body-900)] rounded-xl shadow-lg">
             {/* Column Headers */}
             <div
                 className={`grid ${getGridColsClass(

@@ -3,7 +3,7 @@ export interface Organization {
     name: string;
     slug: string;
     created_at: string;
-    avatar_url?: string;
+    avatar_url?: string | null;
     author?: string;
     time?: string;
     updated_at?: string;

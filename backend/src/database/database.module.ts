@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config'
 import { MongooseModule } from '@nestjs/mongoose'
 import { DatabaseService } from 'src/database/database.service'
 import { UserSchema } from 'src/database/schemas/user.schema'
+import { WorkspaceSchema } from 'src/database/schemas/workspace.schema'
 
 @Global()
 @Module({
@@ -14,7 +15,10 @@ import { UserSchema } from 'src/database/schemas/user.schema'
                 uri: configService.get('MONGODB_URI')
             })
         }),
-        MongooseModule.forFeature([{ name: 'User', schema: UserSchema }])
+        MongooseModule.forFeature([
+            { name: 'User', schema: UserSchema },
+            { name: 'Workspace', schema: WorkspaceSchema }
+        ])
     ],
     controllers: [],
     providers: [DatabaseService],

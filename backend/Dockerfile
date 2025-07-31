@@ -26,11 +26,20 @@ COPY package.json yarn.lock ./
 # Install only production dependencies
 RUN yarn install --frozen-lockfile --production && yarn cache clean
 
+# Also copy node_modules from builder stage to ensure all dependencies are available
+COPY --from=builder /app/node_modules ./node_modules
+
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
 
-# Copy environment file
+# Copy environment file and private key (with error checking)
 COPY .env ./
+COPY app.private-key.pem ./app.private-key.pem
+
+# # Debug: List files to verify they were copied
+# RUN ls -la /app/ && \
+#     echo "Checking if private key exists:" && \
+#     test -f /app/app.private-key.pem && echo "Private key file exists" || echo "Private key file NOT found"
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs

@@ -4,10 +4,12 @@ import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core'
 import { AuthModule } from 'src/auth/auth.module'
 import { validate } from 'src/common/config/env.validation'
 import { AllExceptionsFilter } from 'src/common/filters/custom-exception.filter'
+import { HttpModule } from 'src/common/http/http.module'
 import { ResponseInterceptor } from 'src/common/interceptors/response.interceptor'
 import { DatabaseModule } from 'src/database/database.module'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
+import { GithubModule } from './github/github.module'
 
 @Module({
     imports: [
@@ -16,7 +18,9 @@ import { AppService } from './app.service'
             isGlobal: true
         }),
         DatabaseModule,
-        AuthModule
+        AuthModule,
+        GithubModule,
+        HttpModule
     ],
     controllers: [AppController],
     providers: [

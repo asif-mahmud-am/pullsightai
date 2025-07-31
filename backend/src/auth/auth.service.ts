@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
+import { UpdateOnboardingStepDto } from 'src/auth/dto/update-onboarding-step.dto'
 import { DatabaseService } from 'src/database/database.service'
 
 @Injectable()
@@ -53,7 +54,17 @@ export class AuthService {
             {
                 _id: user.sub
             },
-            'providerId provider username displayName email avatarUrl'
+            'providerId provider username displayName email avatarUrl onboardingStep'
+        )
+    }
+
+    async updateProfile(user: any, updateProfileDto: UpdateOnboardingStepDto) {
+        return await this.dataService.users.findByIdAndUpdate(
+            {
+                _id: user.sub
+            },
+            { ...updateProfileDto },
+            { new: true, fields: 'onboardingStep currentWorkspace' }
         )
     }
 }

@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { AuthGuard } from '@nestjs/passport'
-import { InstallRepoDto } from 'src/github/dto/install-repo.dto'
+import { GetPRDto, InstallRepoDto } from 'src/github/dto/install-repo.dto'
 import { PostReviewDto } from 'src/github/dto/post-review.dto'
 import { PostSummeryDto } from 'src/github/dto/post-summery.dto'
 import { GithubEventService } from 'src/github/github-events.service'
@@ -57,7 +57,7 @@ export class GithubController {
         const org = await this.githubService.listInstallationRepositories(
             Number(installationId)
         )
-        const redirect = `${this.configService.get<string>('CLIENT_URL')}/repositories?name=${org}&installationId=${installationId}`
+        const redirect = `${this.configService.get<string>('CLIENT_URL')}/onboarding/step-3?name=${org}&installationId=${installationId}`
         return { redirect }
     }
 
@@ -65,6 +65,19 @@ export class GithubController {
     @Get('org-repos')
     async getOrgRepos(@Req() req: any) {
         const repos = await this.githubService.listOrgRepositories(req.user)
+        return {
+            message: 'Repositories fetched successfully',
+            result: repos
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('repos-pr-list')
+    async getRepoPRList(@Req() req: any, @Query() getPRDto: GetPRDto) {
+        const repos = await this.githubService.listRepoPullRequests(
+            req.user,
+            getPRDto
+        )
         return {
             message: 'Repositories fetched successfully',
             result: repos

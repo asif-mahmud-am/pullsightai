@@ -237,7 +237,6 @@ export class GithubService {
                 pullRequestFormattedData
             )
         }
-        console.log('Processed GitHub event:', pullRequestFormattedData)
         return pullRequestFormattedData
     }
 }

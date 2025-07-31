@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { DatabaseService } from 'src/database/database.service'
 import {
     BitbucketApiService,
+    BitbucketPullRequest,
     BitbucketRepositoriesResponse
 } from './bitbucket-api.service'
 
@@ -60,9 +61,39 @@ export class BitbucketService {
         }
 
         try {
-            return await this.bitbucketApiService.getAllWorkspaces(
+            const data = await this.bitbucketApiService.getAllWorkspaces(
                 userData?.accessToken
             )
+
+            // Iterate through each workspace and save if it doesn't exist
+            for (const workspace of data.workspaces) {
+                // Check if workspace already exists
+                const existingWorkspace =
+                    await this.dataService.workspaces.findOne({
+                        slug: workspace.slug,
+                        provider: 'bitbucket',
+                        ownerId: user.sub
+                    })
+
+                if (!existingWorkspace) {
+                    await this.dataService.workspaces.create({
+                        id: workspace.slug, // Using slug as ID since Bitbucket doesn't have numeric ID
+                        name: workspace.name,
+                        nodeId: workspace.uuid || 'null', // Bitbucket UUID might be null
+                        slug: workspace.slug,
+                        url: workspace.links.html,
+                        reposUrl: workspace.links.repositories,
+                        avatarUrl: workspace.links.avatar || 'null', // Bitbucket might not have avatar
+                        type: workspace.type,
+                        provider: 'bitbucket',
+                        ownerId: user.sub,
+                        isPrivate: workspace.isPrivate,
+                        createdOn: workspace.createdOn
+                    })
+                }
+            }
+
+            return data.workspaces
         } catch (error) {
             console.error('Error in BitbucketService.getAllWorkspaces:', error)
             throw error
@@ -169,6 +200,44 @@ export class BitbucketService {
                 error
             )
             throw error
+        }
+    }
+
+    async getPullRequests(
+        workspace: string,
+        repository: string,
+        user: any,
+        state?: string,
+        limit?: number
+    ): Promise<BitbucketPullRequest[] | undefined> {
+        const userData = await this.dataService.users.findOne(
+            { _id: user.sub },
+            'accessToken'
+        )
+
+        if (!userData?.accessToken) {
+            throw new BadRequestException('Access token is required')
+        }
+
+        if (!workspace || !repository) {
+            throw new BadRequestException(
+                'Workspace and repository are required'
+            )
+        }
+
+        try {
+            return await this.bitbucketApiService.getPullRequests(
+                userData.accessToken,
+                workspace,
+                repository,
+                state,
+                limit
+            )
+        } catch (error) {
+            console.error(
+                `Error in BitbucketService.getPullRequests for ${workspace}/${repository}:`,
+                error
+            )
         }
     }
 }

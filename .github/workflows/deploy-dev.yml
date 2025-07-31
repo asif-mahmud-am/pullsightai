@@ -30,6 +30,7 @@ jobs:
           GITHUB_CLIENT_ID=${{ secrets.GIT_CLIENT_ID }}
           GITHUB_CLIENT_SECRET=${{ secrets.GIT_CLIENT_SECRET }}
           AI_AGENT_PR_POST_URL=${{ vars.AI_AGENT_PR_POST_URL }}
+          AI_AGENT_PR_REVIEW_URL=${{ vars.AI_AGENT_PR_REVIEW_URL }}
           GITHUB_WEBHOOK_SECRET=${{ secrets.GIT_WEBHOOK_SECRET }}
           GITHUB_PRIVATE_KEY_PATH=${{ secrets.GIT_PRIVATE_KEY_PATH }}
           GITHUB_APP_SLUG=${{ secrets.GIT_APP_SLUG }}
@@ -66,6 +67,7 @@ jobs:
           echo "GITHUB_CLIENT_ID=${{ secrets.GIT_CLIENT_ID }}" >> $GITHUB_ENV
           echo "GITHUB_CLIENT_SECRET=${{ secrets.GIT_CLIENT_SECRET }}" >> $GITHUB_ENV
           echo "AI_AGENT_PR_POST_URL=${{ vars.AI_AGENT_PR_POST_URL }}" >> $GITHUB_ENV
+          echo "AI_AGENT_PR_REVIEW_URL=${{ vars.AI_AGENT_PR_REVIEW_URL }}" >> $GITHUB_ENV
           echo "GITHUB_WEBHOOK_SECRET=${{ secrets.GIT_WEBHOOK_SECRET }}" >> $GITHUB_ENV
           echo "GITHUB_PRIVATE_KEY_PATH=${{ secrets.GIT_PRIVATE_KEY_PATH }}" >> $GITHUB_ENV
           echo "GITHUB_APP_SLUG=${{ secrets.GIT_APP_SLUG }}" >> $GITHUB_ENV

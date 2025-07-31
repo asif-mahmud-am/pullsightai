@@ -7,6 +7,7 @@ import httpx
 import os
 import json
 import re
+from app.api.review_parser import parse_review_response, parse_review_response_ui
 
 supervisor = APIRouter(prefix="", tags=["Supervisor"])
 
@@ -14,47 +15,7 @@ supervisor = APIRouter(prefix="", tags=["Supervisor"])
 BACKEND_SUMMARY_ENDPOINT = os.getenv("BACKEND_SUMMARY_ENDPOINT", "http://backend/v1/github/summary")
 BACKEND_REVIEW_ENDPOINT = os.getenv("BACKEND_REVIEW_ENDPOINT", "http://backend/v1/github/reviews")
 
-def parse_review_response(review_text: str, file_name: str):
-    """
-    Parse the review response to extract individual line reviews.
-    The review text contains JSON embedded in markdown code blocks.
-    """
-    comments = []
-    
-    # Extract JSON from markdown code blocks
-    json_match = re.search(r'```json\s*(\[.*?\])\s*```', review_text, re.DOTALL)
-    if json_match:
-        try:
-            review_items = json.loads(json_match.group(1))
-            
-            for item in review_items:
-                # Create a clean comment body for each line review
-                comment_body = f"**{item.get('severity', 'Medium')} - {item.get('category', 'Issue')}**\n\n"
-                comment_body += f"**Issue:** {item.get('issue', '')}\n\n"
-                comment_body += f"**Suggestion:**\n{item.get('suggestion', '')}"
-                
-                comments.append({
-                    "path": file_name,
-                    "line": item.get('line', 1),
-                    "body": comment_body
-                })
-        except json.JSONDecodeError as e:
-            print(f"Failed to parse JSON from review response: {e}")
-            # Fallback: create a single comment with the full review text
-            comments.append({
-                "path": file_name,
-                "line": 1,
-                "body": review_text
-            })
-    else:
-        # If no JSON found, create a single comment with the full review text
-        comments.append({
-            "path": file_name,
-            "line": 1,
-            "body": review_text
-        })
-    
-    return comments
+
 
 @supervisor.post("/ai_agent")
 async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: BackgroundTasks):
@@ -202,7 +163,7 @@ async def agent_summary_and_review(payload: PRPayloadV2):
                 "pr_diff": file_info["pr_file_diff"]
             }
             review = await generate_review_response(review_variables, llm_service)
-            file_comments = parse_review_response(review.pr_review_and_suggestion, file_info["pr_file_name"])
+            file_comments = parse_review_response_ui(review.pr_review_and_suggestion, file_info["pr_file_name"])
             all_comments.extend(file_comments)
     else:
         for file_key, file_info in pr.get("pr_files", {}).items():

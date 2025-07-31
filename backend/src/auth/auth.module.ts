@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
+import { BitbucketModule } from '../bitbucket/bitbucket.module'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
 import { BitbucketStrategy } from './strategies/bitbucket.strategy'
@@ -13,6 +14,7 @@ import { JwtCookieStrategy } from './strategies/jwt-cookie.strategy'
     imports: [
         ConfigModule,
         PassportModule,
+        BitbucketModule,
         JwtModule.registerAsync({
             imports: [ConfigModule],
             useFactory: async (configService: ConfigService) => ({

@@ -10,7 +10,11 @@ import {
 } from 'src/common/interfaces/repository.interface'
 import { DatabaseService } from 'src/database/database.service'
 import { Workspace } from 'src/database/schemas/workspace.schema'
-import { GetPRDto, InstallRepoDto } from 'src/github/dto/install-repo.dto'
+import {
+    GetPRDto,
+    InstallRepoDto,
+    PRReviewDto
+} from 'src/github/dto/install-repo.dto'
 import { GithubEventService } from 'src/github/github-events.service'
 
 @Injectable()
@@ -144,14 +148,13 @@ export class GithubService {
             Number(userData.currentWorkspace['installationId'])
         )
 
-        const query = {
+        const query: any = {
             owner: userData.currentWorkspace['name'],
             repo: getPRDto.repo,
+            state: 'all',
             per_page: 100
         }
-        if (getPRDto.status) {
-            query['state'] = getPRDto.status
-        }
+
         const { data: pullRequests } = await octokit.rest.pulls.list(query)
         const prList: PullRequestResponse[] = []
         pullRequests.map((pr) => {
@@ -160,7 +163,6 @@ export class GithubService {
                 nodeId: pr.node_id,
                 prNumber: pr.number,
                 title: pr.title,
-                state: pr.state,
                 status: pr.state,
                 user: {
                     username: pr.user?.login || 'Unknown',
@@ -219,6 +221,43 @@ export class GithubService {
         return repositories
     }
 
+    async makePRReview(user: any, prReviewDto: PRReviewDto) {
+        const userData = await this.dataService.users
+            .findOne({ _id: user.sub })
+            .populate('currentWorkspace')
+        if (
+            !userData ||
+            !userData?.currentWorkspace ||
+            !userData?.currentWorkspace['installationId']
+        ) {
+            throw new Error(
+                'User or current workspace not found or installation ID missing'
+            )
+        }
+
+        const octokit = await this.githubEventService.initOctokitApp(
+            Number(userData.currentWorkspace['installationId'])
+        )
+
+        let pullRequestFormattedData: StructuredPRData =
+            await this.githubEventService.createComprehensivePRAnalysis(
+                userData.currentWorkspace['name'],
+                prReviewDto.repo,
+                +prReviewDto.prNumber,
+                userData.currentWorkspace['installationId']
+            )
+
+        const response = await this.httpService.post(
+            this.configService.get('AI_AGENT_PR_POST_URL') as string,
+            pullRequestFormattedData
+        )
+
+        return {
+            ...pullRequestFormattedData,
+            ...response.data
+        }
+    }
+
     async processGithubEvent(event: any, payload: any) {
         let pullRequestFormattedData: StructuredPRData | boolean
         switch (event) {
@@ -237,7 +276,6 @@ export class GithubService {
                 pullRequestFormattedData
             )
         }
-        console.log('Processed GitHub event:', pullRequestFormattedData)
         return pullRequestFormattedData
     }
 }

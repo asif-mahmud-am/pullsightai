@@ -17,7 +17,6 @@ export interface PullRequestResponse {
     nodeId: string
     prNumber: number
     title: string
-    state: string
     status: string
     user: {
         username: string

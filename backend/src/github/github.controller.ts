@@ -9,7 +9,11 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { AuthGuard } from '@nestjs/passport'
-import { GetPRDto, InstallRepoDto } from 'src/github/dto/install-repo.dto'
+import {
+    GetPRDto,
+    InstallRepoDto,
+    PRReviewDto
+} from 'src/github/dto/install-repo.dto'
 import { PostReviewDto } from 'src/github/dto/post-review.dto'
 import { PostSummeryDto } from 'src/github/dto/post-summery.dto'
 import { GithubEventService } from 'src/github/github-events.service'
@@ -81,6 +85,19 @@ export class GithubController {
         return {
             message: 'Repositories fetched successfully',
             result: repos
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('review-pr')
+    async reviewPR(@Req() req: any, @Query() prReviewDto: PRReviewDto) {
+        const reviewData = await this.githubService.makePRReview(
+            req.user,
+            prReviewDto
+        )
+        return {
+            message: 'Pull request reviewed successfully',
+            result: reviewData
         }
     }
 

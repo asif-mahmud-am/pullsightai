@@ -1,4 +1,3 @@
-import { Optional } from '@nestjs/common'
 import { IsNotEmpty, IsString } from 'class-validator'
 
 export class InstallRepoDto {
@@ -19,7 +18,14 @@ export class GetPRDto {
     @IsString()
     @IsNotEmpty()
     repo: string
+}
 
-    @Optional()
-    status: string
+export class PRReviewDto {
+    @IsString()
+    @IsNotEmpty()
+    repo: string
+
+    @IsString()
+    @IsNotEmpty()
+    prNumber: string
 }

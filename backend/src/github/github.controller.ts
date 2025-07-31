@@ -63,14 +63,8 @@ export class GithubController {
 
     @UseGuards(AuthGuard('jwt-cookie'))
     @Get('org-repos')
-    async getOrgRepos(
-        @Query('name') name: string,
-        @Query('installationId') installationId: string
-    ) {
-        const repos = await this.githubService.listOrgRepositories(
-            name,
-            Number(installationId)
-        )
+    async getOrgRepos(@Req() req: any) {
+        const repos = await this.githubService.listOrgRepositories(req.user)
         return {
             message: 'Repositories fetched successfully',
             result: repos

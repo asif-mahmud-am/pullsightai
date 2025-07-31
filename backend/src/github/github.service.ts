@@ -52,28 +52,37 @@ export class GithubService {
 
     async createWorkspace(user: any, installRepoDto: InstallRepoDto) {
         await this.initOctokit(user)
-        const workspace = await this.dataService.workspaces.findOne({
+        let workspace = await this.dataService.workspaces.findOne({
             id: installRepoDto.id,
             provider: 'github',
             ownerId: new Types.ObjectId(user.sub)
         })
-        if (workspace) {
-            return workspace
+        if (!workspace) {
+            const { data: org } = await this.octokit.rest.orgs.get({
+                org: installRepoDto.name
+            })
+
+            workspace = await this.dataService.workspaces.create({
+                id: org.id.toString(),
+                name: org.login,
+                nodeId: org.node_id,
+                url: org.url,
+                reposUrl: org.repos_url,
+                avatarUrl: org.avatar_url,
+                type: org.type,
+                provider: 'github',
+                ownerId: user.sub
+            })
         }
-        const { data: org } = await this.octokit.rest.orgs.get({
-            org: installRepoDto.name
-        })
-        return await this.dataService.workspaces.create({
-            id: org.id.toString(),
-            name: org.login,
-            nodeId: org.node_id,
-            url: org.url,
-            reposUrl: org.repos_url,
-            avatarUrl: org.avatar_url,
-            type: org.type,
-            provider: 'github',
-            ownerId: user.sub
-        })
+        await this.dataService.users.updateOne(
+            { _id: user.sub },
+            {
+                $set: {
+                    currentWorkspace: workspace._id
+                }
+            }
+        )
+        return workspace
     }
     async initOctokit(user: any) {
         const userData = await this.dataService.users.findOne(
@@ -115,12 +124,26 @@ export class GithubService {
         return data.repositories[0].owner.login
     }
 
-    async listOrgRepositories(name: string, installationId: number) {
-        const octokit =
-            await this.githubEventService.initOctokitApp(installationId)
+    async listOrgRepositories(user: any) {
+        const userData = await this.dataService.users
+            .findOne({ _id: user.sub })
+            .populate('currentWorkspace')
+        if (
+            !userData ||
+            !userData?.currentWorkspace ||
+            !userData?.currentWorkspace['installationId']
+        ) {
+            throw new Error(
+                'User or current workspace not found or installation ID missing'
+            )
+        }
+
+        const octokit = await this.githubEventService.initOctokitApp(
+            Number(userData.currentWorkspace['installationId'])
+        )
 
         const { data } = await octokit.rest.repos.listForOrg({
-            org: name,
+            org: userData.currentWorkspace['name'],
             type: 'all'
         })
 

@@ -29,6 +29,7 @@ export class GithubController {
     @UseGuards(AuthGuard('jwt-cookie'))
     @Get('organizations')
     async getOrgs(@Req() req) {
+        console.log(req.user)
         return {
             message: 'Organizations fetched successfully',
             result: await this.githubService.getUserOrganizations(req.user)

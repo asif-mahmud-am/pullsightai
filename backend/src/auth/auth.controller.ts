@@ -17,6 +17,7 @@ import {
     SUCCESS,
     UPDATED
 } from 'src/common/utils/response-message.util'
+import { BitbucketService } from '../bitbucket/bitbucket.service'
 import { AuthService } from './auth.service'
 
 @Controller({
@@ -27,7 +28,8 @@ export class AuthController {
     clientUrl: string
     constructor(
         private readonly authService: AuthService,
-        private readonly configService: ConfigService
+        private readonly configService: ConfigService,
+        private readonly bitbucketService: BitbucketService
     ) {
         this.clientUrl = this.configService.get('CLIENT_URL') || ''
     }

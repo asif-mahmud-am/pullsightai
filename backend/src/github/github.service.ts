@@ -23,7 +23,6 @@ export class GithubService {
         await this.initOctokit(user)
         const userRepoData = await this.octokit.rest.users.getAuthenticated()
         const response = await this.octokit.rest.orgs.listForAuthenticatedUser()
-        console.log('User Repo Data:', response.data)
         const organizations: Workspace[] = []
         organizations.push({
             name: userRepoData.data.login,

@@ -7,18 +7,21 @@ import { bitbucketEndpoints } from "../endpoints/bitbucket";
 
 export const useOrganizationQuery = ({
     provider = "github",
-    isEnabled = true
-}:{
+    isEnabled = true,
+}: {
     provider?: Provider;
     isEnabled?: boolean;
 }) => {
-    const queryFnMap:Record<Provider, () => Promise<ApiResponse<Organization[]>>> = {
+    const queryFnMap: Record<
+        Provider,
+        () => Promise<ApiResponse<Organization[]>>
+    > = {
         github: githubEndpoints.getOrgs,
         bitbucket: bitbucketEndpoints.getOrgs, // Uncomment and implement if needed
         // gitlab: gitlabEndpoints.getOrgs, // Uncomment and implement if needed
     };
 
-    const queryFn = queryFnMap[provider]
+    const queryFn = queryFnMap[provider];
     if (!queryFn) {
         throw new Error(`Unsupported provider: ${provider}`);
     }
@@ -34,12 +37,4 @@ export const useOrganizationQuery = ({
         },
         enabled: isEnabled,
     });
-}
-
-
-export const useGithubRepos = (isEnabled = true) => 
-    useQuery({
-        queryKey: ["github", "repos"],
-        queryFn: githubEndpoints.getRepos,
-        enabled: isEnabled,
-    });
+};

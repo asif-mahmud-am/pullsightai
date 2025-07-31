@@ -1,15 +1,22 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/store/authStore";
+import { ROUTE_CONSTANTS } from "@/lib/constants";
+import {  redirect, useSearchParams } from "next/navigation";
 
 const Step2Page = () => {
-    const user = useAuthStore((s) => s.user);
+    const searchParams = useSearchParams();
+    const orgId = searchParams.get("orgId");
+    const orgName = searchParams.get("name");
+    const orgType = searchParams.get("type") || "Organization"; // Default to Organization if not set
+
+    if (!orgId || !orgName) {
+        redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_1);
+    }
 
     const handleInstall = () => {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
-        const baseUrl = `${apiUrl}/github/install?target_id=${user?.currentWorkspace}`;
+        const baseUrl = `${apiUrl}/github/install?id=${orgId}&type=${orgType}&name=${orgName}`;
         // Redirect to the GitHub installation URL
         window.location.href = baseUrl;
     };

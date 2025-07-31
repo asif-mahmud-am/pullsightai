@@ -4,41 +4,48 @@ import ActionFooter from "../ActionFooter";
 import SelectableList from "../SelectableList";
 import { useState } from "react";
 import { Repository } from "@/types/repository";
-import { redirect, useRouter } from "next/navigation";
+import { redirect, useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { useRepositoryQuery } from "@/api/queries/repository";
 import { useUpdateUserMutation } from "@/api/queries/auth";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
 
-
 const Step2Page = () => {
     const [selectedRepo, setSelectedRepo] = useState<string>("");
 
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const user = useAuthStore((s) => s.user);
     const provider = user?.provider || "github"; // Default to GitHub if not set
-    
-    const router = useRouter();
+    const orgName = searchParams.get("name") as string;
+    const installationId = searchParams.get("installationId") as string;
+
+    // if (!orgName && !installationId) {
+    //     redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_1);
+    // }
 
     const {
         data: repositories = [],
         isLoading,
         error,
-    } = useRepositoryQuery({ provider });
+    } = useRepositoryQuery({
+        provider,
+        orgName,
+        ...(user?.provider === "github" ? { installationId } : {}),
+    });
 
-    const {
-        mutateAsync: updateUser,
-        isPending: isUpdatingUser
-    } = useUpdateUserMutation();
+    const { mutateAsync: updateUser, isPending: isUpdatingUser } =
+        useUpdateUserMutation();
 
     const onStepComplete = () => {
         if (!selectedRepo) return;
-        updateUser({
-            onboardingStep: 4
-        }).then(() => {
-            router.push(ROUTE_CONSTANTS.ONBOARDING_STEP_4);
-        }).catch((error) => {
-            console.error("Error updating user:", error);
-        });
+        // updateUser({
+        //     onboardingStep: 4
+        // }).then(() => {
+        //     router.push(ROUTE_CONSTANTS.ONBOARDING_STEP_4
+        // }).catch((error) => {
+        //     console.error("Error updating user:", error);
+        // });
     };
 
     return (

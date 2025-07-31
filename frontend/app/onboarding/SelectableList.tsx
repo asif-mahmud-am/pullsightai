@@ -129,7 +129,9 @@ const SelectableList: FC<SelectableListProps> = ({
 
                         <div className="flex items-center justify-end">
                             <p className="text-[var(--subtitle-500)] text-sm whitespace-nowrap">
-                                {formatDate(item.timestamp as string) || "N/A"}
+                                {item.timestamp
+                                    ? formatDate(item.timestamp as string)
+                                    : "N/A"}
                             </p>
                         </div>
 

@@ -5,6 +5,7 @@ import {
     CircleIcon,
     StepOnProgressIcon,
 } from "@/components/common/icons";
+import { useAuthStore } from "@/store/authStore";
 import { usePathname } from "next/navigation";
 import React, { FC } from "react";
 
@@ -57,20 +58,30 @@ const stepsData = [
 ];
 
 const ProgressSteps: FC<ProgressStepsProps> = ({ onStepClick }) => {
+    const user = useAuthStore((s) => s.user);
     const pathname = usePathname();
     // step number from pathname
     const stepMatch = pathname.match(/step-(\d+)/);
     const currentStep = stepMatch ? parseInt(stepMatch[1]) : 1;
 
-    const steps = stepsData.map((step) => ({
-        ...step,
-        status:
-            step.index < currentStep
-                ? "complete"
-                : step.index === currentStep
-                ? "current"
-                : "incomplete",
-    })) as Array<{
+    const steps = stepsData
+        .filter((step) => {
+            // remove step 2 if bitbucket
+            if (user?.provider === "bitbucket" && step.index === 2) {
+                return false;
+            } else {
+                return true;
+            }
+        })
+        .map((step) => ({
+            ...step,
+            status:
+                step.index < currentStep
+                    ? "complete"
+                    : step.index === currentStep
+                    ? "current"
+                    : "incomplete",
+        })) as Array<{
         index: number;
         id: string;
         label: string;

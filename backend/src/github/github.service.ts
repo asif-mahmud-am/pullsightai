@@ -50,6 +50,7 @@ export class GithubService {
                 url: details.url,
                 reposUrl: details.repos_url,
                 avatarUrl: details.avatar_url,
+                type: 'Organization',
                 provider: 'github'
             })
         }
@@ -170,7 +171,7 @@ export class GithubService {
                 prNumber: pr.number,
                 title: pr.title,
                 status: pr.state,
-                user: {
+                author: {
                     username: pr.user?.login || 'Unknown',
                     avatarUrl: pr.user?.avatar_url || ''
                 },
@@ -203,10 +204,18 @@ export class GithubService {
             Number(userData.currentWorkspace['installationId'])
         )
 
-        const { data } = await octokit.rest.repos.listForOrg({
-            org: userData.currentWorkspace['name'],
-            type: 'all'
-        })
+        let data
+        if (userData.currentWorkspace['type'] === 'User') {
+            const repoData =
+                await octokit.rest.apps.listReposAccessibleToInstallation()
+            data = repoData.data.repositories
+        } else {
+            data = await octokit.rest.repos.listForOrg({
+                org: userData.currentWorkspace['name'],
+                type: 'all'
+            })
+            data = data.data
+        }
 
         const repositories: Repository[] = data.map(
             (repo) =>

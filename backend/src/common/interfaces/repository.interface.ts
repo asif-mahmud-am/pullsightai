@@ -18,7 +18,7 @@ export interface PullRequestResponse {
     prNumber: number
     title: string
     status: string
-    user: {
+    author: {
         username: string
         avatarUrl: string
     }

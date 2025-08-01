@@ -138,7 +138,9 @@ const SelectableList: FC<SelectableListProps> = ({
                         {hasUpdatedAtItems && (
                             <div className="flex items-center justify-end">
                                 <p className="text-[var(--subtitle-500)] text-sm whitespace-nowrap">
-                                    {item.updatedAt || "N/A"}
+                                    {item.updatedAt
+                                        ? formatDate(item.updatedAt as string)
+                                        : "N/A"}
                                 </p>
                             </div>
                         )}

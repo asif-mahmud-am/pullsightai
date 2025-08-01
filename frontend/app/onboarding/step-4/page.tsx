@@ -78,17 +78,17 @@ const Step4Page = () => {
                                     pullRequests?.map((pr) => ({
                                         id: String(pr.prNumber),
                                         title: pr.title,
-                                        timestamp: pr.time,
-                                        avatar: pr.avatar_url,
-                                        subtitle: pr.user.login,
+                                        timestamp: pr.createdAt,
+                                        avatar: pr.user?.avatarUrl,
+                                        subtitle: pr.user?.username,
                                         status: {
-                                            label: pr.state,
+                                            label: pr.status,
                                             colorClass:
-                                                pr.state === "closed"
+                                                pr.status === "closed"
                                                     ? "bg-red-500 text-white"
                                                     : "bg-green-500 text-white",
                                         },
-                                        updatedAt: pr.updated_at,
+                                        updatedAt: pr.updatedAt,
                                     })) || []
                                 }
                                 selectedId={selectedPR}
@@ -106,7 +106,6 @@ const Step4Page = () => {
                 isLoading={isLoading}
                 onClick={onStepComplete}
                 onBackClick={() => redirect("/onboarding/step-2")}
-                onSkipClick={() => redirect("/dashboard")}
             />
         </>
     );

@@ -35,6 +35,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     ports:
       - "3000:3000"
     container_name: pullsightai-frontend
@@ -42,10 +44,10 @@ services:
       - /app/node_modules
     depends_on:
       - pullsightai-backend
-    environment:
-      - NODE_ENV=${NEXT_NODE_ENV}
-      - NEXT_TELEMETRY_DISABLED=${NEXT_TELEMETRY_DISABLED}
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+    # environment:
+    #  - NODE_ENV=${NEXT_NODE_ENV}
+    #  - NEXT_TELEMETRY_DISABLED=${NEXT_TELEMETRY_DISABLED}
+    #  - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     networks:
       - pullsightai-network
 

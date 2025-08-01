@@ -32,9 +32,8 @@ export const bitbucketEndpoints = {
         repoId: string;
     }): Promise<ApiResponse<void>> =>
         apiClient
-            .post(`/bitbucket/review-pr`, {
-                prNumber: prId,
-                repo: repoId,
+            .get(`/bitbucket/review-pr`, {
+                params: { prNumber: prId, repo: repoId },
             })
             .then((res) => res.data),
 };

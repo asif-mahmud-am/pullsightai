@@ -11,10 +11,10 @@ import {
 } from "lucide-react";
 
 export interface AIComment {
-    file_path: string;
+    path: string;
     line_start: number;
     line_end: number;
-    content: string;
+    suggestion: string;
     code_snippet: string;
     code_snippet_line_start: number;
     severity: "critical" | "warning" | "info";
@@ -218,14 +218,14 @@ export const CodeReviewInterface: React.FC<{ data: PullRequestData }> = ({
                                         comment.severity.slice(1)}{" "}
                                 </Badge>
                                 <span className="text-gray-500 text-xs">
-                                    {comment.file_path}:{comment.line_start}
+                                    {comment.path}:{comment.line_start}
                                     {comment.line_end !== comment.line_start &&
                                         `-${comment.line_end}`}
                                 </span>
                             </div>
 
                             <div className="text-gray-300 text-sm mb-3">
-                                {comment.content}
+                                {comment.suggestion}
                             </div>
 
                             {comment.code_snippet && (

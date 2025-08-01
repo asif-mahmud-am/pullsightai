@@ -12,11 +12,14 @@ export interface PullRequest {
     deletions: number;
     changed_files: number;
     avatar_url?: string | null;
-    author?: string;
     time?: string;
     updatedAt?: string;
     provider: "github" | "gitlab" | "bitbucket";
-    user: {
+    user?: {
+        username: string;
+        avatarUrl: string;
+    };
+    author?: {
         username: string;
         avatarUrl: string;
     };

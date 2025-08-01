@@ -79,8 +79,12 @@ const Step4Page = () => {
                                         id: String(pr.prNumber),
                                         title: pr.title,
                                         timestamp: pr.createdAt,
-                                        avatar: pr.user?.avatarUrl,
-                                        subtitle: pr.user?.username,
+                                        avatar:
+                                            pr.user?.avatarUrl ||
+                                            pr.author?.avatarUrl,
+                                        subtitle:
+                                            pr.user?.username ||
+                                            pr?.author?.username,
                                         status: {
                                             label: pr.status,
                                             colorClass:

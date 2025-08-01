@@ -8,9 +8,9 @@ import {
     Repository
 } from 'src/common/interfaces/repository.interface'
 import { DatabaseService } from 'src/database/database.service'
-import { Workspace } from 'src/database/schemas/workspace.schema'
 import {
     GetPRDto,
+    InstallCallbackDto,
     InstallRepoDto,
     PRReviewDto
 } from 'src/github/dto/install-repo.dto'
@@ -27,34 +27,13 @@ export class GithubService {
         private readonly httpService: HttpService
     ) {}
 
-    async getUserOrganizations(user: any): Promise<Workspace[]> {
-        await this.initOctokit(user)
-        const userRepoData = await this.octokit.rest.users.getAuthenticated()
-        const response = await this.octokit.rest.orgs.listForAuthenticatedUser()
-        const organizations: Workspace[] = []
-        organizations.push({
-            name: userRepoData.data.login,
-            id: userRepoData.data.id.toString(),
-            nodeId: userRepoData.data.node_id,
-            url: userRepoData.data.url,
-            reposUrl: userRepoData.data.repos_url,
-            avatarUrl: userRepoData.data.avatar_url,
-            type: userRepoData.data.type,
-            provider: 'github'
-        })
-        for (const details of response.data) {
-            organizations.push({
-                id: details.id.toString(),
-                name: details.login,
-                nodeId: details.node_id,
-                url: details.url,
-                reposUrl: details.repos_url,
-                avatarUrl: details.avatar_url,
-                type: 'Organization',
-                provider: 'github'
+    async getUserOrganizations(user: any) {
+        const data = await this.dataService.users
+            .findOne({
+                _id: user.sub
             })
-        }
-        return organizations
+            .populate('workspaces')
+        return data?.workspaces || []
     }
 
     async createWorkspace(user: any, installRepoDto: InstallRepoDto) {
@@ -112,30 +91,42 @@ export class GithubService {
         return this.octokit
     }
 
-    async listInstallationRepositories(installationId: number) {
-        const octokit =
-            await this.githubEventService.initOctokitApp(installationId)
-
-        const { data } =
-            await octokit.rest.apps.listReposAccessibleToInstallation()
-        if (data.repositories.length) {
-            const org = data.repositories[0].owner
-            const workspace = await this.dataService.workspaces.findOne({
+    async addInstallOrg(installCallbackDto: InstallCallbackDto) {
+        const octokit = await this.githubEventService.appAuthenticationJWT()
+        const { data } = await octokit.rest.apps.getInstallation({
+            installation_id: +installCallbackDto.installation_id
+        })
+        const org: any = data.account
+        let workspace = await this.dataService.workspaces.findOne({
+            id: org.id.toString(),
+            provider: 'github'
+        })
+        if (!workspace) {
+            workspace = await this.dataService.workspaces.create({
                 id: org.id.toString(),
-                provider: 'github'
+                name: org.login,
+                nodeId: org.node_id,
+                url: org.url,
+                reposUrl: org.repos_url,
+                avatarUrl: org.avatar_url,
+                type: org.type,
+                provider: 'github',
+                ownerId: installCallbackDto.state,
+                installationId: installCallbackDto.installation_id
             })
-            if (workspace) {
-                await this.dataService.workspaces.updateOne(
-                    {
-                        _id: workspace._id
-                    },
-                    {
-                        installationId: installationId.toString()
-                    }
-                )
-            }
         }
-        return data.repositories[0].owner.login
+        await this.dataService.users.updateOne(
+            { _id: installCallbackDto.state },
+            {
+                $set: {
+                    currentWorkspace: workspace._id
+                },
+                $addToSet: {
+                    workspaces: workspace._id
+                }
+            }
+        )
+        return workspace.name
     }
 
     async listRepoPullRequests(user: any, getPRDto: GetPRDto) {

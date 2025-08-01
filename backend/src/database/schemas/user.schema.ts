@@ -47,6 +47,18 @@ export class User {
                 : Types.ObjectId.createFromHexString(value)
     })
     currentWorkspace?: Types.ObjectId
+
+    @Prop({
+        type: [Types.ObjectId],
+        ref: 'Workspace',
+        set: (values: []) =>
+            values.map((value) =>
+                Types.ObjectId.isValid(value)
+                    ? value
+                    : Types.ObjectId.createFromHexString(value)
+            )
+    })
+    workspaces?: Types.ObjectId[]
 }
 
 const schema = SchemaFactory.createForClass(User)

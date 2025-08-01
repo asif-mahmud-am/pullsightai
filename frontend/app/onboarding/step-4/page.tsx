@@ -10,26 +10,6 @@ import { usePullRequestQuery } from "@/api/queries/pullRequest";
 import { useAuthStore } from "@/store/authStore";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
 
-const pullRequests: PullRequest[] = [
-    {
-        external_id: 1,
-        title: "Web app init",
-        number: 1,
-        state: "closed",
-        merged: false,
-        user: {
-            login: "khairul111010",
-            avatar_url: "https://avatars.githubusercontent.com/u/44225180?v=4",
-        },
-        html_url: "https://github.com/TeamChickenHQ/icchamoto/pull/1",
-        created_at: "2024-04-01T09:45:51.000000Z",
-        additions: 0,
-        deletions: 0,
-        changed_files: 0,
-        provider: "github",
-    },
-];
-
 const Step4Page = () => {
     const [selectedPR, setSelectedPR] = useState<string>("");
 
@@ -96,7 +76,7 @@ const Step4Page = () => {
                             <SelectableList
                                 items={
                                     pullRequests?.map((pr) => ({
-                                        id: String(pr.id),
+                                        id: String(pr.prNumber),
                                         title: pr.title,
                                         timestamp: pr.time,
                                         avatar: pr.avatar_url,

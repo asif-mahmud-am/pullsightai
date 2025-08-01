@@ -1,5 +1,6 @@
 export interface PullRequest {
     id?: string; // Unique identifier for the pull request
+    prNumber: string; // PR number
     external_id: number;
     number: number;
     state: string;

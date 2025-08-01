@@ -113,7 +113,6 @@ export class GithubController {
 
     @Post('reviews')
     async postReview(@Body() postReviewDto: PostReviewDto) {
-        console.log('========Post Review DTO:==========', postReviewDto)
         return {
             message: 'Review posted successfully',
             result: await this.githubEventService.addPRReviewComments(

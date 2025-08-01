@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Octokit } from '@octokit/rest'
-import { Types } from 'mongoose'
 import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
 import {
@@ -61,8 +60,7 @@ export class GithubService {
         await this.initOctokit(user)
         let workspace = await this.dataService.workspaces.findOne({
             id: installRepoDto.id,
-            provider: 'github',
-            ownerId: new Types.ObjectId(user.sub)
+            provider: 'github'
         })
         if (!workspace) {
             let org

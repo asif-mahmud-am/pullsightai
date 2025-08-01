@@ -11,7 +11,7 @@ import { ConfigService } from '@nestjs/config'
 import { AuthGuard } from '@nestjs/passport'
 import {
     GetPRDto,
-    InstallRepoDto,
+    InstallCallbackDto,
     PRReviewDto
 } from 'src/github/dto/install-repo.dto'
 import { PostReviewDto } from 'src/github/dto/post-review.dto'
@@ -33,7 +33,6 @@ export class GithubController {
     @UseGuards(AuthGuard('jwt-cookie'))
     @Get('organizations')
     async getOrgs(@Req() req) {
-        console.log(req.user)
         return {
             message: 'Organizations fetched successfully',
             result: await this.githubService.getUserOrganizations(req.user)
@@ -42,27 +41,18 @@ export class GithubController {
 
     @UseGuards(AuthGuard('jwt-cookie'))
     @Get('install')
-    async redirectToGitHubApp(
-        @Query() installRepoDto: InstallRepoDto,
-        @Req() req
-    ) {
-        const org = await this.githubService.createWorkspace(
-            req.user,
-            installRepoDto
-        )
+    async redirectToGitHubApp(@Req() req) {
         const appSlug = this.configService.get<string>('GITHUB_APP_SLUG')
-        const redirect = `https://github.com/apps/${appSlug}/installations/new/permissions?target_id=${installRepoDto.id}&target_type=${installRepoDto.type}`
+        const redirect = `https://github.com/apps/${appSlug}/installations/new?state=${req.user.sub}`
         return {
             redirect
         }
     }
 
     @Get('callback')
-    async githubCallback(@Query('installation_id') installationId: string) {
-        const org = await this.githubService.listInstallationRepositories(
-            Number(installationId)
-        )
-        const redirect = `${this.configService.get<string>('CLIENT_URL')}/onboarding/step-3?name=${org}&installationId=${installationId}`
+    async githubCallback(@Query() installCallbackDto: InstallCallbackDto) {
+        const org = await this.githubService.addInstallOrg(installCallbackDto)
+        const redirect = `${this.configService.get<string>('CLIENT_URL')}/onboarding/step-3?name=${org}&installationId=${installCallbackDto.installation_id}`
         return { redirect }
     }
 
@@ -114,7 +104,6 @@ export class GithubController {
 
     @Post('reviews')
     async postReview(@Body() postReviewDto: PostReviewDto) {
-        console.log('========Post Review DTO:==========', postReviewDto)
         return {
             message: 'Review posted successfully',
             result: await this.githubEventService.addPRReviewComments(

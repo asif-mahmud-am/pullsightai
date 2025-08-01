@@ -60,6 +60,27 @@ export class BitbucketController {
         }
     }
 
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('repos-pr-list')
+    async getPullRequests(
+        @Query('workspace') workspace: string,
+        @Query('repo') repository: string,
+        @Req() req,
+        @Query('state') state?: 'OPEN' | 'MERGED' | 'DECLINED' | 'SUPERSEDED',
+        @Query('limit') limit?: number
+    ) {
+        return {
+            message: 'Pull requests fetched successfully',
+            result: await this.bitbucketService.getPullRequests(
+                workspace,
+                repository,
+                req.user,
+                state,
+                limit
+            )
+        }
+    }
+
     @Post('add-webhook')
     async addWebhook(@Body() addWebhookDto: AddWebhookDto) {
         return {

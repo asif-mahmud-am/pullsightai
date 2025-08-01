@@ -4,30 +4,29 @@ import { Organization } from "@/types/organization";
 import ActionFooter from "../ActionFooter";
 import SelectableList from "../SelectableList";
 import { useState } from "react";
-import { redirect } from "next/navigation";
+import { redirect, useRouter, useSearchParams } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
+import { ROUTE_CONSTANTS } from "@/lib/constants";
+import { useReviewPullRequestQuery } from "@/api/queries/pullRequest";
 
-const organizations: Organization[] = [
-    {
-        id: 44993145,
-        name: "sroy-dev",
-        slug: "sroy-dev",
-        provider: "github",
-        avatar_url: "https://avatars.githubusercontent.com/u/44993145?v=4",
-        created_at: "2018-11-13T05:37:17Z",
-        updated_at: "2025-07-24T03:25:52Z",
-    },
-    {
-        id: 165650485,
-        name: "TeamChickenHQ",
-        slug: "TeamChickenHQ",
-        provider: "github",
-        avatar_url: "https://avatars.githubusercontent.com/u/165650485?v=4",
-        created_at: "2024-04-01T08:49:11Z",
-        updated_at: "2024-04-01T09:36:02Z",
-    },
-];
+const Step5Page = () => {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const user = useAuthStore((s) => s.user);
 
-const Step4Page = () => {
+    const repoId = searchParams.get("repoId") as string;
+    const prId = searchParams.get("prId") as string;
+
+    if (!repoId || !prId) {
+        redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_3);
+    }
+
+    const { data, isLoading, error } = useReviewPullRequestQuery({
+        provider: user?.provider || "github", // Default to GitHub if not set
+        repoId,
+        prId,
+    });
+
     const onStepComplete = () => {
         // You can add your API call or navigation logic here
 
@@ -74,4 +73,4 @@ const Step4Page = () => {
     );
 };
 
-export default Step4Page;
+export default Step5Page;

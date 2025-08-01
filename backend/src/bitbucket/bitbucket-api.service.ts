@@ -20,6 +20,48 @@ export interface BitbucketRepositoriesResponse {
     repositories: BitbucketRepository[]
 }
 
+export interface BitbucketPullRequest {
+    id: number
+    nodeId: string
+    prNumber: number
+    title: string
+    status: string
+    user: {
+        username: string
+        avatarUrl?: string
+    }
+    createdAt: string
+    updatedAt: string
+    closedAt: string | null
+    mergedAt: string | null
+    url: string
+}
+
+export interface BitbucketPullRequestsResponse {
+    message: string
+    repository: {
+        workspace: string
+        name: string
+        fullName: string
+    }
+    filters: {
+        state: string
+        limit: string
+    }
+    totalCount: number
+    pullRequests: BitbucketPullRequest[]
+    summary: {
+        total: number
+        byState: Record<string, number>
+        withReviewers: number
+        withComments: number
+        withTasks: number
+        authors: number
+        averageComments: number
+        averageTasks: number
+    }
+}
+
 @Injectable()
 export class BitbucketApiService {
     private readonly baseUrl = 'https://api.bitbucket.org/2.0'
@@ -401,6 +443,88 @@ export class BitbucketApiService {
             throw new HttpException(
                 'OAuth token exchange failed',
                 HttpStatus.BAD_REQUEST
+            )
+        }
+    }
+
+    /**
+     * Get pull requests for a specific repository
+     */
+    async getPullRequests(
+        accessToken: string,
+        workspace: string,
+        repository: string,
+        state?: string,
+        limit?: number
+    ): Promise<BitbucketPullRequest[]> {
+        try {
+            let allPullRequests: BitbucketPullRequest[] = []
+            const pageLimit = limit ? Math.min(limit, 100) : 50
+            let nextUrl = `/repositories/${workspace}/${repository}/pullrequests?pagelen=${pageLimit}`
+
+            // Add state filter if provided
+            if (state) {
+                nextUrl += `&state=${state.toUpperCase()}`
+            }
+
+            // Fetch all pages of pull requests (or up to the limit)
+            while (nextUrl && (!limit || allPullRequests.length < limit)) {
+                const response = await this.makeApiCall<any>(
+                    nextUrl,
+                    accessToken
+                )
+
+                const pullRequests = response.values.map((pr) => ({
+                    id: pr.id,
+                    nodeId: `BB_${pr.id}`,
+                    prNumber: pr.id,
+                    title: pr.title,
+                    status: pr.state.toLowerCase(),
+                    user: {
+                        username: pr.author.username,
+                        avatarUrl: pr.author.links?.avatar?.href
+                    },
+                    createdAt: pr.created_on,
+                    updatedAt: pr.updated_on,
+                    closedAt:
+                        pr.state === 'DECLINED' || pr.state === 'SUPERSEDED'
+                            ? pr.updated_on
+                            : null,
+                    mergedAt: pr.state === 'MERGED' ? pr.updated_on : null,
+                    url: pr.links.html.href
+                }))
+
+                allPullRequests = allPullRequests.concat(pullRequests)
+
+                // Check if we've reached the limit or if there's no next page
+                if (limit && allPullRequests.length >= limit) {
+                    allPullRequests = allPullRequests.slice(0, limit)
+                    break
+                }
+
+                nextUrl = response.next
+                    ? response.next.replace(this.baseUrl, '')
+                    : null
+            }
+
+            return allPullRequests
+        } catch (error) {
+            console.error(
+                `❌ Error fetching pull requests for ${workspace}/${repository}:`,
+                error
+            )
+
+            if (error.response?.status === 404) {
+                throw new HttpException(
+                    `Repository ${workspace}/${repository} not found or you don't have access to it.`,
+                    HttpStatus.NOT_FOUND
+                )
+            }
+
+            throw new HttpException(
+                error.response?.data?.error?.message ||
+                    'Failed to fetch pull requests',
+                error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR
             )
         }
     }

@@ -9,6 +9,28 @@ services:
     container_name: pullsightai-backend
     volumes:
       - /app/node_modules
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - PORT=${PORT}
+      - MONGODB_URI=${MONGODB_URI}
+      - CLIENT_URL=${CLIENT_URL}
+      - BASE_URL=${BASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+      - BITBUCKET_CLIENT_ID=${BITBUCKET_CLIENT_ID}
+      - BITBUCKET_CLIENT_SECRET=${BITBUCKET_CLIENT_SECRET}
+      - GITLAB_CLIENT_ID=${GITLAB_CLIENT_ID}
+      - GITLAB_CLIENT_SECRET=${GITLAB_CLIENT_SECRET}
+      - GITHUB_APP_ID=${GITHUB_APP_ID}
+      - GITHUB_APP_SLUG=${GITHUB_APP_SLUG}
+      # - GITHUB_PRIVATE_KEY_PATH=${GITHUB_PRIVATE_KEY_PATH}
+      - AI_AGENT_PR_POST_URL=${AI_AGENT_PR_POST_URL}
+      - AI_AGENT_PR_REVIEW_URL=${AI_AGENT_PR_REVIEW_URL}
+      - DOMAIN=${DOMAIN}
+    networks:
+      - pullsightai-network
+
   pullsightai-frontend:
     build:
       context: ./frontend
@@ -20,9 +42,32 @@ services:
     container_name: pullsightai-frontend
     volumes:
       - /app/node_modules
-    # depends_on:
-    #   - pullsightai-backend
+    depends_on:
+      - pullsightai-backend
     # environment:
-    #   - NODE_ENV=1
-    #   - NEXT_TELEMETRY_DISABLED=1
-    #   - NEXT_PUBLIC_API_URL=http://localhost:3333/v1
+    #  - NODE_ENV=${NEXT_NODE_ENV}
+    #  - NEXT_TELEMETRY_DISABLED=${NEXT_TELEMETRY_DISABLED}
+    #  - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+    networks:
+      - pullsightai-network
+
+  pullsightai-ai-agent:
+    build:
+      context: ./ai_agent
+      dockerfile: Dockerfile
+    image: pullsightai-ai-agent
+    ports:
+      - "8030:8030"
+    container_name: pullsightai-ai-agent
+    environment:
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY}
+      - BACKEND_SUMMARY_ENDPOINT=${BACKEND_SUMMARY_ENDPOINT}
+      - BACKEND_REVIEW_ENDPOINT=${BACKEND_REVIEW_ENDPOINT}
+    depends_on:
+      - pullsightai-backend
+    networks:
+      - pullsightai-network
+
+networks:
+  pullsightai-network:
+    driver: bridge

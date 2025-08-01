@@ -14,7 +14,7 @@ export class BitbucketStrategy extends PassportStrategy(Strategy, 'bitbucket') {
             clientID: configService.get('BITBUCKET_CLIENT_ID'),
             clientSecret: configService.get('BITBUCKET_CLIENT_SECRET'),
             callbackURL: `${configService.get('BASE_URL')}/v1/auth/bitbucket/callback`,
-            scope: ['email']
+            scope: ['email', 'account']
         })
     }
 

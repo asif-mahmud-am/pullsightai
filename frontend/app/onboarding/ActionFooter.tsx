@@ -6,6 +6,7 @@ import {
     RightBarArrowIcon,
 } from "@/components/common/icons";
 import { Button } from "@/components/ui/button";
+import { useUpdateUserMutation } from "@/api/queries/auth";
 
 interface ActionFooterProps {
     buttonText?: string;
@@ -28,6 +29,18 @@ const ActionFooter: FC<ActionFooterProps> = ({
     onSkipText = "Go to Dashboard",
     onSkipClick,
 }) => {
+    const { mutateAsync: updateUser } = useUpdateUserMutation();
+
+    const handleSKip = () => {
+        if (onSkipClick) {
+            onSkipClick();
+        } else {
+            // updateUser({
+            //     onboardingStep: 0,
+            // });
+        }
+    };
+
     return (
         <div className="flex py-8 mt-auto w-full">
             {backButtonText && onBackClick && (
@@ -40,10 +53,10 @@ const ActionFooter: FC<ActionFooterProps> = ({
                 </button>
             )}
             <div className="flex ml-auto gap-3">
-                {onSkipText && onSkipClick && (
+                {onSkipText && (
                     <button
                         className="text-base pr-3 py-2.5 rounded-2xl flex items-center  text-[var(--subtitle-300)] hover:text-[var(--subtitle-100)] cursor-pointer"
-                        onClick={onSkipClick}
+                        onClick={handleSKip}
                     >
                         <span>{onSkipText}</span>
                         <RightBarArrowIcon className="w-5 h-5 ml-2" />

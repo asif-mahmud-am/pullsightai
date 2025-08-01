@@ -3,10 +3,10 @@ export interface PullRequest {
     prNumber: string; // PR number
     external_id: number;
     number: number;
-    state: string;
+    status: string;
     merged: boolean;
     title: string;
-    created_at: string;
+    createdAt: string;
     html_url: string;
     additions: number;
     deletions: number;
@@ -14,11 +14,11 @@ export interface PullRequest {
     avatar_url?: string | null;
     author?: string;
     time?: string;
-    updated_at?: string;
+    updatedAt?: string;
     provider: "github" | "gitlab" | "bitbucket";
     user: {
-        login: string;
-        avatar_url: string;
+        username: string;
+        avatarUrl: string;
     };
     integrations?: {
         bitbucket?: {

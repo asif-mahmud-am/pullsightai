@@ -30,16 +30,15 @@ export const useLogoutMutation = () => {
     });
 };
 
-
 export const useUpdateUserMutation = () => {
     const queryClient = useQueryClient();
-    const setUser = useAuthStore((s) => s.setUser);
+    const { user, setUser } = useAuthStore((s) => s);
 
     return useMutation({
         mutationFn: authEndpoints.updateUser,
         onSuccess: (data) => {
-            setUser(data);
+            // setUser({ ...user, ...data });
             queryClient.invalidateQueries({ queryKey: ["user"] });
         },
     });
-}
+};

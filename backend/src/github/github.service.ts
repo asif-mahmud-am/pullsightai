@@ -65,9 +65,17 @@ export class GithubService {
             ownerId: new Types.ObjectId(user.sub)
         })
         if (!workspace) {
-            const { data: org } = await this.octokit.rest.orgs.get({
-                org: installRepoDto.name
-            })
+            let org
+            if (installRepoDto.type === 'User') {
+                const userData =
+                    await this.octokit.rest.users.getAuthenticated()
+                org = userData.data
+            } else {
+                const orgData = await this.octokit.rest.orgs.get({
+                    org: installRepoDto.name
+                })
+                org = orgData.data
+            }
 
             workspace = await this.dataService.workspaces.create({
                 id: org.id.toString(),

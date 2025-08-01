@@ -4,37 +4,66 @@ import { Organization } from "@/types/organization";
 import ActionFooter from "../ActionFooter";
 import SelectableList from "../SelectableList";
 import { useState } from "react";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useOrganizationQuery } from "@/api/queries/organization";
+import { useUpdateUserMutation } from "@/api/queries/auth";
+import { ROUTE_CONSTANTS } from "@/lib/constants";
+import { useAuthStore } from "@/store/authStore";
 
 const organizations: Organization[] = [
     {
-        id: 44993145,
         name: "sroy-dev",
-        slug: "sroy-dev",
-        provider: "github",
-        avatar_url: "https://avatars.githubusercontent.com/u/44993145?v=4",
-        created_at: "2018-11-13T05:37:17Z",
-        updated_at: "2025-07-24T03:25:52Z",
+        id: "44993145",
+        nodeId: "MDQ6VXNlcjQ0OTkzMTQ1",
+        url: "https://api.github.com/users/sroy-dev",
+        reposUrl: "https://api.github.com/users/sroy-dev/repos",
+        avatarUrl: "https://avatars.githubusercontent.com/u/44993145?v=4",
+        type: "User",
     },
     {
-        id: 165650485,
+        id: "165650485",
         name: "TeamChickenHQ",
-        slug: "TeamChickenHQ",
-        provider: "github",
-        avatar_url: "https://avatars.githubusercontent.com/u/165650485?v=4",
-        created_at: "2024-04-01T08:49:11Z",
-        updated_at: "2024-04-01T09:36:02Z",
+        nodeId: "O_kgDOCd-gNQ",
+        url: "https://api.github.com/orgs/TeamChickenHQ",
+        reposUrl: "https://api.github.com/orgs/TeamChickenHQ/repos",
+        avatarUrl: "https://avatars.githubusercontent.com/u/165650485?v=4",
+        type: "Organization",
     },
 ];
 
 const Step1Page = () => {
-    const [selectedOrg, setSelectedOrg] = useState<string>("");
+    const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
+    const user = useAuthStore((s) => s.user);
+    const provider = user?.provider || "github"; // Default to GitHub if not set
 
-    const onStepComplete = () => {
+    const router = useRouter();
+
+    const {
+        data: organizations = [],
+        isLoading,
+        error,
+    } = useOrganizationQuery({ provider });
+
+    const onStepComplete = async () => {
         if (!selectedOrg) return;
-        // You can add your API call or navigation logic here
-
-        redirect(`/onboarding/step-2`);
+        if (
+            provider === "github" &&
+            user?.currentWorkspace?.id !== selectedOrg.id
+        ) {
+            router.push(
+                ROUTE_CONSTANTS.ONBOARDING_STEP_2 +
+                    `?orgId=${selectedOrg.id}&type=${
+                        selectedOrg.type ?? "Organization"
+                    }&name=${selectedOrg.name}`
+            );
+        } else {
+            router.push(
+                ROUTE_CONSTANTS.ONBOARDING_STEP_3 +
+                    `?orgId=${selectedOrg.name}&type=${
+                        selectedOrg.type ?? "Organization"
+                    }&name=${selectedOrg.name}`
+            );
+        }
     };
 
     return (
@@ -60,29 +89,36 @@ const Step1Page = () => {
                             Organizations list
                         </h3>
 
-                        {false && (
+                        {isLoading && (
                             <p className="text-[var(--subtitle-400)]">
                                 Loading organizations...
                             </p>
                         )}
-                        {false && (
+                        {error && (
                             <p className="text-[var(--subtitle-400)]">
                                 Error loading organizations. Please try again.
                             </p>
                         )}
 
-                        {organizations.length > 0 && (
+                        {organizations?.length > 0 && (
                             <SelectableList
-                                items={organizations.map((org) => ({
-                                    id: String(org.slug),
-                                    title: org.name,
-                                    subtitle: org.author,
-                                    timestamp: org.time,
-                                    avatar: org.avatar_url,
-                                    updatedAt: org.updated_at,
-                                }))}
-                                selectedId={selectedOrg}
-                                onSelect={(id) => setSelectedOrg(id)}
+                                items={organizations?.map(
+                                    (org: Organization) => ({
+                                        id: String(org.id || org.name),
+                                        title: org.name,
+                                        subtitle: org.name,
+                                        avatar: org.avatarUrl,
+                                    })
+                                )}
+                                selectedId={selectedOrg?.id}
+                                onSelect={(id) =>
+                                    setSelectedOrg(
+                                        organizations.find(
+                                            (org) =>
+                                                org.id === id || org.name === id
+                                        ) || null
+                                    )
+                                }
                             />
                         )}
                     </div>
@@ -92,8 +128,8 @@ const Step1Page = () => {
             {/* Footer with action button */}
             <ActionFooter
                 buttonText="Connect Organization"
-                isEnabled={Boolean(selectedOrg) && !false}
-                // isLoading={isPending}
+                isEnabled={Boolean(selectedOrg)}
+                isLoading={isLoading}
                 onClick={onStepComplete}
             />
         </>

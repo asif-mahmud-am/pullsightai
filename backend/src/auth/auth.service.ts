@@ -20,6 +20,7 @@ export class AuthService {
             provider,
             providerId: profile.id
         })
+
         if (!user) {
             user = await this.dataService.users.create({
                 provider,

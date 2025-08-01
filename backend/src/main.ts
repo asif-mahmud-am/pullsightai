@@ -7,6 +7,7 @@ import { AppModule } from './app.module'
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule)
+
     const options = {
         origin: [
             'http://localhost:3000',
@@ -19,10 +20,12 @@ async function bootstrap() {
         credentials: true
     }
 
+
     // Increase request body size limit (default: 100kb)
     app.use(bodyParser.json({ limit: '10mb' })) // Set the limit as per needs
     app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }))
     app.enableCors(options)
+    //app.enableCors()
     app.use(helmet())
     app.use(compression())
     app.enableVersioning({

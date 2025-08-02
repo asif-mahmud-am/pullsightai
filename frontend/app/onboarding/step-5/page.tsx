@@ -4,82 +4,95 @@ import { Organization } from "@/types/organization";
 import ActionFooter from "../ActionFooter";
 import SelectableList from "../SelectableList";
 import { useState } from "react";
-import { redirect, useRouter, useSearchParams } from "next/navigation";
-import { useAuthStore } from "@/store/authStore";
+import { redirect } from "next/navigation";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
-import { useReviewPullRequestQuery } from "@/api/queries/pullRequest";
-import PRAnalysisContent from "./PrAnalysisContent";
+
+const organizations: Organization[] = [
+    {
+        name: "sroy-dev",
+        id: "44993145",
+        nodeId: "MDQ6VXNlcjQ0OTkzMTQ1",
+        url: "https://api.github.com/users/sroy-dev",
+        reposUrl: "https://api.github.com/users/sroy-dev/repos",
+        avatarUrl: "https://avatars.githubusercontent.com/u/44993145?v=4",
+        type: "User",
+    },
+    {
+        id: "165650485",
+        name: "TeamChickenHQ",
+        nodeId: "O_kgDOCd-gNQ",
+        url: "https://api.github.com/orgs/TeamChickenHQ",
+        reposUrl: "https://api.github.com/orgs/TeamChickenHQ/repos",
+        avatarUrl: "https://avatars.githubusercontent.com/u/165650485?v=4",
+        type: "Organization",
+    },
+];
 
 const Step5Page = () => {
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const user = useAuthStore((s) => s.user);
-
-    const repoId = searchParams.get("repoId") as string;
-    const prId = searchParams.get("prId") as string;
-
-    if (!repoId || !prId) {
-        redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_3);
-    }
-
-    const { data, isLoading, error } = useReviewPullRequestQuery({
-        provider: user?.provider || "github", // Default to GitHub if not set
-        repoId,
-        prId,
-    });
+    const [selectedOrg, setSelectedOrg] = useState<string>("");
 
     const onStepComplete = () => {
         // You can add your API call or navigation logic here
 
-        redirect(`/onboarding/step-5`);
+        redirect(`/dashboard`);
     };
 
     return (
         <>
             <div className="grid grid-cols-12 gap-4 lg:gap-8">
                 {/* Left column */}
-                <div className="col-span-4 xl:pr-16">
+                <div className="col-span-4 col-start-2 xl:pr-16">
                     <h2 className="text-4xl font-medium text-[var(--title-50)] mb-4 leading-[45px]">
-                        Generate your first AI-powered review
+                        Collaborate & Scale Your Code Quality
                     </h2>
                     <p className="text-base font-medium text-[var(--subtitle-400)] mb-6">
-                        Please wait a moment. Our AI is now deeply analyzing PR
-                        Improve database query performance to identify potential
-                        bugs, performance bottlenecks, security flaws, and style
-                        inconsistencies.
+                        You&apos;ve seen the power of AI-driven feedback! Now,
+                        invite your team members to experience faster reviews
+                        and higher code quality together. The more, the merrier
+                        (and smarter!).
                     </p>
                 </div>
 
                 {/* Right column */}
-                <div className="col-span-8">
+                <div className="col-span-6">
                     <div className="mb-4">
                         <h3 className="text-[var(--title-50)] font-medium mb-4 text-lg">
-                            PR Summary
+                            Team members lists
                         </h3>
-                        <div className="bg-dark-900 border border-dashed py-25 rounded-xl">
-                            {isLoading && (
-                                <p className="text-[var(--subtitle-400)] px-5">
-                                    Loading PR summary...
-                                </p>
-                            )}
-                            {error && (
-                                <p className="text-[var(--subtitle-400)] px-5">
-                                    Error loading PR summary. Please try again.
-                                </p>
-                            )}
-                            {data && <PRAnalysisContent data={data} />}
-                        </div>
+
+                        {false && (
+                            <p className="text-[var(--subtitle-400)]">
+                                Loading organizations...
+                            </p>
+                        )}
+                        {false && (
+                            <p className="text-[var(--subtitle-400)]">
+                                Error loading organizations. Please try again.
+                            </p>
+                        )}
+
+                        {organizations.length > 0 && (
+                            <SelectableList
+                                items={organizations.map((org) => ({
+                                    id: String(org.id),
+                                    title: org.name,
+                                    subtitle: org.author,
+                                }))}
+                                selectedId={selectedOrg}
+                                onSelect={(id) => setSelectedOrg(id)}
+                            />
+                        )}
                     </div>
                 </div>
             </div>
 
             {/* Footer with action button */}
             <ActionFooter
-                buttonText="Invite team members"
+                buttonText="Send invites & go to Dashboard"
                 isEnabled={true}
                 // isLoading={isPending}
                 onClick={onStepComplete}
-                onBackClick={() => redirect("/onboarding/step-3")}
+                onBackClick={() => redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_5)}
             />
         </>
     );

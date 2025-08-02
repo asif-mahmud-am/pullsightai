@@ -1,5 +1,6 @@
 import type React from "react";
 import { useState } from "react";
+import Markdown from "react-markdown";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -9,43 +10,9 @@ import {
     GitPullRequest,
     GitMerge,
 } from "lucide-react";
+import { PRAnalysisData } from "@/types/prAnalysis";
 
-export interface AIComment {
-    path: string;
-    line_start: number;
-    line_end: number;
-    suggestion: string;
-    code_snippet: string;
-    code_snippet_line_start: number;
-    severity: "critical" | "warning" | "info";
-}
-
-export interface PullRequestData {
-    pull_request: {
-        pr_title: string;
-        pr_number: number;
-        pr_state: string;
-        merged: boolean;
-        pr_user: string;
-        // user: {
-        //     login: string;
-        //     avatar_url: string;
-        // };
-        html_url: string;
-        pr_created_at: string;
-        pr_additions: number;
-        pr_deletions: number;
-        pr_files_changed: number;
-    };
-    analysis: {
-        summary: string;
-        comments: AIComment[];
-    };
-}
-
-export const CodeReviewInterface: React.FC<{ data: PullRequestData }> = ({
-    data,
-}) => {
+const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
     const [showAllComments] = useState(true);
 
     const { pull_request: pr, analysis } = data;
@@ -159,7 +126,9 @@ export const CodeReviewInterface: React.FC<{ data: PullRequestData }> = ({
                         </div>
 
                         <div className="text-gray-300 text-sm mb-3">
-                            {analysis.summary}
+                            <Markdown remarkPlugins={[]}>
+                                {analysis.summary}
+                            </Markdown>
                         </div>
 
                         <div className="flex items-center gap-4 text-xs text-gray-400">
@@ -225,7 +194,7 @@ export const CodeReviewInterface: React.FC<{ data: PullRequestData }> = ({
                             </div>
 
                             <div className="text-gray-300 text-sm mb-3">
-                                {comment.suggestion}
+                                <Markdown>{comment.suggestion}</Markdown>
                             </div>
 
                             {comment.code_snippet && (
@@ -299,3 +268,5 @@ export const CodeReviewInterface: React.FC<{ data: PullRequestData }> = ({
         </div>
     );
 };
+
+export default PrCodeAnalysis;

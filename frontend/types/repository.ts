@@ -7,11 +7,9 @@ export interface Repository {
         avatarUrl: string;
     };
     slug: string;
-    pushedAt: string;
-    owner_avatar: string | null;
-    avatar_url?: string | null;
+    createdAt: string;
+    updatedAt: string;
     time?: string;
-    updated_at?: string;
     provider: "github" | "gitlab" | "bitbucket";
     integrations?: {
         bitbucket?: {

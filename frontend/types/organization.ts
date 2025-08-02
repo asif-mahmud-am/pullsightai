@@ -1,4 +1,5 @@
 export interface Organization {
+    _id?: string;
     id: string;
     name: string;
     nodeId: string;

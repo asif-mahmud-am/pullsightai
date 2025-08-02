@@ -8,14 +8,12 @@ export const bitbucketEndpoints = {
         apiClient.get("/bitbucket/organizations").then((res) => res.data),
     getRepos: ({
         orgName,
-        installationId,
     }: {
         orgName: string;
-        installationId: string;
     }): Promise<ApiResponse<Repository[]>> =>
         apiClient
             .get("/bitbucket/repositories", {
-                params: { workspace: orgName },
+                params: {},
             })
             .then((res) => res.data),
     getPRs: (id: string) =>

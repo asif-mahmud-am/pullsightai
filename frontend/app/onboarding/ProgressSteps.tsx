@@ -32,26 +32,21 @@ const stepsData = [
     },
     {
         index: 2,
-        id: "install",
-        label: "Install PullSight",
-    },
-    {
-        index: 3,
         id: "repos",
         label: "Choose Repositories",
     },
     {
-        index: 4,
+        index: 3,
         id: "prs",
         label: "Choose Pull Requests",
     },
     {
-        index: 5,
+        index: 4,
         id: "ai",
         label: "Generate AI Analysis on PR",
     },
     {
-        index: 6,
+        index: 5,
         id: "invite",
         label: "Invite Team Members",
     },
@@ -64,24 +59,15 @@ const ProgressSteps: FC<ProgressStepsProps> = ({ onStepClick }) => {
     const stepMatch = pathname.match(/step-(\d+)/);
     const currentStep = stepMatch ? parseInt(stepMatch[1]) : 1;
 
-    const steps = stepsData
-        .filter((step) => {
-            // remove step 2 if bitbucket
-            if (user?.provider === "bitbucket" && step.index === 2) {
-                return false;
-            } else {
-                return true;
-            }
-        })
-        .map((step) => ({
-            ...step,
-            status:
-                step.index < currentStep
-                    ? "complete"
-                    : step.index === currentStep
-                    ? "current"
-                    : "incomplete",
-        })) as Array<{
+    const steps = stepsData.map((step) => ({
+        ...step,
+        status:
+            step.index < currentStep
+                ? "complete"
+                : step.index === currentStep
+                ? "current"
+                : "incomplete",
+    })) as Array<{
         index: number;
         id: string;
         label: string;

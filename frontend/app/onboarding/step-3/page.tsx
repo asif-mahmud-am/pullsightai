@@ -1,48 +1,48 @@
 "use client";
 
+import { Organization } from "@/types/organization";
 import ActionFooter from "../ActionFooter";
 import SelectableList from "../SelectableList";
 import { useState } from "react";
-import { Repository } from "@/types/repository";
+import { PullRequest } from "@/types/pullRequest";
 import { redirect, useRouter, useSearchParams } from "next/navigation";
+import { usePullRequestQuery } from "@/api/queries/pullRequest";
 import { useAuthStore } from "@/store/authStore";
-import { useRepositoryQuery } from "@/api/queries/repository";
-import { useUpdateUserMutation } from "@/api/queries/auth";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 const Step3Page = () => {
-    const [selectedRepo, setSelectedRepo] = useState<string>("");
-
     const router = useRouter();
     const searchParams = useSearchParams();
     const user = useAuthStore((s) => s.user);
-    const provider = user?.provider || "github"; // Default to GitHub if not set
-    const orgName =
-        searchParams.get("name") || user?.currentWorkspace?.name || "";
-    const installationId =
-        searchParams.get("installationId") ||
-        user?.currentWorkspace?.installationId ||
-        "";
 
-    // if (!orgName && !installationId) {
-    //     redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_1);
-    // }
+    const repoId = searchParams.get("repoId") as string;
+    const prId = searchParams.get("prId") as string;
+
+    if (!repoId) {
+        redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_2);
+    }
+
+    const [selectedPR, setSelectedPR] = useState<string>(prId || "");
 
     const {
-        data: repositories = [],
-        isLoading,
+        data: pullRequests,
+        refetch: refetchPullRequests,
+        isFetching,
         error,
-    } = useRepositoryQuery({
-        provider,
-        orgName,
-        ...(user?.provider === "github" ? { installationId } : {}),
+    } = usePullRequestQuery({
+        provider: user?.provider || "github", // Default to GitHub if not set
+        repoId,
     });
 
     const onStepComplete = () => {
-        if (!selectedRepo) return;
-        router.push(
+        if (!selectedPR) return;
+        // You can add your API call or navigation logic here
+
+        redirect(
             ROUTE_CONSTANTS.ONBOARDING_STEP_4 +
-                `?repoId=${selectedRepo}&orgName=${orgName}`
+                `?prId=${selectedPR}&repoId=${repoId}`
         );
     };
 
@@ -50,60 +50,85 @@ const Step3Page = () => {
         <>
             <div className="grid grid-cols-12 gap-4 lg:gap-8">
                 {/* Left column */}
-                <div className="col-span-4 col-start-2 xl:pr-16">
+                <div className="col-span-4 xl:pr-16">
                     <h2 className="text-4xl font-medium text-[var(--title-50)] mb-4 leading-[45px]">
-                        Select Repositories for AI Analysis
+                        Let&apos;s See the AI in Action on Your Code
                     </h2>
                     <p className="text-base font-medium text-[var(--subtitle-400)] mb-6">
-                        Choose the repositories you&apos;d like PullSight to
-                        monitor for Pull Requests. Our AI will automatically
-                        analyze new or updated PRs in these repos to provide
-                        instant feedback.
+                        We&apos;ve identified active Pull Requests in your
+                        selected repositories. Choose one to generate your very
+                        first AI-powered analysis right now!
                     </p>
                 </div>
 
                 {/* Right column */}
-                <div className="col-span-6">
+                <div className="col-span-8">
                     <div className="mb-4">
-                        <h3 className="text-[var(--title-50)] font-medium mb-4 text-lg">
-                            Repositories list
-                        </h3>
-
-                        {isLoading && (
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-[var(--title-50)] font-medium text-lg">
+                                PRs list
+                            </h3>
+                            {/* add another organization button here */}
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className=""
+                                onClick={() => refetchPullRequests()}
+                            >
+                                <RefreshCw className="inline mr-1" />
+                            </Button>
+                        </div>
+                        {isFetching && (
                             <p className="text-[var(--subtitle-400)]">
-                                Loading repositories...
+                                Loading pull requests...
                             </p>
                         )}
                         {error && (
                             <p className="text-[var(--subtitle-400)]">
-                                Error loading repositories. Please try again.
+                                Error loading pull requests. Please try again.
                             </p>
                         )}
 
-                        {repositories.length > 0 && (
-                            <SelectableList
-                                items={repositories.map((repo) => ({
-                                    id: String(repo.name),
-                                    title: repo.name,
-                                    subtitle: repo.author?.name,
-                                    timestamp: repo.pushedAt,
-                                    avatar: repo.avatar_url,
-                                }))}
-                                selectedId={selectedRepo}
-                                onSelect={(id) => setSelectedRepo(id)}
-                            />
-                        )}
+                        {!isFetching &&
+                            pullRequests &&
+                            pullRequests?.length > 0 && (
+                                <SelectableList
+                                    items={
+                                        pullRequests?.map((pr) => ({
+                                            id: String(pr.prNumber),
+                                            title: pr.title,
+                                            timestamp: pr.createdAt,
+                                            avatar:
+                                                pr.user?.avatarUrl ||
+                                                pr.author?.avatarUrl,
+                                            subtitle:
+                                                pr.user?.username ||
+                                                pr?.author?.username,
+                                            status: {
+                                                label: pr.status,
+                                                colorClass:
+                                                    pr.status === "closed"
+                                                        ? "bg-red-500 text-white"
+                                                        : "bg-green-500 text-white",
+                                            },
+                                            updatedAt: pr.updatedAt,
+                                        })) || []
+                                    }
+                                    selectedId={selectedPR}
+                                    onSelect={(id) => setSelectedPR(id)}
+                                />
+                            )}
                     </div>
                 </div>
             </div>
 
             {/* Footer with action button */}
             <ActionFooter
-                buttonText="Select Repository"
-                isEnabled={Boolean(selectedRepo) && !false}
+                buttonText={false ? "Analyzing..." : "Analyze Pull Request"}
+                isEnabled={Boolean(selectedPR) && !isFetching}
+                isLoading={isFetching}
                 onClick={onStepComplete}
-                isLoading={isLoading}
-                onBackClick={() => redirect("/onboarding/step-1")}
+                onBackClick={() => redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_2)}
             />
         </>
     );

@@ -10,6 +10,6 @@ export interface User {
     provider: Provider;
     providerId: string;
     avatarUrl: string;
-    currentWorkspace?: Organization;
+    currentWorkspace?: Organization | string; // Can be Organization object or ID
     onboardingStep: number | null;
 }

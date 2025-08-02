@@ -1,26 +1,41 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import ActionFooter from "../ActionFooter";
+import SelectableList from "../SelectableList";
+import { useState } from "react";
+import { redirect, useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
+import { useRepositoryQuery } from "@/api/queries/repository";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
-import {  redirect, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 const Step2Page = () => {
-    const searchParams = useSearchParams();
-    const orgId = searchParams.get("orgId");
-    const orgName = searchParams.get("name");
-    const orgType = searchParams.get("type") || "Organization"; // Default to Organization if not set
+    const [selectedRepo, setSelectedRepo] = useState<string>("");
 
-    if (!orgId || !orgName) {
-        redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_1);
-    }
+    const router = useRouter();
+    const user = useAuthStore((s) => s.user);
+    const provider = user?.provider || "github";
 
-    const handleInstall = () => {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
-        const baseUrl = `${apiUrl}/github/install?id=${orgId}&type=${orgType}&name=${orgName}`;
-        // Redirect to the GitHub installation URL
-        window.location.href = baseUrl;
+    // if (!orgName && !installationId) {
+    //     redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_1);
+    // }
+
+    const {
+        data: repositories = [],
+        refetch: refetchRepositories,
+        isFetching,
+        error,
+    } = useRepositoryQuery({
+        provider,
+    });
+
+    const onStepComplete = () => {
+        if (!selectedRepo) return;
+        router.push(
+            ROUTE_CONSTANTS.ONBOARDING_STEP_3 + `?repoId=${selectedRepo}`
+        );
     };
-    
 
     return (
         <>
@@ -28,38 +43,70 @@ const Step2Page = () => {
                 {/* Left column */}
                 <div className="col-span-4 col-start-2 xl:pr-16">
                     <h2 className="text-4xl font-medium text-[var(--title-50)] mb-4 leading-[45px]">
-                        Install PullSight to Select Repositories
+                        Select Repositories for AI Analysis
                     </h2>
                     <p className="text-base font-medium text-[var(--subtitle-400)] mb-6">
-                        To analyze your Pull Requests and provide smart
-                        feedback, PullSight needs access to your repositories.
-                        This is a secure, standard connection via OAuth.
+                        Choose the repositories you&apos;d like PullSight to
+                        monitor for Pull Requests. Our AI will automatically
+                        analyze new or updated PRs in these repos to provide
+                        instant feedback.
                     </p>
-                    <p className="text-base font-medium text-[var(--subtitle-400)] mb-6">
-                        You can select all repositories or specific ones during the installation process.
-                    </p>
-                    <Button className="!bg-white !text-black hover:!bg-gray-200 cursor-pointer" size={"xl"}  onClick={handleInstall}>
-                        Install PullSight
-                    </Button>
                 </div>
 
                 {/* Right column */}
                 <div className="col-span-6">
                     <div className="mb-4">
-                        
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-[var(--title-50)] font-medium text-lg">
+                                Repositories List{" "}
+                            </h3>
+                            {/* add another organization button here */}
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className=""
+                                onClick={() => refetchRepositories()}
+                            >
+                                <RefreshCw className="inline mr-1" />
+                            </Button>
+                        </div>
+                        {isFetching && (
+                            <p className="text-[var(--subtitle-400)]">
+                                Loading repositories...
+                            </p>
+                        )}
+                        {error && (
+                            <p className="text-[var(--subtitle-400)]">
+                                Error loading repositories. Please try again.
+                            </p>
+                        )}
+
+                        {!isFetching && repositories.length > 0 && (
+                            <SelectableList
+                                items={repositories.map((repo) => ({
+                                    id: String(repo.name),
+                                    title: repo.name,
+                                    subtitle: repo.author?.name,
+                                    avatar: repo.author?.avatarUrl,
+                                    timestamp: repo.createdAt,
+                                    updatedAt: repo.updatedAt,
+                                }))}
+                                selectedId={selectedRepo}
+                                onSelect={(id) => setSelectedRepo(id)}
+                            />
+                        )}
                     </div>
                 </div>
             </div>
 
             {/* Footer with action button */}
-            {/* <ActionFooter
+            <ActionFooter
                 buttonText="Select Repository"
-                isEnabled={Boolean(selectedRepo) && !false}
+                isEnabled={Boolean(selectedRepo) && !isFetching}
                 onClick={onStepComplete}
-                // isLoading={isPending}
-                // backButtonText="Back"
-                onBackClick={() => redirect("/onboarding/step-1")}
-            /> */}
+                isLoading={isFetching}
+                onBackClick={() => redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_1)}
+            />
         </>
     );
 };

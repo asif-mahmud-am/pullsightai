@@ -13,6 +13,9 @@ export class Workspace {
     @Prop({ required: true, trim: true })
     name: string
 
+    @Prop({ required: false, trim: true })
+    slug?: string
+
     @Prop({ required: true, trim: true })
     provider: string
 
@@ -36,6 +39,12 @@ export class Workspace {
 
     @Prop({ required: false, trim: true })
     installationId?: string
+
+    @Prop({ required: false })
+    isPrivate?: boolean
+
+    @Prop({ required: false })
+    createdOn?: string
 
     @Prop({
         required: true,

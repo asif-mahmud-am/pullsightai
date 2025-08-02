@@ -10,6 +10,7 @@ import { DatabaseModule } from 'src/database/database.module'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { GithubModule } from './github/github.module'
+import { GitlabModule } from './gitlab/gitlab.module';
 
 @Module({
     imports: [
@@ -20,7 +21,8 @@ import { GithubModule } from './github/github.module'
         DatabaseModule,
         AuthModule,
         GithubModule,
-        HttpModule
+        HttpModule,
+        GitlabModule
     ],
     controllers: [AppController],
     providers: [

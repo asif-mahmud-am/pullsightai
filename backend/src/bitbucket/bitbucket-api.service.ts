@@ -214,6 +214,9 @@ export class BitbucketApiService {
      */
     async getAllWorkspaces(accessToken: string): Promise<any> {
         try {
+            // First get user profile to add as the personal workspace
+            const userProfile = await this.getUserProfile(accessToken)
+
             let allWorkspaces = []
             let nextUrl = '/workspaces?pagelen=100'
 
@@ -230,10 +233,12 @@ export class BitbucketApiService {
                     isPrivate: workspace.is_private,
                     createdOn: workspace.created_on,
                     updatedOn: workspace.updated_on,
+                    uuid: workspace.uuid,
                     links: {
                         html: workspace.links.html.href,
                         repositories: `${this.baseUrl}/repositories/${workspace.slug}`,
-                        projects: workspace.links.projects?.href
+                        projects: workspace.links.projects?.href,
+                        avatar: workspace.links.avatar?.href
                     }
                 }))
 
@@ -243,8 +248,30 @@ export class BitbucketApiService {
                     : null
             }
 
+            // Add user profile as the first workspace (personal workspace)
+            const personalWorkspace = {
+                name: userProfile.display_name || userProfile.username,
+                slug: userProfile.username,
+                displayName: userProfile.display_name || userProfile.username,
+                type: 'user',
+                isPrivate: false,
+                createdOn: userProfile.created_on,
+                updatedOn: userProfile.created_on,
+                uuid: userProfile.uuid,
+                links: {
+                    html:
+                        userProfile.links?.html?.href ||
+                        `https://bitbucket.org/${userProfile.username}`,
+                    repositories: `${this.baseUrl}/repositories/${userProfile.username}`,
+                    avatar: userProfile.links?.avatar?.href
+                }
+            }
+
+            // Put personal workspace first, then all other workspaces
+            const finalWorkspaces = [personalWorkspace, ...allWorkspaces]
+
             return {
-                workspaces: allWorkspaces
+                workspaces: finalWorkspaces
             }
         } catch (error) {
             console.error('❌ Error fetching workspaces:', error)

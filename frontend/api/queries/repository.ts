@@ -9,24 +9,16 @@ interface UseRepositoryQueryParams {
     provider?: Provider;
     isEnabled?: boolean;
     orgName?: string;
-    installationId?: string;
 }
 
 export const useRepositoryQuery = ({
     provider = "github",
     isEnabled = true,
     orgName = "",
-    installationId = "",
 }: UseRepositoryQueryParams) => {
     const queryFnMap: Record<
         Provider,
-        ({
-            orgName,
-            installationId,
-        }: {
-            orgName: string;
-            installationId: string;
-        }) => Promise<ApiResponse<Repository[]>>
+        ({ orgName }: { orgName: string }) => Promise<ApiResponse<Repository[]>>
     > = {
         github: githubEndpoints.getRepos,
         bitbucket: bitbucketEndpoints.getRepos, // Uncomment and implement if needed
@@ -39,11 +31,10 @@ export const useRepositoryQuery = ({
     }
 
     return useQuery<Repository[], Error>({
-        queryKey: [provider, "repos"],
+        queryKey: ["repos"],
         queryFn: async () => {
             const response = await queryFn({
                 orgName,
-                installationId,
             });
             if (!response?.data) {
                 throw new Error("No data received from response");

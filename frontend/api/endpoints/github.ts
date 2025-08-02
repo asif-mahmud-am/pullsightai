@@ -8,14 +8,12 @@ export const githubEndpoints = {
         apiClient.get("/github/organizations").then((res) => res.data),
     getRepos: ({
         orgName,
-        installationId,
     }: {
-        orgName: string;
-        installationId: string;
+        orgName?: string;
     }): Promise<ApiResponse<Repository[]>> =>
         apiClient
             .get("/github/org-repos", {
-                params: { name: orgName, installationId },
+                params: {},
             })
             .then((res) => res.data),
     getPRs: (id: string) =>

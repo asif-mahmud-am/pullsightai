@@ -1,6 +1,6 @@
 export interface Repository {
     id: number
-    nodeId: string
+    // nodeId: string
     name: string
     fullName: string
     private: boolean
@@ -8,7 +8,8 @@ export interface Repository {
         name: string
         avatarUrl: string
     }
-    pushedAt: string
+    createdAt: string
+    updatedAt: string
     openIssues: number
 }
 

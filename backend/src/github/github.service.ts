@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, InternalServerErrorException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Octokit } from '@octokit/rest'
 import { HttpService } from 'src/common/http/http.service'
@@ -32,7 +32,15 @@ export class GithubService {
             .findOne({
                 _id: user.sub
             })
-            .populate('workspaces')
+            .populate({
+                path: 'workspaces',
+                match: {
+                    installationId: {
+                        $exists: true,
+                        $nin: [null, '', undefined]
+                    }
+                }
+            })
         return data?.workspaces || []
     }
 
@@ -91,17 +99,35 @@ export class GithubService {
         return this.octokit
     }
 
-    async addInstallOrg(installCallbackDto: InstallCallbackDto) {
+    async validateAndGetInstalledOrg(installationId: number) {
         const octokit = await this.githubEventService.appAuthenticationJWT()
         const { data } = await octokit.rest.apps.getInstallation({
-            installation_id: +installCallbackDto.installation_id
+            installation_id: installationId
         })
-        const org: any = data.account
+        return data.account
+    }
+
+    async addInstallOrg(installCallbackDto: InstallCallbackDto) {
+        const org: any = await this.validateAndGetInstalledOrg(
+            +installCallbackDto.installation_id
+        )
         let workspace = await this.dataService.workspaces.findOne({
             id: org.id.toString(),
             provider: 'github'
         })
-        if (!workspace) {
+        if (workspace) {
+            const updatedWorkspace =
+                await this.dataService.workspaces.findOneAndUpdate(
+                    { _id: workspace._id },
+                    {
+                        $set: {
+                            installationId: installCallbackDto.installation_id
+                        }
+                    },
+                    { new: true }
+                )
+            workspace = updatedWorkspace
+        } else {
             workspace = await this.dataService.workspaces.create({
                 id: org.id.toString(),
                 name: org.login,
@@ -115,6 +141,13 @@ export class GithubService {
                 installationId: installCallbackDto.installation_id
             })
         }
+
+        if (!workspace) {
+            throw new InternalServerErrorException(
+                'Failed to create or update workspace'
+            )
+        }
+
         await this.dataService.users.updateOne(
             { _id: installCallbackDto.state },
             {
@@ -190,6 +223,22 @@ export class GithubService {
                 'User or current workspace not found or installation ID missing'
             )
         }
+        try {
+            await this.validateAndGetInstalledOrg(
+                +userData.currentWorkspace['installationId']
+            )
+        } catch (error) {
+            await this.githubEventService.removeInstallationIdFromWorkspace(
+                +userData.currentWorkspace['installationId']
+            )
+            return {
+                invalidInstallationId: true,
+                message: 'Organization installation not found or invalid'
+            }
+        }
+        await this.validateAndGetInstalledOrg(
+            +userData.currentWorkspace['installationId']
+        )
 
         const octokit = await this.githubEventService.initOctokitApp(
             Number(userData.currentWorkspace['installationId'])
@@ -212,7 +261,6 @@ export class GithubService {
             (repo) =>
                 ({
                     id: repo.id,
-                    nodeId: repo.node_id,
                     name: repo.name,
                     fullName: repo.full_name,
                     private: repo.private,
@@ -220,7 +268,8 @@ export class GithubService {
                         name: repo.owner.login,
                         avatarUrl: repo.owner.avatar_url
                     },
-                    pushedAt: repo.pushed_at,
+                    createdAt: repo.created_at,
+                    updatedAt: repo.pushed_at,
                     openIssues: repo.open_issues_count
                 }) as Repository
         )
@@ -272,6 +321,8 @@ export class GithubService {
                         payload
                     )
                 break
+            case 'installation':
+                await this.githubEventService.handleGitHubInstallation(payload)
             default:
                 pullRequestFormattedData = false
         }

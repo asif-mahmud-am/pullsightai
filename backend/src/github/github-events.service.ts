@@ -5,6 +5,7 @@ import { Octokit } from '@octokit/rest'
 import * as fs from 'fs'
 import * as path from 'path'
 import { PRFile, StructuredPRData } from 'src/common/interfaces/pr.interface'
+import { DatabaseService } from 'src/database/database.service'
 import { PostReviewDto } from 'src/github/dto/post-review.dto'
 import { PostSummeryDto } from 'src/github/dto/post-summery.dto'
 
@@ -13,7 +14,10 @@ export class GithubEventService {
     private octokit: Octokit
     private privateKey: string
 
-    constructor(private readonly configService: ConfigService) {
+    constructor(
+        private readonly configService: ConfigService,
+        private readonly dataService: DatabaseService
+    ) {
         const pemPath = path.resolve(
             this.configService.get<string>('GITHUB_PRIVATE_KEY_PATH') || ''
         )
@@ -57,6 +61,23 @@ export class GithubEventService {
             )
         } else {
             return false
+        }
+    }
+
+    async removeInstallationIdFromWorkspace(installationId: number) {
+        return this.dataService.workspaces.updateOne(
+            { installationId },
+            { $set: { installationId: null } }
+        )
+    }
+
+    async handleGitHubInstallation(payload) {
+        const { action, installation } = payload
+        switch (action) {
+            case 'deleted':
+                return await this.removeInstallationIdFromWorkspace(
+                    installation.id
+                )
         }
     }
 

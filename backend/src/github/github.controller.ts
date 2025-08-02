@@ -52,7 +52,7 @@ export class GithubController {
     @Get('callback')
     async githubCallback(@Query() installCallbackDto: InstallCallbackDto) {
         const org = await this.githubService.addInstallOrg(installCallbackDto)
-        const redirect = `${this.configService.get<string>('CLIENT_URL')}/onboarding/step-3?name=${org}&installationId=${installCallbackDto.installation_id}`
+        const redirect = `${this.configService.get<string>('CLIENT_URL')}/onboarding/step-2`
         return { redirect }
     }
 
@@ -94,8 +94,9 @@ export class GithubController {
 
     @Post('events')
     async githubEvents(@Body() body: any, @Req() req) {
-        console.log('Received GitHub event:')
+        // console.log('Received GitHub event:============\n', body)
         const event = req.headers['x-github-event']
+        // console.log('Event type:', event)
         return {
             message: 'GitHub events processed successfully',
             result: await this.githubService.processGithubEvent(event, body)

@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { DatabaseService } from 'src/database/database.service'
+import { Workspace } from 'src/database/schemas/workspace.schema'
 import {
     BitbucketApiService,
     BitbucketPullRequest,
@@ -65,6 +66,9 @@ export class BitbucketService {
                 userData?.accessToken
             )
 
+            // Create organizations array similar to GitHub pattern
+            const organizations: Workspace[] = []
+
             // Iterate through each workspace and save if it doesn't exist
             for (const workspace of data.workspaces) {
                 // Check if workspace already exists
@@ -91,9 +95,22 @@ export class BitbucketService {
                         createdOn: workspace.createdOn
                     })
                 }
+
+                // Add to organizations array in the format expected by frontend
+                organizations.push({
+                    id: workspace.slug,
+                    name: workspace.name,
+                    nodeId: workspace.uuid || 'null',
+                    slug: workspace.slug,
+                    url: workspace.links.html,
+                    reposUrl: workspace.links.repositories,
+                    avatarUrl: workspace.links.avatar || null,
+                    type: workspace.type,
+                    provider: 'bitbucket'
+                })
             }
 
-            return data.workspaces
+            return organizations
         } catch (error) {
             console.error('Error in BitbucketService.getAllWorkspaces:', error)
             throw error

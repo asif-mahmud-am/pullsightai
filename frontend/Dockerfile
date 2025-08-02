@@ -20,7 +20,6 @@ COPY --from=builder /app/public ./public
 
 EXPOSE 3000
 
-#CMD ["node", "server.js"]
+CMD ["node", "server.js"]
 
-
-CMD ["yarn", "start"]
+# CMD ["yarn", "start"]

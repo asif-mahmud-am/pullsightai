@@ -8,6 +8,7 @@ import { redirect, useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
 import { useReviewPullRequestQuery } from "@/api/queries/pullRequest";
+import PRAnalysisContent from "./PrAnalysisContent";
 
 const Step5Page = () => {
     const router = useRouter();
@@ -55,7 +56,19 @@ const Step5Page = () => {
                         <h3 className="text-[var(--title-50)] font-medium mb-4 text-lg">
                             PR Summary
                         </h3>
-                        <div className="bg-dark-900 border border-dashed py-25 rounded-xl"></div>
+                        <div className="bg-dark-900 border border-dashed py-25 rounded-xl">
+                            {isLoading && (
+                                <p className="text-[var(--subtitle-400)] px-5">
+                                    Loading PR summary...
+                                </p>
+                            )}
+                            {error && (
+                                <p className="text-[var(--subtitle-400)] px-5">
+                                    Error loading PR summary. Please try again.
+                                </p>
+                            )}
+                            {data && <PRAnalysisContent data={data} />}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -67,7 +80,6 @@ const Step5Page = () => {
                 // isLoading={isPending}
                 onClick={onStepComplete}
                 onBackClick={() => redirect("/onboarding/step-3")}
-                onSkipClick={() => redirect("/dashboard")}
             />
         </>
     );

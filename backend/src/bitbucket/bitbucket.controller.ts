@@ -40,7 +40,7 @@ export class BitbucketController {
     @Get('organizations')
     async getAllWorkspaces(@Req() req) {
         return {
-            message: 'Workspaces fetched successfully',
+            message: 'Organizations fetched successfully',
             result: await this.bitbucketService.getAllWorkspaces(req.user)
         }
     }

@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { DatabaseService } from 'src/database/database.service'
+import { Workspace } from 'src/database/schemas/workspace.schema'
 import {
     GitlabApiService,
     GitlabPullRequest,
@@ -62,6 +63,9 @@ export class GitlabService {
                 userData?.accessToken
             )
 
+            // Create organizations array similar to GitHub pattern
+            const organizations: Workspace[] = []
+
             // Iterate through each group and save if it doesn't exist
             for (const group of data.groups) {
                 // Check if group already exists
@@ -89,9 +93,22 @@ export class GitlabService {
                         createdOn: group.createdAt
                     })
                 }
+
+                // Add to organizations array in the format expected by frontend
+                organizations.push({
+                    id: group.id,
+                    name: group.name,
+                    nodeId: group.id,
+                    slug: group.slug,
+                    url: group.webUrl,
+                    reposUrl: group.projectsUrl,
+                    avatarUrl: group.avatarUrl || null,
+                    type: group.type,
+                    provider: 'gitlab'
+                })
             }
 
-            return data.groups
+            return organizations
         } catch (error) {
             console.error('Error in GitlabService.getAllGroups:', error)
             throw error
@@ -128,13 +145,47 @@ export class GitlabService {
         }
     }
 
+    async getUserRepositories(
+        userId: string,
+        user: any
+    ): Promise<GitlabRepositoriesResponse | undefined> {
+        const userData = await this.dataService.users.findOne(
+            { _id: user.sub },
+            'accessToken'
+        )
+        if (!userData?.accessToken) {
+            throw new BadRequestException('Access token is required')
+        }
+
+        if (!userId) {
+            throw new BadRequestException('User ID is required')
+        }
+
+        try {
+            return await this.gitlabApiService.getUserRepositories(
+                userData.accessToken,
+                userId
+            )
+        } catch (error) {
+            console.error(
+                `Error in GitlabService.getUserRepositories for ${userId}:`,
+                error
+            )
+            throw error
+        }
+    }
+
     async addWebhook(
-        accessToken: string,
+        user: any,
         projectId: string,
         webhookUrl?: string,
         events?: string[]
     ): Promise<any> {
-        if (!accessToken) {
+        const userData = await this.dataService.users.findOne(
+            { _id: user.sub },
+            'accessToken'
+        )
+        if (!userData?.accessToken) {
             throw new BadRequestException('Access token is required')
         }
 
@@ -145,7 +196,7 @@ export class GitlabService {
         // Default webhook URL if not provided
         const finalWebhookUrl =
             webhookUrl ||
-            `${this.configService.get('BASE_URL') || 'http://localhost:3001'}/api/webhooks/gitlab`
+            `${this.configService.get('BASE_URL') || 'http://localhost:3001'}/v1/gitlab/callback`
 
         // Default events if not provided
         const finalEvents = events || [
@@ -162,18 +213,19 @@ export class GitlabService {
         ]
 
         try {
-            return await this.gitlabApiService.addWebhook(
-                accessToken,
-                projectId,
-                finalWebhookUrl,
-                finalEvents
-            )
+            if (userData?.accessToken) {
+                return await this.gitlabApiService.addWebhook(
+                    userData?.accessToken,
+                    projectId,
+                    finalWebhookUrl,
+                    finalEvents
+                )
+            }
         } catch (error) {
             console.error(
                 `Error in GitlabService.addWebhook for project ${projectId}:`,
                 error
             )
-            throw error
         }
     }
 

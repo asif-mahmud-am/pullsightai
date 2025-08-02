@@ -40,20 +40,38 @@ export class GitlabController {
     @Get('organizations')
     async getAllGroups(@Req() req) {
         return {
-            message: 'Groups fetched successfully',
+            message: 'Organizations fetched successfully',
             result: await this.gitlabService.getAllGroups(req.user)
         }
     }
 
     @UseGuards(AuthGuard('jwt-cookie'))
-    @Get('repositories/:groupId')
-    async getGroupRepositories(@Param('groupId') groupId: string, @Req() req) {
-        return {
-            message: 'Group repositories fetched successfully',
-            result: await this.gitlabService.getGroupRepositories(
-                groupId,
-                req.user
-            )
+    @Get('repositories/:orgId')
+    async getOrganizationRepositories(
+        @Param('orgId') orgId: string,
+        @Req() req
+    ) {
+        // Check if the orgId is numeric (group) or if it matches a user
+        const isNumeric = /^\d+$/.test(orgId)
+
+        if (isNumeric) {
+            // It's a group ID
+            return {
+                message: 'Group repositories fetched successfully',
+                result: await this.gitlabService.getGroupRepositories(
+                    orgId,
+                    req.user
+                )
+            }
+        } else {
+            // It's a user ID/username
+            return {
+                message: 'User repositories fetched successfully',
+                result: await this.gitlabService.getUserRepositories(
+                    orgId,
+                    req.user
+                )
+            }
         }
     }
 
@@ -76,14 +94,15 @@ export class GitlabController {
         }
     }
 
+    @UseGuards(AuthGuard('jwt-cookie'))
     @Post('add-webhook')
-    async addWebhook(@Body() addWebhookDto: AddWebhookDto) {
+    async addWebhook(@Body() addWebhookDto: AddWebhookDto, @Req() req) {
         return {
             message: 'Webhook added successfully',
             result: await this.gitlabService.addWebhook(
-                addWebhookDto.access_token,
+                req.user,
                 addWebhookDto.project_id,
-                addWebhookDto.webhook_url,
+                addWebhookDto.webhookUrl,
                 addWebhookDto.events
             )
         }

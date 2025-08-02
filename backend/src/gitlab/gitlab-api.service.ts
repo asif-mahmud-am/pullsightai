@@ -203,6 +203,9 @@ export class GitlabApiService {
      */
     async getAllGroups(accessToken: string): Promise<any> {
         try {
+            // First get user profile to add as the personal workspace
+            const userProfile = await this.getUserProfile(accessToken)
+
             const groups = await this.makeApiCall<any[]>(
                 `/groups?per_page=100&order_by=name&sort=asc`,
                 accessToken
@@ -223,8 +226,27 @@ export class GitlabApiService {
                 type: 'group'
             }))
 
+            // Add user profile as the first organization (personal workspace)
+            const personalWorkspace = {
+                id: userProfile.id.toString(),
+                name: userProfile.name || userProfile.username,
+                slug: userProfile.username,
+                fullName: userProfile.name || userProfile.username,
+                description: userProfile.bio || '',
+                visibility: 'public',
+                avatarUrl: userProfile.avatar_url || null,
+                webUrl: userProfile.web_url,
+                projectsUrl: `${this.baseUrl}/users/${userProfile.id}/projects`,
+                createdAt: userProfile.created_at,
+                isPrivate: false,
+                type: 'user'
+            }
+
+            // Put personal workspace first, then all groups
+            const finalGroups = [personalWorkspace, ...transformedGroups]
+
             return {
-                groups: transformedGroups
+                groups: finalGroups
             }
         } catch (error) {
             console.error('Error in GitlabApiService.getAllGroups:', error)
@@ -279,6 +301,52 @@ export class GitlabApiService {
     }
 
     /**
+     * Get repositories for a specific user (personal repositories)
+     */
+    async getUserRepositories(
+        accessToken: string,
+        userId: string
+    ): Promise<GitlabRepositoriesResponse> {
+        try {
+            const projects = await this.makeApiCall<any[]>(
+                `/users/${encodeURIComponent(userId)}/projects?per_page=100&order_by=updated_at&sort=desc`,
+                accessToken
+            )
+
+            const repositories: GitlabRepository[] = projects.map(
+                (project: any) => ({
+                    id: project.id.toString(),
+                    name: project.name,
+                    fullName: project.path_with_namespace,
+                    createdOn: project.created_at,
+                    updatedOn: project.last_activity_at || project.updated_at,
+                    author: {
+                        username:
+                            project.owner?.username ||
+                            project.namespace?.name ||
+                            'unknown',
+                        displayName:
+                            project.owner?.name ||
+                            project.namespace?.full_name ||
+                            'Unknown',
+                        type: project.namespace?.kind || 'user'
+                    }
+                })
+            )
+
+            return {
+                repositories
+            }
+        } catch (error) {
+            console.error(
+                `Error in GitlabApiService.getUserRepositories for ${userId}:`,
+                error
+            )
+            throw error
+        }
+    }
+
+    /**
      * Add webhook to a repository
      */
     async addWebhook(
@@ -291,24 +359,43 @@ export class GitlabApiService {
             // Map events to GitLab webhook events
             const gitlabEvents = {
                 push_events:
-                    events.includes('push') || events.includes('repo:push'),
+                    events.includes('push_events') ||
+                    events.includes('push') ||
+                    events.includes('repo:push'),
                 merge_requests_events:
+                    events.includes('merge_requests_events') ||
                     events.includes('merge_requests') ||
                     events.includes('pullrequest:created') ||
                     events.includes('pullrequest:updated'),
                 issues_events:
+                    events.includes('issues_events') ||
                     events.includes('issues') ||
                     events.includes('issue:created') ||
                     events.includes('issue:updated'),
                 note_events:
+                    events.includes('note_events') ||
                     events.includes('note') ||
                     events.includes('issue:comment_created'),
-                tag_push_events: events.includes('tag_push'),
-                wiki_page_events: events.includes('wiki_page'),
-                deployment_events: events.includes('deployment'),
-                job_events: events.includes('job'),
-                pipeline_events: events.includes('pipeline'),
-                release_events: events.includes('release')
+                tag_push_events:
+                    events.includes('tag_push_events') ||
+                    events.includes('tag_push'),
+                wiki_page_events:
+                    events.includes('wiki_page_events') ||
+                    events.includes('wiki_page'),
+                deployment_events:
+                    events.includes('deployment_events') ||
+                    events.includes('deployment'),
+                job_events:
+                    events.includes('job_events') || events.includes('job'),
+                pipeline_events:
+                    events.includes('pipeline_events') ||
+                    events.includes('pipeline'),
+                release_events:
+                    events.includes('release_events') ||
+                    events.includes('release'),
+                confidential_issues_events:
+                    events.includes('confidential_issues_events') ||
+                    events.includes('confidential_issues')
             }
 
             const webhookData = {
@@ -316,6 +403,10 @@ export class GitlabApiService {
                 ...gitlabEvents,
                 enable_ssl_verification: true
             }
+            console.log(
+                `Adding webhook to ${projectId} with data:`,
+                webhookData
+            )
 
             return await this.makeApiCall(
                 `/projects/${encodeURIComponent(projectId)}/hooks`,

@@ -247,12 +247,17 @@ export class GithubService {
         let data
         if (userData.currentWorkspace['type'] === 'User') {
             const repoData =
-                await octokit.rest.apps.listReposAccessibleToInstallation()
+                await octokit.rest.apps.listReposAccessibleToInstallation({
+                    sort: 'created',
+                    direction: 'desc'
+                })
             data = repoData.data.repositories
         } else {
             data = await octokit.rest.repos.listForOrg({
                 org: userData.currentWorkspace['name'],
-                type: 'all'
+                type: 'all',
+                sort: 'created',
+                direction: 'desc'
             })
             data = data.data
         }

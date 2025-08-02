@@ -34,6 +34,17 @@ export class GithubEventService {
         return new Octokit({ auth: installationAuth.token })
     }
 
+    async appAuthenticationJWT() {
+        const auth = createAppAuth({
+            appId: Number(this.configService.get<string>('GITHUB_APP_ID')),
+            privateKey: this.privateKey,
+            clientId: this.configService.get<string>('GITHUB_CLIENT_ID'),
+            clientSecret: this.configService.get<string>('GITHUB_CLIENT_SECRET')
+        })
+        const { token } = await auth({ type: 'app' })
+        return new Octokit({ auth: token })
+    }
+
     // GitHub Pull Request Events
     async handleGitHubPullRequest(payload) {
         const { action, pull_request, repository, installation } = payload

@@ -29,3 +29,13 @@ export class PRReviewDto {
     @IsNotEmpty()
     prNumber: string
 }
+
+export class InstallCallbackDto {
+    @IsString()
+    @IsNotEmpty()
+    installation_id: string
+
+    @IsString()
+    @IsNotEmpty()
+    state: string
+}

@@ -228,9 +228,6 @@ export class GithubService {
                 +userData.currentWorkspace['installationId']
             )
         } catch (error) {
-            await this.githubEventService.removeInstallationIdFromWorkspace(
-                +userData.currentWorkspace['installationId']
-            )
             return {
                 invalidInstallationId: true,
                 message: 'Organization installation not found or invalid'

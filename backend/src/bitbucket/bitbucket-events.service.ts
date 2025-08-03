@@ -59,18 +59,18 @@ export class BitbucketEventsService {
             )
 
             prFiles.push({
-                pr_file_name: file.new?.path || file.old?.path,
-                pr_file_status: file.status,
-                pr_file_additions: file.lines_added || 0,
-                pr_file_deletions: file.lines_removed || 0,
-                pr_file_changes:
+                prFileName: file.new?.path || file.old?.path,
+                prFileStatus: file.status,
+                prFileAdditions: file.lines_added || 0,
+                prFileDeletions: file.lines_removed || 0,
+                prFileChanges:
                     (file.lines_added || 0) + (file.lines_removed || 0),
-                pr_file_content_before:
+                prFileContentBefore:
                     contentBefore || 'File not found in destination branch',
-                pr_file_content_after:
+                prFileContentAfter:
                     contentAfter || 'File not found in source branch',
-                pr_file_diff: 'Diff not available in webhook', // Bitbucket doesn't provide diff in webhook
-                pr_file_blob_url:
+                prFileDiff: 'Diff not available in webhook', // Bitbucket doesn't provide diff in webhook
+                prFileBlobUrl:
                     file.new?.links?.self?.href ||
                     file.old?.links?.self?.href ||
                     ''
@@ -79,9 +79,9 @@ export class BitbucketEventsService {
 
         // Create the comprehensive structure matching GitHub format
         const comprehensiveAnalysis: StructuredPRData = {
-            pull_request: {
-                pr_id: pullRequest.id.toString(),
-                pr_user:
+            pullRequest: {
+                prId: pullRequest.id.toString(),
+                prUser:
                     pullRequest.author?.username ||
                     payload.actor?.username ||
                     'unknown',
@@ -89,20 +89,19 @@ export class BitbucketEventsService {
                 repo: repository.name,
                 prNumber: pullRequest.id.toString(),
                 installationId: 'bitbucket_integration', // Bitbucket doesn't have installation concept
-                pr_repo_name: repository.full_name,
-                pr_number: pullRequest.id,
-                pr_title: pullRequest.title,
-                pr_body: pullRequest.description || '',
-                pr_state: pullRequest.state,
-                pr_created_at: pullRequest.created_on,
-                pr_updated_at: pullRequest.updated_on,
-                pr_head_branch: pullRequest.source?.branch?.name || 'unknown',
-                pr_base_branch:
+                prRepoName: repository.full_name,
+                prTitle: pullRequest.title,
+                prBody: pullRequest.description || '',
+                prState: pullRequest.state,
+                prCreatedAt: pullRequest.created_on,
+                prUpdatedAt: pullRequest.updated_on,
+                prHeadBranch: pullRequest.source?.branch?.name || 'unknown',
+                prBaseBranch:
                     pullRequest.destination?.branch?.name || 'unknown',
-                pr_head_sha: pullRequest.source?.commit?.hash || 'unknown',
-                pr_base_sha: pullRequest.destination?.commit?.hash || 'unknown',
-                pr_files_changed: files.length,
-                pr_files: prFiles
+                prHeadSha: pullRequest.source?.commit?.hash || 'unknown',
+                prBaseSha: pullRequest.destination?.commit?.hash || 'unknown',
+                prFilesChanged: files.length,
+                prFiles: prFiles
             }
         }
 

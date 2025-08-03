@@ -55,29 +55,29 @@ export class GitlabEventsService {
             )
 
             prFiles.push({
-                pr_file_name: file.new_path,
-                pr_file_status: file.new_file
+                prFileName: file.new_path,
+                prFileStatus: file.new_file
                     ? 'added'
                     : file.deleted_file
                       ? 'removed'
                       : 'modified',
-                pr_file_additions: 0, // GitLab doesn't provide this in webhook
-                pr_file_deletions: 0, // GitLab doesn't provide this in webhook
-                pr_file_changes: 0, // GitLab doesn't provide this in webhook
-                pr_file_content_before:
+                prFileAdditions: 0, // GitLab doesn't provide this in webhook
+                prFileDeletions: 0, // GitLab doesn't provide this in webhook
+                prFileChanges: 0, // GitLab doesn't provide this in webhook
+                prFileContentBefore:
                     contentBefore || 'File not found in target branch',
-                pr_file_content_after:
+                prFileContentAfter:
                     contentAfter || 'File not found in source branch',
-                pr_file_diff: file.diff || 'No diff available',
-                pr_file_blob_url: `${project.web_url}/-/blob/${mergeRequest.source_branch}/${file.new_path}`
+                prFileDiff: file.diff || 'No diff available',
+                prFileBlobUrl: `${project.web_url}/-/blob/${mergeRequest.source_branch}/${file.new_path}`
             })
         }
 
         // Create the comprehensive structure matching GitHub format
         const comprehensiveAnalysis: StructuredPRData = {
-            pull_request: {
-                pr_id: mergeRequest.id.toString(),
-                pr_user:
+            pullRequest: {
+                prId: mergeRequest.id.toString(),
+                prUser:
                     mergeRequest.author?.username ||
                     payload.user?.username ||
                     'unknown',
@@ -85,19 +85,18 @@ export class GitlabEventsService {
                 repo: project.name,
                 prNumber: mergeRequest.iid.toString(),
                 installationId: 'gitlab_integration', // GitLab doesn't have installation concept
-                pr_repo_name: project.path_with_namespace,
-                pr_number: mergeRequest.iid,
-                pr_title: mergeRequest.title,
-                pr_body: mergeRequest.description || '',
-                pr_state: mergeRequest.state,
-                pr_created_at: mergeRequest.created_at,
-                pr_updated_at: mergeRequest.updated_at,
-                pr_head_branch: mergeRequest.source_branch,
-                pr_base_branch: mergeRequest.target_branch,
-                pr_head_sha: mergeRequest.last_commit?.id || 'unknown',
-                pr_base_sha: 'unknown', // Not provided in webhook
-                pr_files_changed: files.length,
-                pr_files: prFiles
+                prRepoName: project.path_with_namespace,
+                prTitle: mergeRequest.title,
+                prBody: mergeRequest.description || '',
+                prState: mergeRequest.state,
+                prCreatedAt: mergeRequest.created_at,
+                prUpdatedAt: mergeRequest.updated_at,
+                prHeadBranch: mergeRequest.source_branch,
+                prBaseBranch: mergeRequest.target_branch,
+                prHeadSha: mergeRequest.last_commit?.id || 'unknown',
+                prBaseSha: 'unknown', // Not provided in webhook
+                prFilesChanged: files.length,
+                prFiles: prFiles
             }
         }
 

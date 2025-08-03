@@ -5,6 +5,7 @@ import {
     HttpException,
     HttpStatus
 } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { HttpAdapterHost } from '@nestjs/core'
 import { isArray } from 'class-validator'
 import { MongoServerError } from 'mongodb'
@@ -13,14 +14,19 @@ import { ERROR } from 'src/common/utils/response-message.util'
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
-    constructor(private readonly httpAdapterHost: HttpAdapterHost) {}
+    constructor(
+        private readonly httpAdapterHost: HttpAdapterHost,
+        private readonly configService: ConfigService
+    ) {}
 
     catch(exception: any, host: ArgumentsHost): void {
         const { httpAdapter } = this.httpAdapterHost
         const ctx = host.switchToHttp()
         let responseBody: { [key: string]: any } = {}
+        const path = httpAdapter.getRequestUrl(ctx.getRequest())
+        const response = ctx.getResponse()
 
-        console.log('exception========', exception)
+        console.log('custom-exception========', exception)
 
         if (exception instanceof mongoose.Error.ValidationError) {
             responseBody = {
@@ -53,6 +59,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
                 message: ERROR
             }
         }
+
+        // Redirect to client URL for auth callback
+        const pattern = /^\/v1\/auth\/[^\/]+\/callback/
+        if (pattern.test(path)) {
+            return response.redirect(
+                this.configService.get('CLIENT_URL') as string
+            )
+        }
+
         responseBody = {
             success: false,
             ...responseBody,

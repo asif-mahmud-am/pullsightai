@@ -56,10 +56,18 @@ jobs:
           NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
           EOF
 
-      - name: create pem file
+      - name: Create PEM file
         run: |
           echo "${{ secrets.GIT_PRIVATE_KEY }}" > backend/app.private-key.pem
           chmod 600 backend/app.private-key.pem
+
+      - name: Deploy with Docker Compose
+        run: |
+          docker compose up --build
+
+      - name: Clean up Docker resources
+        run: |
+          docker system prune -a --volumes -f
 
       - name: Set environment variables for Docker Compose
         run: |
@@ -95,136 +103,6 @@ jobs:
           echo "NEXT_TELEMETRY_DISABLED=${{ vars.NEXT_TELEMETRY_DISABLED }}" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}" >> $GITHUB_ENV
 
-      - name: Stop existing containers
-        run: |
-          docker compose down || true
-
-      - name: Build new images
-        run: |
-          docker compose build
-
-      - name: Start new services with temporary names
-        run: |
-          # Create temporary docker-compose file for blue-green deployment
-          cp docker-compose.yml docker-compose-new.yml
-          
-          # Update container names in the temporary file
-          sed -i 's/pullsightai-backend/pullsightai-backend-new/g' docker-compose-new.yml
-          sed -i 's/pullsightai-frontend/pullsightai-frontend-new/g' docker-compose-new.yml
-          sed -i 's/pullsightai-ai-agent/pullsightai-ai-agent-new/g' docker-compose-new.yml
-          
-          # Update port mappings to avoid conflicts
-          sed -i 's/"3001:3001"/"3011:3001"/g' docker-compose-new.yml
-          sed -i 's/"3000:3000"/"3010:3000"/g' docker-compose-new.yml
-          sed -i 's/"8030:8030"/"8040:8030"/g' docker-compose-new.yml
-          
-          # Start new services
-          docker compose -f docker-compose-new.yml up -d
-
-      - name: Health check new services
-        run: |
-          echo "Waiting for services to start..."
-          sleep 30
-          
-          # Health check function
-          check_service() {
-            local service_name=$1
-            local port=$2
-            local endpoint=$3
-            local max_attempts=30
-            local attempt=1
-            
-            echo "Checking $service_name health..."
-            while [ $attempt -le $max_attempts ]; do
-              if curl -f -s "http://localhost:$port$endpoint" > /dev/null 2>&1; then
-                echo "✅ $service_name is healthy"
-                return 0
-              fi
-              echo "⏳ Attempt $attempt/$max_attempts - $service_name not ready yet..."
-              sleep 10
-              attempt=$((attempt + 1))
-            done
-            echo "❌ $service_name health check failed"
-            return 1
-          }
-          
-          # Check all services
-          check_service "Backend" "3011" "/"
-          backend_status=$?
-          
-          check_service "Frontend" "3010" "/"
-          frontend_status=$?
-          
-          check_service "AI-Agent" "8040" "/health"
-          ai_agent_status=$?
-          
-          # If any service failed, stop new containers and exit
-          if [ $backend_status -ne 0 ] || [ $frontend_status -ne 0 ] || [ $ai_agent_status -ne 0 ]; then
-            echo "❌ Health checks failed. Rolling back..."
-            docker compose -f docker-compose-new.yml down
-            rm docker-compose-new.yml
-            exit 1
-          fi
-          
-          echo "✅ All services are healthy!"
-
-      - name: Switch traffic to new services (Blue-Green Swap)
-        run: |
-          echo "🔄 Switching traffic to new services..."
-          
-          # Stop old services
-          docker compose down || true
-          
-          # Update port mappings back to original ports
-          sed -i 's/"3011:3001"/"3001:3001"/g' docker-compose-new.yml
-          sed -i 's/"3010:3000"/"3000:3000"/g' docker-compose-new.yml
-          sed -i 's/"8040:8030"/"8030:8030"/g' docker-compose-new.yml
-          
-          # Update container names back to original
-          sed -i 's/pullsightai-backend-new/pullsightai-backend/g' docker-compose-new.yml
-          sed -i 's/pullsightai-frontend-new/pullsightai-frontend/g' docker-compose-new.yml
-          sed -i 's/pullsightai-ai-agent-new/pullsightai-ai-agent/g' docker-compose-new.yml
-          
-          # Stop new services temporarily  
-          docker compose -f docker-compose-new.yml down
-          
-          # Start with correct ports and names
-          docker compose -f docker-compose-new.yml up -d
-          
-          # Clean up temporary file
-          rm docker-compose-new.yml
-          
-          echo "✅ Traffic switched successfully!"
-
-      - name: Final health check
-        run: |
-          sleep 15
-          
-          # Final verification that all services are running on correct ports
-          echo "🔍 Final health check on production ports..."
-          
-          if curl -f -s "http://localhost:3001/" > /dev/null 2>&1; then
-            echo "✅ Backend is live on port 3001"
-          else
-            echo "❌ Backend health check failed on port 3001"
-            exit 1
-          fi
-          
-          if curl -f -s "http://localhost:3000/" > /dev/null 2>&1; then
-            echo "✅ Frontend is live on port 3000"
-          else
-            echo "❌ Frontend health check failed on port 3000"
-            exit 1
-          fi
-          
-          if curl -f -s "http://localhost:8030/health" > /dev/null 2>&1; then
-            echo "✅ AI Agent is live on port 8030"
-          else
-            echo "❌ AI Agent health check failed on port 8030"
-            exit 1
-          fi
-          
-          echo "🎉 Zero-downtime deployment completed successfully!"
 
       - name: Show service status and logs
         run: |

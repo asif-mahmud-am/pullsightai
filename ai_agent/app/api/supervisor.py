@@ -23,7 +23,7 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
     print("Input PR", pr)
     
     # Parse the new PR data structure
-    pr_number = pr["pr_number"]
+    prNumber = pr["prNumber"]
     pr_title = pr["pr_title"]
     pr_description = pr.get("pr_body", "")
     author_name = pr.get("pr_user", "")
@@ -50,6 +50,7 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
         "pr_title": pr_title,
         "pr_description": pr_description,
         "author_name": author_name,
+        "prNumber": prNumber,
         "changed_files": ", ".join(changed_files),
         "repo_structure_summary": repo_structure_summary,
         "pr_diff": pr_diff
@@ -60,7 +61,7 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
         summary_payload = {
             "owner": pr.get("owner", ""),
             "repo": pr.get("repo", ""),
-            "prNumber": pr_number,
+            "prNumber": prNumber,
             "body": summary.pr_summary,
             "installationId": int(pr.get("installationId", "0"))
         }
@@ -76,9 +77,11 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
                     "pr_title": pr_title,
                     "pr_description": pr_description,
                     "author_name": author_name,
+                    "prNumber": prNumber,
                     "changed_files": file_info["pr_file_name"],
                     "repo_structure_summary": repo_structure_summary,
-                    "pr_diff": file_info["pr_file_diff"]
+                    "pr_diff": file_info["pr_file_diff"],
+                    "pr_file_content_before": file_info.get("pr_file_content_before", "")
                 }
                 review = await generate_review_response(review_variables, llm_service)
                 
@@ -92,9 +95,11 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
                     "pr_title": pr_title,
                     "pr_description": pr_description,
                     "author_name": author_name,
+                    "prNumber": prNumber,
                     "changed_files": file_info[f"{file_key}_name"],
                     "repo_structure_summary": repo_structure_summary,
-                    "pr_diff": file_info[f"{file_key}_diff"]
+                    "pr_diff": file_info[f"{file_key}_diff"],
+                    "pr_file_content_before": file_info.get("pr_file_content_before", "")
                 }
                 review = await generate_review_response(review_variables, llm_service)
                 
@@ -106,7 +111,7 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
         review_payload = {
             "owner": pr.get("owner", ""),
             "repo": pr.get("repo", ""),
-            "prNumber": pr_number,
+            "prNumber": prNumber,
             "comments": all_comments,
             "installationId": int(pr.get("installationId", "0"))
         }
@@ -119,7 +124,7 @@ async def agent_summary_and_review(payload: PRPayloadV2):
     llm_service = ClaudeService()
     pr = payload.pull_request
 
-    pr_number = pr["pr_number"]
+    prNumber = pr["prNumber"]
     pr_title = pr["pr_title"]
     pr_description = pr.get("pr_body", "")
     author_name = pr.get("pr_user", "")
@@ -181,7 +186,7 @@ async def agent_summary_and_review(payload: PRPayloadV2):
     response_payload = {
         "owner": pr.get("owner", ""),
         "repo": pr.get("repo", ""),
-        "prNumber": pr_number,
+        "prNumber": prNumber,
         "installationId": int(pr.get("installationId", "0")),
         "analysis": {
             "summary": summary.pr_summary,

@@ -14,5 +14,6 @@ def fill_prompt(template: str, variables: dict) -> str:
 async def generate_review_response(variables: dict, llm_service):
     prompt_yaml = load_prompt()
     prompt = fill_prompt(prompt_yaml['review'], variables)
+    print("Generated Review Prompt:", prompt)
     review = await llm_service.generate_code_review(prompt)
-    return PRReviewResponse(pr_number=variables.get('pr_number', 0), pr_line=1, pr_review_and_suggestion=review) 
+    return PRReviewResponse(prNumber=variables.get('prNumber', 0), pr_line=1, pr_review_and_suggestion=review) 

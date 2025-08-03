@@ -32,6 +32,9 @@ export class User {
     refreshToken?: string
 
     @Prop({ required: false })
+    tokenExpiresAt?: Date
+
+    @Prop({ required: false })
     raw?: string
 
     @Prop({ required: false, default: 1 })

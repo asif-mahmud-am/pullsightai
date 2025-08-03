@@ -535,4 +535,39 @@ export class GitlabApiService {
             throw error
         }
     }
+
+    async refreshAccessToken(refreshToken: string): Promise<{
+        access_token: string;
+        refresh_token?: string;
+        expires_in: number;
+    } | null> {
+        try {
+            const gitlabTokenUrl = this.configService.get('GITLAB_TOKEN_URL') || 'https://gitlab.com/oauth/token'
+            const clientId = this.configService.get('GITLAB_CLIENT_ID')
+            const clientSecret = this.configService.get('GITLAB_CLIENT_SECRET')
+
+            if (!clientId || !clientSecret) {
+                console.error('GitLab client credentials not configured')
+                return null
+            }
+            
+            const response = await firstValueFrom(
+                this.httpService.post(gitlabTokenUrl, {
+                    grant_type: 'refresh_token',
+                    refresh_token: refreshToken,
+                    client_id: clientId,
+                    client_secret: clientSecret
+                }, {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+            )
+
+            return response.data
+        } catch (error) {
+            console.error('Error refreshing GitLab access token:', error)
+            return null
+        }
+    }
 }

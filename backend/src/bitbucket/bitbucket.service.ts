@@ -1,5 +1,8 @@
+import { HttpService } from '@nestjs/axios'
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { BitbucketEventsService } from 'src/bitbucket/bitbucket-events.service'
+import { StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { DatabaseService } from 'src/database/database.service'
 import { Workspace } from 'src/database/schemas/workspace.schema'
 import {
@@ -13,7 +16,9 @@ export class BitbucketService {
     constructor(
         private readonly dataService: DatabaseService,
         private readonly configService: ConfigService,
-        private readonly bitbucketApiService: BitbucketApiService
+        private readonly bitbucketApiService: BitbucketApiService,
+        private readonly httpService: HttpService,
+        private readonly bitbucketEventsService: BitbucketEventsService
     ) {}
 
     async getAllRepositories(user: any) {
@@ -54,7 +59,7 @@ export class BitbucketService {
     async getAllWorkspaces(user: any) {
         const userData = await this.dataService.users.findOne(
             { _id: user.sub },
-            'accessToken'
+            'accessToken _id workspaces currentWorkspace'
         )
 
         if (!userData?.accessToken) {
@@ -65,9 +70,10 @@ export class BitbucketService {
             const data = await this.bitbucketApiService.getAllWorkspaces(
                 userData?.accessToken
             )
-
+            console.log('data', data)
             // Create organizations array similar to GitHub pattern
             const organizations: Workspace[] = []
+            let isFirstWorkspace = true
 
             // Iterate through each workspace and save if it doesn't exist
             for (const workspace of data.workspaces) {
@@ -79,21 +85,64 @@ export class BitbucketService {
                         ownerId: user.sub
                     })
 
+                let workspaceToAdd: any = null
+
                 if (!existingWorkspace) {
-                    await this.dataService.workspaces.create({
-                        id: workspace.slug, // Using slug as ID since Bitbucket doesn't have numeric ID
-                        name: workspace.name,
-                        nodeId: workspace.uuid || 'null', // Bitbucket UUID might be null
-                        slug: workspace.slug,
-                        url: workspace.links.html,
-                        reposUrl: workspace.links.repositories,
-                        avatarUrl: workspace.links.avatar || 'null', // Bitbucket might not have avatar
-                        type: workspace.type,
-                        provider: 'bitbucket',
-                        ownerId: user.sub,
-                        isPrivate: workspace.isPrivate,
-                        createdOn: workspace.createdOn
-                    })
+                    // Create new workspace
+                    const newWorkspace =
+                        await this.dataService.workspaces.create({
+                            id: workspace.slug, // Using slug as ID since Bitbucket doesn't have numeric ID
+                            name: workspace.name,
+                            nodeId: workspace.uuid || 'null', // Bitbucket UUID might be null
+                            slug: workspace.slug,
+                            url: workspace.links.html,
+                            reposUrl: workspace.links.repositories,
+                            avatarUrl: workspace.links.avatar || 'null', // Bitbucket might not have avatar
+                            type: workspace.type,
+                            provider: 'bitbucket',
+                            ownerId: user.sub,
+                            isPrivate: workspace.isPrivate,
+                            createdOn: workspace.createdOn
+                        })
+                    workspaceToAdd = newWorkspace
+                } else {
+                    workspaceToAdd = existingWorkspace
+                }
+
+                // Set currentWorkspace to the first workspace if not already set
+                if (isFirstWorkspace && !userData.currentWorkspace) {
+                    await this.dataService.users.updateOne(
+                        { _id: user.sub },
+                        {
+                            $set: {
+                                currentWorkspace: workspaceToAdd._id
+                            }
+                        }
+                    )
+                }
+
+                // Add workspace to user's workspaces if not already included
+                if (userData && userData.workspaces) {
+                    if (!userData.workspaces.includes(workspaceToAdd._id)) {
+                        await this.dataService.users.updateOne(
+                            { _id: user.sub },
+                            {
+                                $addToSet: {
+                                    workspaces: workspaceToAdd._id
+                                }
+                            }
+                        )
+                    }
+                } else {
+                    // If user has no workspaces array, initialize it
+                    await this.dataService.users.updateOne(
+                        { _id: user.sub },
+                        {
+                            $addToSet: {
+                                workspaces: workspaceToAdd._id
+                            }
+                        }
+                    )
                 }
 
                 // Add to organizations array in the format expected by frontend
@@ -108,6 +157,9 @@ export class BitbucketService {
                     type: workspace.type,
                     provider: 'bitbucket'
                 })
+
+                // Mark that we've processed the first workspace
+                isFirstWorkspace = false
             }
 
             return organizations
@@ -256,5 +308,27 @@ export class BitbucketService {
                 error
             )
         }
+    }
+
+    async processBitbucketEvent(event: any, payload: any) {
+        let pullRequestFormattedData: StructuredPRData | boolean
+        switch (event) {
+            case 'pullrequest:created':
+            case 'pullrequest:updated':
+                pullRequestFormattedData =
+                    await this.bitbucketEventsService.handleBitbucketPullRequest(
+                        payload
+                    )
+                break
+            default:
+                pullRequestFormattedData = false
+        }
+        if (pullRequestFormattedData) {
+            await this.httpService.post(
+                this.configService.get('AI_AGENT_PR_POST_URL') as string,
+                pullRequestFormattedData
+            )
+        }
+        return pullRequestFormattedData
     }
 }

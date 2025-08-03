@@ -150,42 +150,41 @@ export class GithubEventService {
             )
 
             prFiles.push({
-                pr_file_name: file.filename,
-                pr_file_status: file.status,
-                pr_file_additions: file.additions,
-                pr_file_deletions: file.deletions,
-                pr_file_changes: file.changes,
-                pr_file_content_before:
+                prFileName: file.filename,
+                prFileStatus: file.status,
+                prFileAdditions: file.additions,
+                prFileDeletions: file.deletions,
+                prFileChanges: file.changes,
+                prFileContentBefore:
                     contentBefore || 'File not found in base branch',
-                pr_file_content_after:
+                prFileContentAfter:
                     contentAfter || 'File not found in head branch',
-                pr_file_diff: file.patch || 'No diff available',
-                pr_file_blob_url: file.blob_url
+                prFileDiff: file.patch || 'No diff available',
+                prFileBlobUrl: file.blob_url
             })
         }
 
         // Create the comprehensive structure
         const comprehensiveAnalysis: StructuredPRData = {
-            pull_request: {
-                pr_id: prData.id.toString(),
-                pr_user: prData.user.login,
+            pullRequest: {
+                prId: prData.id.toString(),
+                prUser: prData.user.login,
                 owner: owner,
                 repo: repo,
                 prNumber: prNumber.toString(),
                 installationId: installationId?.toString() || 'not_provided',
-                pr_repo_name: `${owner}/${repo}`,
-                pr_number: prNumber,
-                pr_title: prData.title,
-                pr_body: prData.body || '',
-                pr_state: prData.state,
-                pr_created_at: prData.created_at,
-                pr_updated_at: prData.updated_at,
-                pr_head_branch: prData.head.ref,
-                pr_base_branch: prData.base.ref,
-                pr_head_sha: prData.head.sha,
-                pr_base_sha: prData.base.sha,
-                pr_files_changed: files.length,
-                pr_files: prFiles
+                prRepoName: `${owner}/${repo}`,
+                prTitle: prData.title,
+                prBody: prData.body || '',
+                prState: prData.state,
+                prCreatedAt: prData.created_at,
+                prUpdatedAt: prData.updated_at,
+                prHeadBranch: prData.head.ref,
+                prBaseBranch: prData.base.ref,
+                prHeadSha: prData.head.sha,
+                prBaseSha: prData.base.sha,
+                prFilesChanged: files.length,
+                prFiles: prFiles
             }
         }
         return comprehensiveAnalysis

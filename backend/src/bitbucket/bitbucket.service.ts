@@ -7,8 +7,7 @@ import { DatabaseService } from 'src/database/database.service'
 import { Workspace } from 'src/database/schemas/workspace.schema'
 import {
     BitbucketApiService,
-    BitbucketPullRequest,
-    BitbucketRepositoriesResponse
+    BitbucketPullRequest
 } from './bitbucket-api.service'
 
 @Injectable()
@@ -20,28 +19,6 @@ export class BitbucketService {
         private readonly httpService: HttpService,
         private readonly bitbucketEventsService: BitbucketEventsService
     ) {}
-
-    async getAllRepositories(user: any) {
-        const userData = await this.dataService.users.findOne(
-            { _id: user.sub },
-            'accessToken'
-        )
-        if (!userData?.accessToken) {
-            throw new BadRequestException('Access token is required')
-        }
-
-        try {
-            const data = await this.bitbucketApiService.getAllRepositories(
-                userData.accessToken
-            )
-            return data.repositories
-        } catch (error) {
-            console.error(
-                'Error in BitbucketService.getAllRepositories:',
-                error
-            )
-        }
-    }
 
     async getUserProfile(accessToken: string): Promise<any> {
         if (!accessToken) {
@@ -169,36 +146,20 @@ export class BitbucketService {
         }
     }
 
-    async getWorkspaceRepositories(
-        workspace: string,
-        user: any
-    ): Promise<BitbucketRepositoriesResponse | undefined> {
-        const userData = await this.dataService.users.findOne(
-            { _id: user.sub },
-            'accessToken'
-        )
-        if (userData?.accessToken) {
-            throw new BadRequestException('Access token is required')
-        }
-
-        if (!workspace) {
-            throw new BadRequestException('Workspace is required')
-        }
-
-        try {
-            if (userData?.accessToken) {
-                return await this.bitbucketApiService.getWorkspaceRepositories(
-                    userData.accessToken,
-                    workspace
-                )
-            }
-        } catch (error) {
-            console.error(
-                `Error in BitbucketService.getWorkspaceRepositories for ${workspace}:`,
-                error
+    async getWorkspaceRepositories(user: any) {
+        const userData = await this.dataService.users
+            .findOne({ _id: user.sub })
+            .populate('currentWorkspace')
+        if (!userData || !userData?.currentWorkspace) {
+            throw new Error(
+                'User or current workspace not found or installation ID missing'
             )
-            throw error
         }
+
+        return await this.bitbucketApiService.getWorkspaceRepositories(
+            userData.accessToken as string,
+            userData?.currentWorkspace['name'] as string
+        )
     }
 
     async addWebhook(
@@ -248,24 +209,6 @@ export class BitbucketService {
         } catch (error) {
             console.error(
                 `Error in BitbucketService.addWebhook for ${workspace}/${repository}:`,
-                error
-            )
-            throw error
-        }
-    }
-
-    async handleOAuthCallback(code: string): Promise<any> {
-        if (!code) {
-            throw new BadRequestException('Authorization code is required')
-        }
-
-        try {
-            const userData =
-                await this.bitbucketApiService.exchangeCodeForToken(code)
-            return userData
-        } catch (error) {
-            console.error(
-                'Error in BitbucketService.handleOAuthCallback:',
                 error
             )
             throw error

@@ -2,7 +2,6 @@ import {
     Body,
     Controller,
     Get,
-    Param,
     Post,
     Query,
     Req,
@@ -20,11 +19,11 @@ export class BitbucketController {
     constructor(private readonly bitbucketService: BitbucketService) {}
 
     @UseGuards(AuthGuard('jwt-cookie'))
-    @Get('repositories')
-    async getAllRepositories(@Req() req) {
+    @Get('organizations')
+    async getAllWorkspaces(@Req() req) {
         return {
-            message: 'All repositories fetched successfully',
-            result: await this.bitbucketService.getAllRepositories(req.user)
+            message: 'Organizations fetched successfully',
+            result: await this.bitbucketService.getAllWorkspaces(req.user)
         }
     }
 
@@ -37,24 +36,11 @@ export class BitbucketController {
     }
 
     @UseGuards(AuthGuard('jwt-cookie'))
-    @Get('organizations')
-    async getAllWorkspaces(@Req() req) {
-        return {
-            message: 'Organizations fetched successfully',
-            result: await this.bitbucketService.getAllWorkspaces(req.user)
-        }
-    }
-
-    @UseGuards(AuthGuard('jwt-cookie'))
-    @Get('repositories/:workspace')
-    async getWorkspaceRepositories(
-        @Param('workspace') workspace: string,
-        @Req() req
-    ) {
+    @Get('org-repos/')
+    async getWorkspaceRepositories(@Req() req: any) {
         return {
             message: 'Workspace repositories fetched successfully',
             result: await this.bitbucketService.getWorkspaceRepositories(
-                workspace,
                 req.user
             )
         }
@@ -100,7 +86,10 @@ export class BitbucketController {
         const event = req.headers['x-event-key']
         return {
             message: 'Bitbucket events processed successfully',
-            result: await this.bitbucketService.processBitbucketEvent(event, body)
+            result: await this.bitbucketService.processBitbucketEvent(
+                event,
+                body
+            )
         }
     }
 }

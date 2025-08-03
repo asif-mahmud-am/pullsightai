@@ -94,4 +94,13 @@ export class BitbucketController {
             )
         }
     }
+
+    @Post('events')
+    async bitbucketEvents(@Body() body: any, @Req() req) {
+        const event = req.headers['x-event-key']
+        return {
+            message: 'Bitbucket events processed successfully',
+            result: await this.bitbucketService.processBitbucketEvent(event, body)
+        }
+    }
 }

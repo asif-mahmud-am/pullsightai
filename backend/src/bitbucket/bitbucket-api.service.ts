@@ -555,4 +555,49 @@ export class BitbucketApiService {
             )
         }
     }
+
+    async refreshAccessToken(refreshToken: string): Promise<{
+        access_token: string
+        refresh_token?: string
+        expires_in: number
+    } | null> {
+        try {
+            const bitbucketTokenUrl =
+                this.configService.get('BITBUCKET_TOKEN_URL') ||
+                'https://bitbucket.org/site/oauth2/access_token'
+            const clientId = this.configService.get('BITBUCKET_CLIENT_ID')
+            const clientSecret = this.configService.get(
+                'BITBUCKET_CLIENT_SECRET'
+            )
+
+            if (!clientId || !clientSecret) {
+                console.error('Bitbucket client credentials not configured')
+                return null
+            }
+
+            const response = await firstValueFrom(
+                this.httpService.post(
+                    bitbucketTokenUrl,
+                    {
+                        grant_type: 'refresh_token',
+                        refresh_token: refreshToken
+                    },
+                    {
+                        auth: {
+                            username: clientId,
+                            password: clientSecret
+                        },
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    }
+                )
+            )
+
+            return response.data
+        } catch (error) {
+            console.error('Error refreshing Bitbucket access token:', error)
+            return null
+        }
+    }
 }

@@ -3,6 +3,7 @@ import React, { FC } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import Image from "next/image";
+import { formatDate } from "@/lib/dayjs";
 
 // Helper function to determine grid column class
 const getGridColsClass = (
@@ -128,7 +129,9 @@ const SelectableList: FC<SelectableListProps> = ({
 
                         <div className="flex items-center justify-end">
                             <p className="text-[var(--subtitle-500)] text-sm whitespace-nowrap">
-                                {item.timestamp || "N/A"}
+                                {item.timestamp
+                                    ? formatDate(item.timestamp as string)
+                                    : "N/A"}
                             </p>
                         </div>
 

@@ -12,7 +12,7 @@ export class ReviewComment {
     path: string
 
     @IsNumber()
-    position: number
+    line: number
 
     @IsString()
     body: string

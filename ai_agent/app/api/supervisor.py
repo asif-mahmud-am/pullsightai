@@ -16,7 +16,6 @@ BACKEND_SUMMARY_ENDPOINT = os.getenv("BACKEND_SUMMARY_ENDPOINT", "http://backend
 BACKEND_REVIEW_ENDPOINT = os.getenv("BACKEND_REVIEW_ENDPOINT", "http://backend/v1/github/reviews")
 
 
-
 @supervisor.post("/ai_agent")
 async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: BackgroundTasks):
     llm_service = ClaudeService()

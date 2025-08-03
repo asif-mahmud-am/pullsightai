@@ -13,6 +13,7 @@ export default function AuthGuardClient({ children }: { children: ReactNode }) {
     const hydrated = useAuthStore((s) => s.hydrated);
 
     useEffect(() => {
+        console.log("First effect", user);
         if (hydrated && !user) {
             redirect(ROUTE_CONSTANTS.LOGIN);
             // Alternatively, you can use router.push(ROUTE_CONSTANTS.LOGIN);
@@ -21,7 +22,7 @@ export default function AuthGuardClient({ children }: { children: ReactNode }) {
             hydrated &&
             user &&
             user.onboardingStep !== null &&
-            !pathname.includes(ROUTE_CONSTANTS.ONBOARDING)
+            !pathname.includes(ROUTE_CONSTANTS.ONBOARDING) // need to check current step and pathname to redirect to proper step
         ) {
             const onboardingStep = user.onboardingStep;
             if (onboardingStep === 1) {
@@ -34,6 +35,8 @@ export default function AuthGuardClient({ children }: { children: ReactNode }) {
                 redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_4);
             } else if (onboardingStep === 5) {
                 redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_5);
+            }else if (onboardingStep === 6) {
+                redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_6);
             } else {
                 redirect(ROUTE_CONSTANTS.DASHBOARD);
             }

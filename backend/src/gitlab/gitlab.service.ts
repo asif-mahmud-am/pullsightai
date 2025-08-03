@@ -1,7 +1,10 @@
+import { HttpService } from '@nestjs/axios'
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { DatabaseService } from 'src/database/database.service'
 import { Workspace } from 'src/database/schemas/workspace.schema'
+import { GitlabEventsService } from 'src/gitlab/gitlab-events.service'
 import {
     GitlabApiService,
     GitlabPullRequest,
@@ -13,7 +16,9 @@ export class GitlabService {
     constructor(
         private readonly dataService: DatabaseService,
         private readonly configService: ConfigService,
-        private readonly gitlabApiService: GitlabApiService
+        private readonly gitlabApiService: GitlabApiService,
+        private readonly httpService: HttpService,
+        private readonly gitlabEventsService: GitlabEventsService
     ) {}
 
     async getAllRepositories(user: any) {
@@ -51,7 +56,7 @@ export class GitlabService {
     async getAllGroups(user: any) {
         const userData = await this.dataService.users.findOne(
             { _id: user.sub },
-            'accessToken'
+            'accessToken _id workspaces currentWorkspace'
         )
 
         if (!userData?.accessToken) {
@@ -65,6 +70,7 @@ export class GitlabService {
 
             // Create organizations array similar to GitHub pattern
             const organizations: Workspace[] = []
+            let isFirstGroup = true
 
             // Iterate through each group and save if it doesn't exist
             for (const group of data.groups) {
@@ -77,8 +83,11 @@ export class GitlabService {
                     }
                 )
 
+                let workspaceToAdd: any = null
+
                 if (!existingGroup) {
-                    await this.dataService.workspaces.create({
+                    // Create new workspace
+                    const newGroup = await this.dataService.workspaces.create({
                         id: group.id,
                         name: group.name,
                         nodeId: group.id,
@@ -92,6 +101,45 @@ export class GitlabService {
                         isPrivate: group.isPrivate,
                         createdOn: group.createdAt
                     })
+                    workspaceToAdd = newGroup
+                } else {
+                    workspaceToAdd = existingGroup
+                }
+
+                // Set currentWorkspace to the first group if not already set
+                if (isFirstGroup && !userData.currentWorkspace) {
+                    await this.dataService.users.updateOne(
+                        { _id: user.sub },
+                        {
+                            $set: {
+                                currentWorkspace: workspaceToAdd._id
+                            }
+                        }
+                    )
+                }
+
+                // Add workspace to user's workspaces if not already included
+                if (userData && userData.workspaces) {
+                    if (!userData.workspaces.includes(workspaceToAdd._id)) {
+                        await this.dataService.users.updateOne(
+                            { _id: user.sub },
+                            {
+                                $addToSet: {
+                                    workspaces: workspaceToAdd._id
+                                }
+                            }
+                        )
+                    }
+                } else {
+                    // If user has no workspaces array, initialize it
+                    await this.dataService.users.updateOne(
+                        { _id: user.sub },
+                        {
+                            $addToSet: {
+                                workspaces: workspaceToAdd._id
+                            }
+                        }
+                    )
                 }
 
                 // Add to organizations array in the format expected by frontend
@@ -106,6 +154,9 @@ export class GitlabService {
                     type: group.type,
                     provider: 'gitlab'
                 })
+
+                // Mark that we've processed the first group
+                isFirstGroup = false
             }
 
             return organizations
@@ -276,5 +327,27 @@ export class GitlabService {
                 error
             )
         }
+    }
+
+    async processGitlabEvent(event: any, payload: any) {
+        let mergeRequestFormattedData: StructuredPRData | boolean
+        switch (event) {
+            case 'Merge Request Hook':
+                mergeRequestFormattedData =
+                    await this.gitlabEventsService.handleGitlabMergeRequest(
+                        payload
+                    )
+                break
+            default:
+                mergeRequestFormattedData = false
+        }
+        console.log('mergeRequestFormattedData', mergeRequestFormattedData)
+        if (mergeRequestFormattedData) {
+            await this.httpService.post(
+                this.configService.get('AI_AGENT_PR_POST_URL') as string,
+                mergeRequestFormattedData
+            )
+        }
+        return mergeRequestFormattedData
     }
 }

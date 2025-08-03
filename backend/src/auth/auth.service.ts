@@ -21,6 +21,14 @@ export class AuthService {
             providerId: profile.id
         })
 
+        // Use provider-specific default expiry times since tokens are not JWTs
+        const defaultExpiry = {
+            gitlab: 7200, // 2 hours
+            bitbucket: 3600, // 1 hour
+            github: 28800 // 8 hours (GitHub App tokens)
+        }
+        const expiry = defaultExpiry[provider] || 7200 // Default to 2 hours
+        const tokenExpiresAt = new Date(Date.now() + expiry * 1000)
         if (!user) {
             user = await this.dataService.users.create({
                 provider,
@@ -31,11 +39,13 @@ export class AuthService {
                 avatarUrl: profile.photos?.[0]?.value,
                 accessToken,
                 refreshToken,
+                tokenExpiresAt,
                 raw: profile._raw
             })
         } else {
             user.accessToken = accessToken
             user.refreshToken = refreshToken
+            user.tokenExpiresAt = tokenExpiresAt
             await user.save()
         }
         return user

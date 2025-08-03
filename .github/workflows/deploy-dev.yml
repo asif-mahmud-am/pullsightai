@@ -61,14 +61,6 @@ jobs:
           echo "${{ secrets.GIT_PRIVATE_KEY }}" > backend/app.private-key.pem
           chmod 600 backend/app.private-key.pem
 
-      - name: Deploy with Docker Compose
-        run: |
-          docker compose up --build
-
-      - name: Clean up Docker resources
-        run: |
-          docker system prune -a --volumes -f
-
       - name: Set environment variables for Docker Compose
         run: |
           echo "NODE_ENV=${{ vars.NODE_ENV }}" >> $GITHUB_ENV
@@ -96,6 +88,14 @@ jobs:
           echo "NEXT_NODE_ENV=${{ vars.NEXT_NODE_ENV }}" >> $GITHUB_ENV
           echo "NEXT_TELEMETRY_DISABLED=${{ vars.NEXT_TELEMETRY_DISABLED }}" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}" >> $GITHUB_ENV
+
+      - name: Deploy with Docker Compose
+        run: |
+          docker compose up --build -d
+
+      - name: Clean up Docker resources
+        run: |
+          docker system prune -a --volumes -f
 
       - name: Set frontend environment variables
         run: |

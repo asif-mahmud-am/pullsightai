@@ -13,6 +13,7 @@ summary: |
   PR Title: {pr_title}
   PR Description: {pr_description}
   Author: {author_name}
+  prNumber: {prNumber}
   Changed Files:
   {changed_files}
   [REPO STRUCTURE SUMMARY]
@@ -46,12 +47,13 @@ review: |
   PR Title: {pr_title}
   PR Description: {pr_description}
   Author: {author_name}
+  prNumber: {prNumber}
   Changed Files:
   {changed_files}
   [REPO STRUCTURE SUMMARY (via CodeGraph)]
   {repo_structure_summary}
-  [RELEVANT FUNCTION/CLASS CONTEXTS FROM CHANGED FILES]
-  You are provided with the full context for all modified functions, classes, or code blocks.
+  [FULL CODE BEFORE PR]
+  {pr_file_content_before}
   
   Here is the unified diff for all changed files:
   {pr_diff}

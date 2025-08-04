@@ -41,7 +41,6 @@ export class BitbucketEventsService {
         // Process each file to get before/after content
         for (let i = 0; i < files.length; i++) {
             const file = files[i]
-
             const contentBefore = await this.fetchFileContent(
                 workspace,
                 repository.name,
@@ -49,7 +48,6 @@ export class BitbucketEventsService {
                 pullRequest.destination?.branch?.name,
                 accessToken
             )
-
             const contentAfter = await this.fetchFileContent(
                 workspace,
                 repository.name,
@@ -77,14 +75,10 @@ export class BitbucketEventsService {
             })
         }
 
-        // Create the comprehensive structure matching GitHub format
         const comprehensiveAnalysis: StructuredPRData = {
             pullRequest: {
                 prId: pullRequest.id.toString(),
-                prUser:
-                    pullRequest.author?.username ||
-                    payload.actor?.username ||
-                    'unknown',
+                prUser: pullRequest.author?.username || 'unknown',
                 owner: repository.owner?.username || 'unknown',
                 repo: repository.name,
                 prNumber: pullRequest.id.toString(),
@@ -104,7 +98,6 @@ export class BitbucketEventsService {
                 prFiles: prFiles
             }
         }
-
         return comprehensiveAnalysis
     }
 
@@ -126,10 +119,6 @@ export class BitbucketEventsService {
                 )
 
                 if (!userData?.accessToken) {
-                    console.warn(
-                        'No access token found for user with workspace:',
-                        workspace
-                    )
                     return null
                 }
 

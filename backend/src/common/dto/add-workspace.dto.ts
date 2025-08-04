@@ -1,7 +1,7 @@
 import { IsNotEmpty, IsString } from 'class-validator'
 
-export class AddWebhookDto {
+export class AddWorkspaceDto {
     @IsNotEmpty()
     @IsString()
-    repo: string
+    slug: string
 }

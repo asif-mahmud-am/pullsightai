@@ -138,7 +138,9 @@ export class GithubService {
                 type: org.type,
                 provider: 'github',
                 ownerId: installCallbackDto.state,
-                installationId: installCallbackDto.installation_id
+                installationId: installCallbackDto.installation_id,
+                createdOn: org.created_at,
+                isPrivate: org.private
             })
         }
 

@@ -1,50 +1,12 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { OrgType } from 'src/common/enums/org.enum'
 import { HttpService } from 'src/common/http/http.service'
-import { Repository } from 'src/common/interfaces/repository.interface'
+import {
+    PullRequestResponse,
+    Repository
+} from 'src/common/interfaces/repository.interface'
 import { Workspace } from 'src/database/schemas/workspace.schema'
-
-export interface BitbucketPullRequest {
-    id: number
-    nodeId: string
-    prNumber: number
-    title: string
-    status: string
-    user: {
-        username: string
-        avatarUrl?: string
-    }
-    createdAt: string
-    updatedAt: string
-    closedAt: string | null
-    mergedAt: string | null
-    url: string
-}
-
-export interface BitbucketPullRequestsResponse {
-    message: string
-    repository: {
-        workspace: string
-        name: string
-        fullName: string
-    }
-    filters: {
-        state: string
-        limit: string
-    }
-    totalCount: number
-    pullRequests: BitbucketPullRequest[]
-    summary: {
-        total: number
-        byState: Record<string, number>
-        withReviewers: number
-        withComments: number
-        withTasks: number
-        authors: number
-        averageComments: number
-        averageTasks: number
-    }
-}
 
 @Injectable()
 export class BitbucketApiService {
@@ -79,61 +41,59 @@ export class BitbucketApiService {
     /**
      * Get all workspaces for the authenticated user
      */
-    async getAllWorkspaces(accessToken: string): Promise<any> {
-        try {
-            // First get user profile to add as the personal workspace
-            const userProfile = await this.getUserProfile(accessToken)
+    async getAllWorkspaces(accessToken: string): Promise<Workspace[]> {
+        let allWorkspaces: Workspace[] = []
+        let url = `${this.baseUrl}/workspaces?pagelen=100`
 
-            let allWorkspaces = []
-            let url = `${this.baseUrl}/workspaces?pagelen=100`
-
-            const response = await this.httpService.get(url, {
-                headers: this.getAuthHeaders(accessToken)
-            })
-            const workspaces = response.values.map(
-                (workspace) =>
-                    ({
-                        id: workspace.uuid,
-                        name: workspace.name,
-                        slug: workspace.slug,
-                        provider: 'bitbucket',
-                        url: workspace.links.html.href,
-                        reposUrl: `${this.baseUrl}/repositories/${workspace.slug}`,
-                        avatarUrl: workspace.links.avatar?.href,
-                        type: workspace.type,
-                        nodeId: `BB_${workspace.uuid}`,
-                        description: workspace.description,
-                        isPrivate: workspace.is_private,
-                        createdOn: workspace.created_on
-                    }) as Workspace
-            )
-
-            // Add user profile as the first workspace (personal workspace)
-            const personalWorkspace: Workspace = {
-                id: userProfile.uuid,
-                name: userProfile.display_name || userProfile.username,
-                slug: userProfile.username,
-                type: 'user',
-                isPrivate: false,
-                createdOn: userProfile.created_on,
+        const response = await this.httpService.get(url, {
+            headers: this.getAuthHeaders(accessToken)
+        })
+        response.values.map((workspace) =>
+            allWorkspaces.push({
+                id: workspace.uuid,
+                name: workspace.name,
+                slug: workspace.slug,
                 provider: 'bitbucket',
-                url: userProfile.links.html.href,
-                reposUrl: `${this.baseUrl}/repositories/${userProfile.username}`,
-                avatarUrl: userProfile.links.avatar?.href,
-                nodeId: `BB_${userProfile.uuid}`,
-                description: userProfile.display_name || userProfile.username,
-                ownerId: userProfile.uuid
-            }
+                url: workspace.links.html.href,
+                reposUrl: `${this.baseUrl}/repositories/${workspace.slug}`,
+                avatarUrl: workspace.links.avatar?.href,
+                type: OrgType.ORGANIZATION,
+                nodeId: `BB_${workspace.uuid}`,
+                description: workspace.description,
+                isPrivate: workspace.is_private,
+                createdOn: workspace.created_on
+            })
+        )
+        return allWorkspaces
+    }
 
-            // Put personal workspace first, then all other workspaces
-            const finalWorkspaces = [personalWorkspace, ...allWorkspaces]
-
-            return {
-                workspaces: finalWorkspaces
-            }
-        } catch (error) {
-            console.error('❌ Error fetching workspaces:', error)
-            throw error
+    /**
+     * Get single workspace by slug
+     * @param slug - The slug of the workspace to fetch
+     * @returns Workspace object or null if not found
+     */
+    async getSingleWorkspace(
+        accessToken: string,
+        slug: string
+    ): Promise<Workspace> {
+        let url = `${this.baseUrl}/workspaces/${slug}`
+        const workspace = await this.httpService.get(url, {
+            headers: this.getAuthHeaders(accessToken)
+        })
+        return {
+            id: workspace.uuid,
+            name: workspace.name,
+            slug: workspace.slug,
+            provider: 'bitbucket',
+            url: workspace.links.html.href,
+            reposUrl: `${this.baseUrl}/repositories/${workspace.slug}`,
+            avatarUrl: workspace.links.avatar?.href,
+            type:
+                workspace.type == 'user' ? OrgType.USER : OrgType.ORGANIZATION,
+            nodeId: `BB_${workspace.uuid}`,
+            description: workspace.description,
+            isPrivate: workspace.is_private,
+            createdOn: workspace.created_on
         }
     }
 
@@ -232,8 +192,8 @@ export class BitbucketApiService {
         repository: string,
         state?: string,
         limit?: number
-    ): Promise<BitbucketPullRequest[]> {
-        let allPullRequests: BitbucketPullRequest[] = []
+    ): Promise<PullRequestResponse[]> {
+        let allPullRequests: PullRequestResponse[] = []
         const pageLimit = limit ? Math.min(limit, 100) : 50
         let nextUrl = `/repositories/${workspace}/${repository}/pullrequests?pagelen=${pageLimit}`
 
@@ -247,25 +207,27 @@ export class BitbucketApiService {
             headers: this.getAuthHeaders(accessToken)
         })
 
-        const pullRequests = response.values.map((pr) => ({
-            id: pr.id,
-            nodeId: `BB_${pr.id}`,
-            prNumber: pr.id,
-            title: pr.title,
-            status: pr.state.toLowerCase(),
-            user: {
-                username: pr.author.username,
-                avatarUrl: pr.author.links?.avatar?.href
-            },
-            createdAt: pr.created_on,
-            updatedAt: pr.updated_on,
-            closedAt:
-                pr.state === 'DECLINED' || pr.state === 'SUPERSEDED'
-                    ? pr.updated_on
-                    : null,
-            mergedAt: pr.state === 'MERGED' ? pr.updated_on : null,
-            url: pr.links.html.href
-        }))
+        response.values.map((pr) => {
+            allPullRequests.push({
+                id: pr.id,
+                nodeId: `BB_${pr.id}`,
+                prNumber: pr.id,
+                title: pr.title,
+                status: pr.state.toLowerCase(),
+                author: {
+                    username: pr.author.nickname,
+                    avatarUrl: pr.author.links?.avatar?.href
+                },
+                createdAt: pr.created_on,
+                updatedAt: pr.updated_on,
+                closedAt:
+                    pr.state === 'DECLINED' || pr.state === 'SUPERSEDED'
+                        ? pr.updated_on
+                        : null,
+                mergedAt: pr.state === 'MERGED' ? pr.updated_on : null,
+                url: pr.links.html.href
+            })
+        })
         return allPullRequests
     }
 

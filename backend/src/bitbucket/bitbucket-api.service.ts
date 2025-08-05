@@ -269,4 +269,32 @@ export class BitbucketApiService {
             repository
         }
     }
+
+    async fetchPRDiff(
+        workspace: string,
+        repository: string,
+        pullRequestId: number,
+        accessToken: string
+    ): Promise<string | null> {
+        const apiUrl = `${this.baseUrl}/repositories/${workspace}/${repository}/pullrequests/${pullRequestId}/diff`
+        return await this.httpService.get(apiUrl, {
+            headers: this.getAuthHeaders(accessToken)
+        })
+    }
+
+    extractFileDiff(fullDiff: string | null, filePath: string): string {
+        if (!fullDiff || !filePath) {
+            return 'No diff available'
+        }
+
+        const escapedFileName = filePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        const filePattern = new RegExp(
+            `diff --git a/${escapedFileName} b/${escapedFileName}[\\s\\S]*?(?=diff --git|$)`,
+            'g'
+        )
+        const fileDiffMatch = fullDiff.match(filePattern)
+        return fileDiffMatch
+            ? fileDiffMatch[0].trim()
+            : 'No diff available for this file'
+    }
 }

@@ -38,6 +38,12 @@ export class BitbucketEventsService {
 
         const prFiles: PRFile[] = []
 
+        const fullDiff = await this.bitbucketApiService.fetchPRDiff(
+            workspace,
+            repository.name,
+            pullRequest.id,
+            accessToken
+        )
         // Process each file to get before/after content
         for (let i = 0; i < files.length; i++) {
             const file = files[i]
@@ -67,7 +73,10 @@ export class BitbucketEventsService {
                     contentBefore || 'File not found in destination branch',
                 prFileContentAfter:
                     contentAfter || 'File not found in source branch',
-                prFileDiff: 'Diff not available in webhook', // Bitbucket doesn't provide diff in webhook
+                prFileDiff: this.bitbucketApiService.extractFileDiff(
+                    fullDiff,
+                    file.new?.path || file.old?.path
+                ),
                 prFileBlobUrl:
                     file.new?.links?.self?.href ||
                     file.old?.links?.self?.href ||
@@ -104,7 +113,7 @@ export class BitbucketEventsService {
 
     private async getAccessTokenForWorkspace(
         workspace: string
-    ): Promise<string | null> {
+    ): Promise<string> {
         const workspaceRecord = await this.dataService.workspaces.findOne({
             slug: workspace,
             provider: 'bitbucket'
@@ -117,7 +126,9 @@ export class BitbucketEventsService {
             )
 
             if (!userData?.accessToken) {
-                return null
+                throw new BadRequestException(
+                    'No user found with access token for the provided Bitbucket workspace'
+                )
             }
 
             const now = new Date()
@@ -161,9 +172,11 @@ export class BitbucketEventsService {
             }
 
             return userData.accessToken
+        } else {
+            throw new BadRequestException(
+                'No workspace found for the provided Bitbucket slug'
+            )
         }
-
-        return null
     }
 
     private async fetchPRFiles(

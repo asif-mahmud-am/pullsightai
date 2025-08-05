@@ -1,15 +1,20 @@
 import { HttpService } from '@nestjs/axios'
-import { BadRequestException, Injectable } from '@nestjs/common'
+import {
+    BadRequestException,
+    Injectable,
+    InternalServerErrorException
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
+import {
+    PullRequestResponse,
+    Repository
+} from 'src/common/interfaces/repository.interface'
 import { DatabaseService } from 'src/database/database.service'
 import { Workspace } from 'src/database/schemas/workspace.schema'
 import { GitlabEventsService } from 'src/gitlab/gitlab-events.service'
-import {
-    GitlabApiService,
-    GitlabPullRequest,
-    GitlabRepositoriesResponse
-} from './gitlab-api.service'
+import { GitlabApiService } from './gitlab-api.service'
 
 @Injectable()
 export class GitlabService {
@@ -21,23 +26,20 @@ export class GitlabService {
         private readonly gitlabEventsService: GitlabEventsService
     ) {}
 
-    async getAllRepositories(user: any) {
-        const userData = await this.dataService.users.findOne(
-            { _id: user.sub },
-            'accessToken'
-        )
-        if (!userData?.accessToken) {
-            throw new BadRequestException('Access token is required')
-        }
-
-        try {
-            const data = await this.gitlabApiService.getAllRepositories(
-                userData.accessToken
+    async getAllRepositories(user: any): Promise<Repository[]> {
+        const userData = await this.dataService.users
+            .findOne({ _id: user.sub }, 'accessToken currentWorkspace')
+            .populate('currentWorkspace', 'slug type')
+        if (!userData?.accessToken || !userData?.currentWorkspace) {
+            throw new BadRequestException(
+                'Access token is required or workspace not set'
             )
-            return data.repositories
-        } catch (error) {
-            console.error('Error in GitlabService.getAllRepositories:', error)
         }
+        return await this.gitlabApiService.getAllRepositories(
+            userData.accessToken,
+            userData.currentWorkspace['slug'],
+            userData.currentWorkspace['type']
+        )
     }
 
     async getUserProfile(accessToken: string): Promise<any> {
@@ -58,118 +60,68 @@ export class GitlabService {
             { _id: user.sub },
             'accessToken _id workspaces currentWorkspace'
         )
+        if (!userData?.accessToken) {
+            throw new BadRequestException('Access token is required')
+        }
+        return await this.gitlabApiService.getAllGroups(userData?.accessToken)
+    }
+
+    async addWorkspace(
+        user: any,
+        addWorkspaceDto: AddWorkspaceDto
+    ): Promise<Workspace> {
+        const userData = await this.dataService.users.findOne(
+            { _id: user.sub },
+            'accessToken _id'
+        )
 
         if (!userData?.accessToken) {
             throw new BadRequestException('Access token is required')
         }
 
-        try {
-            const data = await this.gitlabApiService.getAllGroups(
-                userData?.accessToken
-            )
+        const workspace = await this.gitlabApiService.getSingleWorkspace(
+            userData?.accessToken,
+            addWorkspaceDto.slug,
+            addWorkspaceDto.type
+        )
 
-            // Create organizations array similar to GitHub pattern
-            const organizations: Workspace[] = []
-            let isFirstGroup = true
+        let existingWorkspace = await this.dataService.workspaces.findOne({
+            id: workspace.id,
+            slug: workspace.slug,
+            provider: 'bitbucket'
+        })
 
-            // Iterate through each group and save if it doesn't exist
-            for (const group of data.groups) {
-                // Check if group already exists
-                const existingGroup = await this.dataService.workspaces.findOne(
-                    {
-                        slug: group.slug,
-                        provider: 'gitlab',
-                        ownerId: user.sub
-                    }
-                )
-
-                let workspaceToAdd: any = null
-
-                if (!existingGroup) {
-                    // Create new workspace
-                    const newGroup = await this.dataService.workspaces.create({
-                        id: group.id,
-                        name: group.name,
-                        nodeId: group.id,
-                        slug: group.slug,
-                        url: group.webUrl,
-                        reposUrl: group.projectsUrl,
-                        avatarUrl: group.avatarUrl || 'null',
-                        type: group.type,
-                        provider: 'gitlab',
-                        ownerId: user.sub,
-                        isPrivate: group.isPrivate,
-                        createdOn: group.createdAt
-                    })
-                    workspaceToAdd = newGroup
-                } else {
-                    workspaceToAdd = existingGroup
-                }
-
-                // Set currentWorkspace to the first group if not already set
-                if (isFirstGroup && !userData.currentWorkspace) {
-                    await this.dataService.users.updateOne(
-                        { _id: user.sub },
-                        {
-                            $set: {
-                                currentWorkspace: workspaceToAdd._id
-                            }
-                        }
-                    )
-                }
-
-                // Add workspace to user's workspaces if not already included
-                if (userData && userData.workspaces) {
-                    if (!userData.workspaces.includes(workspaceToAdd._id)) {
-                        await this.dataService.users.updateOne(
-                            { _id: user.sub },
-                            {
-                                $addToSet: {
-                                    workspaces: workspaceToAdd._id
-                                }
-                            }
-                        )
-                    }
-                } else {
-                    // If user has no workspaces array, initialize it
-                    await this.dataService.users.updateOne(
-                        { _id: user.sub },
-                        {
-                            $addToSet: {
-                                workspaces: workspaceToAdd._id
-                            }
-                        }
-                    )
-                }
-
-                // Add to organizations array in the format expected by frontend
-                organizations.push({
-                    id: group.id,
-                    name: group.name,
-                    nodeId: group.id,
-                    slug: group.slug,
-                    url: group.webUrl,
-                    reposUrl: group.projectsUrl,
-                    avatarUrl: group.avatarUrl || null,
-                    type: group.type,
-                    provider: 'gitlab'
-                })
-
-                // Mark that we've processed the first group
-                isFirstGroup = false
-            }
-
-            return organizations
-        } catch (error) {
-            console.error('Error in GitlabService.getAllGroups:', error)
-            throw error
+        if (!existingWorkspace) {
+            existingWorkspace = await this.dataService.workspaces.create({
+                ...workspace,
+                ownerId: userData._id
+            })
         }
+
+        if (!existingWorkspace) {
+            throw new InternalServerErrorException(
+                'Failed to create or update workspace'
+            )
+        }
+
+        await this.dataService.users.updateOne(
+            { _id: userData._id },
+            {
+                $set: {
+                    currentWorkspace: existingWorkspace._id
+                },
+                $addToSet: {
+                    workspaces: existingWorkspace._id
+                }
+            }
+        )
+        return existingWorkspace
     }
 
     async getGroupRepositories(
         groupId: string,
         user: any
-    ): Promise<GitlabRepositoriesResponse | undefined> {
+    ): Promise<Repository[]> {
         const userData = await this.dataService.users.findOne(
             { _id: user.sub },
             'accessToken'
@@ -181,25 +133,16 @@ export class GitlabService {
         if (!groupId) {
             throw new BadRequestException('Group ID is required')
         }
-
-        try {
-            return await this.gitlabApiService.getGroupRepositories(
-                userData.accessToken,
-                groupId
-            )
-        } catch (error) {
-            console.error(
-                `Error in GitlabService.getGroupRepositories for ${groupId}:`,
-                error
-            )
-            throw error
-        }
+        return await this.gitlabApiService.getGroupRepositories(
+            userData.accessToken,
+            groupId
+        )
     }
 
     async getUserRepositories(
         userId: string,
         user: any
-    ): Promise<GitlabRepositoriesResponse | undefined> {
+    ): Promise<Repository[]> {
         const userData = await this.dataService.users.findOne(
             { _id: user.sub },
             'accessToken'
@@ -211,19 +154,10 @@ export class GitlabService {
         if (!userId) {
             throw new BadRequestException('User ID is required')
         }
-
-        try {
-            return await this.gitlabApiService.getUserRepositories(
-                userData.accessToken,
-                userId
-            )
-        } catch (error) {
-            console.error(
-                `Error in GitlabService.getUserRepositories for ${userId}:`,
-                error
-            )
-            throw error
-        }
+        return await this.gitlabApiService.getUserRepositories(
+            userData.accessToken,
+            userId
+        )
     }
 
     async addWebhook(
@@ -300,7 +234,7 @@ export class GitlabService {
         user: any,
         state?: string,
         limit?: number
-    ): Promise<GitlabPullRequest[] | undefined> {
+    ): Promise<PullRequestResponse[]> {
         const userData = await this.dataService.users.findOne(
             { _id: user.sub },
             'accessToken'
@@ -314,19 +248,12 @@ export class GitlabService {
             throw new BadRequestException('Project ID is required')
         }
 
-        try {
-            return await this.gitlabApiService.getMergeRequests(
-                userData.accessToken,
-                projectId,
-                state,
-                limit
-            )
-        } catch (error) {
-            console.error(
-                `Error in GitlabService.getMergeRequests for project ${projectId}:`,
-                error
-            )
-        }
+        return await this.gitlabApiService.getMergeRequests(
+            userData.accessToken,
+            projectId,
+            state,
+            limit
+        )
     }
 
     async processGitlabEvent(event: any, payload: any) {

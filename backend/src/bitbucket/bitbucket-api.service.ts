@@ -44,7 +44,6 @@ export class BitbucketApiService {
     async getAllWorkspaces(accessToken: string): Promise<Workspace[]> {
         let allWorkspaces: Workspace[] = []
         let url = `${this.baseUrl}/workspaces?pagelen=100`
-
         const response = await this.httpService.get(url, {
             headers: this.getAuthHeaders(accessToken)
         })
@@ -111,12 +110,7 @@ export class BitbucketApiService {
             headers: this.getAuthHeaders(accessToken)
         })
 
-        const repositories = response.values.map((repo) =>
-            this.mapRepositoryResponse(repo)
-        )
-        allRepositories = allRepositories.concat(repositories)
-
-        return allRepositories
+        return response.values.map((repo) => this.mapRepositoryResponse(repo))
     }
 
     /**
@@ -172,10 +166,10 @@ export class BitbucketApiService {
             id: repo.uuid,
             name: repo.name,
             fullName: repo.full_name,
-            createdAt: repo.created_on,
-            updatedAt: repo.updated_on,
+            createdOn: repo.created_on,
+            updatedOn: repo.updated_on,
             author: {
-                name: repo.owner?.username,
+                username: repo.owner?.username,
                 avatarUrl: repo.owner?.links?.avatar?.href
             },
             private: repo.is_private,
@@ -258,5 +252,29 @@ export class BitbucketApiService {
             }
         )
         return response
+    }
+
+    async getBitbucketPRAndRepo(
+        accessToken: string,
+        workspace: string,
+        repo: string,
+        prId: number
+    ) {
+        const pullrequest = await this.httpService.get(
+            `${this.baseUrl}/repositories/${workspace}/${repo}/pullrequests/${prId}`,
+            {
+                headers: this.getAuthHeaders(accessToken)
+            }
+        )
+        const repository = await this.httpService.get(
+            `${this.baseUrl}/repositories/${workspace}/${repo}`,
+            {
+                headers: this.getAuthHeaders(accessToken)
+            }
+        )
+        return {
+            pullrequest,
+            repository
+        }
     }
 }

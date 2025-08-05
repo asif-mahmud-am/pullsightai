@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
-import { GetPRDto } from 'src/github/dto/install-repo.dto'
+import { GetPRDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
 import { BitbucketService } from './bitbucket.service'
 import { AddWebhookDto } from './dto/add-webhook.dto'
 
@@ -75,18 +75,18 @@ export class BitbucketController {
         }
     }
 
-    // @UseGuards(AuthGuard('jwt-cookie'))
-    // @Get('review-pr')
-    // async reviewPR(@Req() req: any, @Query() prReviewDto: PRReviewDto) {
-    //     const reviewData = await this.bitbucketService.makePRReview(
-    //         req.user,
-    //         prReviewDto
-    //     )
-    //     return {
-    //         message: 'Pull request reviewed successfully',
-    //         result: reviewData
-    //     }
-    // }
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('review-pr')
+    async reviewPR(@Req() req: any, @Query() prReviewDto: PRReviewDto) {
+        const reviewData = await this.bitbucketService.makePRReview(
+            req.user,
+            prReviewDto
+        )
+        return {
+            message: 'Pull request reviewed successfully',
+            result: reviewData
+        }
+    }
 
     @UseGuards(AuthGuard('jwt-cookie'))
     @Post('add-webhook')

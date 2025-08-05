@@ -193,8 +193,6 @@ export class GithubEventService {
     // Add review comments to specific lines in PR files
     async addPRReviewComments(postReviewDto: PostReviewDto) {
         const octokit = await this.initOctokitApp(postReviewDto.installationId)
-
-        // Create a review with multiple line comments
         const reviewData: any = {
             owner: postReviewDto.owner,
             repo: postReviewDto.repo,

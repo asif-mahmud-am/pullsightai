@@ -131,6 +131,7 @@ export class GithubService {
             workspace = await this.dataService.workspaces.create({
                 id: org.id.toString(),
                 name: org.login,
+                slug: org.login,
                 nodeId: org.node_id,
                 url: org.url,
                 reposUrl: org.repos_url,

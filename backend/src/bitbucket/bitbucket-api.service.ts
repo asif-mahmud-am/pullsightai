@@ -259,4 +259,28 @@ export class BitbucketApiService {
         )
         return response
     }
+
+    async getBitbucketPRAndRepo(
+        accessToken: string,
+        workspace: string,
+        repo: string,
+        prId: number
+    ) {
+        const pullrequest = await this.httpService.get(
+            `${this.baseUrl}/repositories/${workspace}/${repo}/pullrequests/${prId}`,
+            {
+                headers: this.getAuthHeaders(accessToken)
+            }
+        )
+        const repository = await this.httpService.get(
+            `${this.baseUrl}/repositories/${workspace}/${repo}`,
+            {
+                headers: this.getAuthHeaders(accessToken)
+            }
+        )
+        return {
+            pullrequest,
+            repository
+        }
+    }
 }

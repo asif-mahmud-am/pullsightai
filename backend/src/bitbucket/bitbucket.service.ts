@@ -10,7 +10,7 @@ import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { DatabaseService } from 'src/database/database.service'
 import { Workspace } from 'src/database/schemas/workspace.schema'
-import { GetPRDto } from 'src/github/dto/install-repo.dto'
+import { GetPRDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
 import { BitbucketApiService } from './bitbucket-api.service'
 
 @Injectable()
@@ -200,28 +200,35 @@ export class BitbucketService {
         return pullRequestFormattedData
     }
 
-    // async makePRReview(user: any, prReviewDto: PRReviewDto) {
-    //     const userData = await this.dataService.users
-    //         .findOne({ _id: user.sub })
-    //         .populate('currentWorkspace')
-    //     if (
-    //         !userData ||
-    //         !userData?.currentWorkspace ||
-    //         !userData?.currentWorkspace['installationId']
-    //     ) {
-    //         throw new Error(
-    //             'User or current workspace not found or installation ID missing'
-    //         )
-    //     }
-    //     const pullRequestFormattedData =
-    //         await this.bitbucketEventsService.handleBitbucketPullRequest(
-    //             {
+    async makePRReview(user: any, prReviewDto: PRReviewDto) {
+        const userData = await this.dataService.users
+            .findOne({ _id: user.sub })
+            .populate('currentWorkspace')
 
-    //             }
-    //         )
-    //     return {
-    //         ...pullRequestFormattedData,
-    //         ...response
-    //     }
-    // }
+        if (!userData || !userData?.currentWorkspace) {
+            throw new Error(
+                'User or current workspace not found or installation ID missing'
+            )
+        }
+        const PrAndRepo = await this.bitbucketApiService.getBitbucketPRAndRepo(
+            userData.accessToken as string,
+            userData?.currentWorkspace['slug'] as string,
+            prReviewDto.repo,
+            +prReviewDto.prNumber
+        )
+        const pullRequestFormattedData =
+            await this.bitbucketEventsService.handleBitbucketPullRequest(
+                PrAndRepo
+            )
+
+        const response = await this.httpService.post(
+            this.configService.get('AI_AGENT_PR_REVIEW_URL') as string,
+            pullRequestFormattedData
+        )
+        console.log('AI Agent response:', response)
+        return {
+            ...pullRequestFormattedData,
+            ...response
+        }
+    }
 }

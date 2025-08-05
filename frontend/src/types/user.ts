@@ -1,6 +1,6 @@
 import { Organization } from "./organization";
 
-export type Provider = "github" | "bitbucket"; // | "gitlab";
+export type Provider = "github" | "bitbucket" | "gitlab";
 
 export interface User {
     _id: string;

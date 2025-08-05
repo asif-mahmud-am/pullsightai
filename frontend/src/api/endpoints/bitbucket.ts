@@ -4,34 +4,49 @@ import { Repository } from "@/types/repository";
 import { ApiResponse } from "@/types/response";
 
 export const bitbucketEndpoints = {
-    getOrgs: (): Promise<ApiResponse<Organization[]>> =>
-        apiClient.get("/bitbucket/organizations").then((res) => res.data),
-    getRepos: ({
+    getOrgs: async (): Promise<ApiResponse<Organization[]>> => {
+        return apiClient
+            .get("/bitbucket/organizations")
+            .then((res) => res.data);
+    },
+
+    addOrg: async (orgSlug: string) => {
+        return apiClient
+            .post("/bitbucket/add-workspace", { slug: orgSlug })
+            .then((res) => res.data);
+    },
+
+    getRepos: async ({
         orgName,
     }: {
         orgName: string;
-    }): Promise<ApiResponse<Repository[]>> =>
-        apiClient
-            .get("/bitbucket/repositories", {
+    }): Promise<ApiResponse<Repository[]>> => {
+        return apiClient
+            .get("/bitbucket/org-repos", {
                 params: {},
             })
-            .then((res) => res.data),
-    getPRs: (id: string) =>
-        apiClient
+            .then((res) => res.data);
+    },
+
+    getPRs: async (id: string) => {
+        return apiClient
             .get(`/bitbucket/repos-pr-list`, {
                 params: { repo: id },
             })
-            .then((res) => res.data),
-    reviewPr: ({
+            .then((res) => res.data);
+    },
+
+    reviewPr: async ({
         prId,
         repoId,
     }: {
         prId: string;
         repoId: string;
-    }): Promise<ApiResponse<void>> =>
-        apiClient
+    }): Promise<ApiResponse<void>> => {
+        return apiClient
             .get(`/bitbucket/review-pr`, {
                 params: { prNumber: prId, repo: repoId },
             })
-            .then((res) => res.data),
+            .then((res) => res.data);
+    },
 };

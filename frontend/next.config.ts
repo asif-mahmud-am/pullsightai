@@ -17,6 +17,18 @@ const nextConfig: NextConfig = {
                 port: "",
                 pathname: "/**",
             },
+            {
+                protocol: "https",
+                hostname: "bitbucket.org",
+                port: "",
+                pathname: "/**",
+            },
+            {
+                protocol: "https",
+                hostname: "secure.gravatar.com",
+                port: "",
+                pathname: "/**",
+            },
         ],
     },
 };

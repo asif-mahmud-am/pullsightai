@@ -5,6 +5,7 @@ import { githubEndpoints } from "../endpoints/github";
 import { bitbucketEndpoints } from "../endpoints/bitbucket";
 import { useQuery } from "@tanstack/react-query";
 import { PRAnalysisData } from "@/types/prAnalysis";
+import { gitlabEndpoints } from "../endpoints/gitlab";
 
 export const usePullRequestQuery = ({
     provider = "github",
@@ -20,8 +21,8 @@ export const usePullRequestQuery = ({
         (prId: string) => Promise<ApiResponse<PullRequest[]>>
     > = {
         github: githubEndpoints.getPRs,
-        bitbucket: bitbucketEndpoints.getPRs, // Uncomment and implement if needed
-        // gitlab: gitlabEndpoints.getPR, // Uncomment and implement if needed
+        bitbucket: bitbucketEndpoints.getPRs,
+        gitlab: gitlabEndpoints.getPRs,
     };
 
     const queryFn = queryFnMap[provider];
@@ -56,8 +57,8 @@ export const useReviewPullRequestQuery = ({
         (params: { prId: string; repoId: string }) => Promise<ApiResponse<void>>
     > = {
         github: githubEndpoints.reviewPr,
-        bitbucket: bitbucketEndpoints.reviewPr, // Uncomment and implement if needed
-        // gitlab: gitlabEndpoints.reviewPr, // Uncomment and implement if needed
+        bitbucket: bitbucketEndpoints.reviewPr,
+        gitlab: gitlabEndpoints.reviewPr,
     };
 
     const queryFn = queryFnMap[provider];

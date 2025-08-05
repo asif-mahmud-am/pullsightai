@@ -4,6 +4,7 @@ import { githubEndpoints } from "../endpoints/github";
 import { useQuery } from "@tanstack/react-query";
 import { Repository } from "@/types/repository";
 import { bitbucketEndpoints } from "../endpoints/bitbucket";
+import { gitlabEndpoints } from "../endpoints/gitlab";
 
 interface UseRepositoryQueryParams {
     provider?: Provider;
@@ -21,8 +22,8 @@ export const useRepositoryQuery = ({
         ({ orgName }: { orgName: string }) => Promise<ApiResponse<Repository[]>>
     > = {
         github: githubEndpoints.getRepos,
-        bitbucket: bitbucketEndpoints.getRepos, // Uncomment and implement if needed
-        // gitlab: gitlabEndpoints.getOrgs, // Uncomment and implement if needed
+        bitbucket: bitbucketEndpoints.getRepos,
+        gitlab: gitlabEndpoints.getRepos,
     };
 
     const queryFn = queryFnMap[provider];

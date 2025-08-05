@@ -3,6 +3,7 @@ export interface Organization {
     id: string;
     name: string;
     nodeId: string;
+    slug?: string;
     url: string;
     avatarUrl?: string | null;
     reposUrl?: string;

@@ -9,11 +9,14 @@ import {
     AlertCircle,
     GitPullRequest,
     GitMerge,
+    ExternalLink,
 } from "lucide-react";
 import { PRAnalysisData } from "@/types/prAnalysis";
+import { humanizeDate } from "@/lib/dayjs";
+import { Button } from "@/components/ui/button";
 
 const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
-    const [showAllComments] = useState(true);
+    const [showAllComments, setShowAllComments] = useState(true);
 
     const { pull_request: pr, analysis } = data;
 
@@ -24,26 +27,15 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
 
     const getSeverityColor = (severity: string) => {
         switch (severity) {
-            case "critical":
+            case "high":
                 return "bg-red-900/30 text-red-300 border-red-700";
-            case "warning":
+            case "medium":
                 return "bg-yellow-900/30 text-yellow-300 border-yellow-700";
-            case "info":
+            case "low":
                 return "bg-blue-900/30 text-blue-300 border-blue-700";
             default:
                 return "bg-gray-900/30 text-gray-300 border-gray-700";
         }
-    };
-
-    const formatTimestamp = (timestamp: string) => {
-        const date = new Date(timestamp);
-        const now = new Date();
-        const diffMs = now.getTime() - date.getTime();
-        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-
-        if (diffHours < 1) return "just now";
-        if (diffHours < 24) return `${diffHours} hours ago`;
-        return `${Math.floor(diffHours / 24)} days ago`;
     };
 
     const displayedComments = showAllComments
@@ -51,7 +43,7 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
         : validComments.slice(0, 3);
 
     return (
-        <div className="bg-black rounded-xl text-gray-100 font-sans">
+        <div className="bg-[var(--body-900)] rounded-xl text-gray-100 font-sans">
             {/* PR Header */}
             <div className="border-b border-gray-700 p-4">
                 <div className="flex items-start gap-3">
@@ -84,8 +76,16 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
                                 PR #{pr.pr_number} • {pr.pr_state}
                             </Badge>
                             <span className="text-gray-400 text-sm">
-                                {formatTimestamp(pr.pr_created_at)}
+                                {humanizeDate(pr.pr_created_at)}
                             </span>
+                            <a
+                                href={pr.html_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="cursor-pointer text-gray-400 hover:text-gray-200"
+                            >
+                                <ExternalLink className="w-4 h-4" />
+                            </a>
                         </div>
 
                         <h3 className="text-lg font-semibold text-gray-200 mb-2">
@@ -168,10 +168,6 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
             {displayedComments.map((comment, index) => (
                 <div key={index} className="border-b border-gray-700 p-4">
                     <div className="flex items-start gap-3">
-                        {/* <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
-              {getSeverityIcon(comment.severity)}
-            </div> */}
-
                         <div className="flex-1 max-w-full">
                             <div className="flex items-center gap-2 mb-2">
                                 <span className="font-semibold text-gray-200 text-sm">
@@ -179,7 +175,7 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
                                 </span>
                                 <Badge
                                     className={`text-xs ${getSeverityColor(
-                                        comment.severity
+                                        comment.severity?.toLowerCase()
                                     )}`}
                                 >
                                     Severity:{" "}
@@ -251,20 +247,24 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
             ))}
 
             {/* Show More Button */}
-            {/* {analysis.comments.length > 3 && (
-        <div className="border-b border-gray-700 p-4 text-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowAllComments(!showAllComments)}
-            className="text-gray-400 hover:text-gray-200"
-          >
-            {showAllComments
-              ? `Show less (${analysis.comments.length - 3} hidden)`
-              : `Show ${analysis.comments.length - 3} more comments`}
-          </Button>
-        </div>
-      )} */}
+            {analysis.comments.length > 3 && (
+                <div className="border-b border-gray-700 p-4 text-center">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowAllComments(!showAllComments)}
+                        className="text-gray-400 hover:text-gray-200"
+                    >
+                        {showAllComments
+                            ? `Show less (${
+                                  analysis.comments.length - 3
+                              } hidden)`
+                            : `Show ${
+                                  analysis.comments.length - 3
+                              } more comments`}
+                    </Button>
+                </div>
+            )}
         </div>
     );
 };

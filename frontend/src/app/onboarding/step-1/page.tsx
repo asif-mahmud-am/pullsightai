@@ -5,7 +5,10 @@ import ActionFooter from "../ActionFooter";
 import SelectableList from "../SelectableList";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useOrganizationQuery } from "@/api/queries/organization";
+import {
+    useOrganizationAddMutation,
+    useOrganizationQuery,
+} from "@/api/queries/organization";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
 import { useAuthStore } from "@/store/authStore";
 import { Plus } from "lucide-react";
@@ -31,29 +34,38 @@ const Step1Page = () => {
         error: updateUserError,
     } = useUpdateUserMutation();
 
+    const {
+        mutateAsync: addOrganization,
+        isPending: isAddingOrg,
+        error: addOrgError,
+    } = useOrganizationAddMutation();
+
     const onStepComplete = async () => {
         if (!selectedOrg) return;
 
-        updateUser({
-            currentWorkspace: selectedOrg._id,
-        })
-            .then(() => {
-                // Redirect to the next step after updating user
-                router.push(ROUTE_CONSTANTS.ONBOARDING_STEP_2);
+        if (provider === "github") {
+            updateUser({
+                currentWorkspace: selectedOrg._id,
             })
-            .catch((error) => {
-                console.error("Error updating user:", error);
-                // Handle error (e.g., show a notification)
-            });
-
-        // if (
-        //     provider === "github" &&
-        //     user?.currentWorkspace?.id !== selectedOrg.id
-        // ) {
-        //     router.push(ROUTE_CONSTANTS.ONBOARDING_STEP_2);
-        // } else {
-        //     router.push(ROUTE_CONSTANTS.ONBOARDING_STEP_3);
-        // }
+                .then(() => {
+                    // Redirect to the next step after updating user
+                    router.push(ROUTE_CONSTANTS.ONBOARDING_STEP_2);
+                })
+                .catch((error) => {
+                    console.error("Error updating user:", error);
+                });
+        } else if (provider === "bitbucket") {
+            addOrganization({
+                slug: selectedOrg.slug,
+            })
+                .then(() => {
+                    // Redirect to the next step after adding organization
+                    router.push(ROUTE_CONSTANTS.ONBOARDING_STEP_2);
+                })
+                .catch((error) => {
+                    console.error("Error adding organization:", error);
+                });
+        }
     };
 
     const handleInstall = () => {
@@ -87,15 +99,16 @@ const Step1Page = () => {
                             <h3 className="text-[var(--title-50)] font-medium text-lg">
                                 Organizations list
                             </h3>
-                            {/* add another organization button here */}
-                            <Button
-                                variant="outline"
-                                className=""
-                                onClick={handleInstall}
-                            >
-                                <Plus className="inline mr-1" />
-                                <span>Add New Organization</span>
-                            </Button>
+                            {provider === "github" && (
+                                <Button
+                                    variant="outline"
+                                    className=""
+                                    onClick={handleInstall}
+                                >
+                                    <Plus className="inline mr-1" />
+                                    <span>Add New Organization</span>
+                                </Button>
+                            )}
                         </div>
                         <div className="border border-dashed py-5 px-5 rounded-xl">
                             {isLoading && (
@@ -114,7 +127,7 @@ const Step1Page = () => {
                                 <SelectableList
                                     items={organizations?.map(
                                         (org: Organization) => ({
-                                            id: String(org.id || org.name),
+                                            id: String(org.id || org.slug),
                                             title: org.name,
                                             subtitle: org.name,
                                             avatar: org.avatarUrl,
@@ -126,7 +139,7 @@ const Step1Page = () => {
                                             organizations.find(
                                                 (org) =>
                                                     org.id === id ||
-                                                    org.name === id
+                                                    org.slug === id
                                             ) || null
                                         )
                                     }

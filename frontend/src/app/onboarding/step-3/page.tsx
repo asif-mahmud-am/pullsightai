@@ -118,6 +118,13 @@ const Step3Page = () => {
                                     onSelect={(id) => setSelectedPR(id)}
                                 />
                             )}
+                        {!isFetching &&
+                            pullRequests &&
+                            pullRequests?.length === 0 && (
+                                <p className="text-[var(--subtitle-400)]">
+                                    No pull requests found for this repository.
+                                </p>
+                            )}
                     </div>
                 </div>
             </div>

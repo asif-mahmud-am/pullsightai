@@ -168,15 +168,15 @@ const Step4Page = () => {
     const repoId = searchParams.get("repoId") as string;
     const prId = searchParams.get("prId") as string;
 
-    if (!repoId || !prId) {
-        redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_3);
-    }
+    // if (!repoId || !prId) {
+    //     redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_3);
+    // }
 
-    const { data, isLoading, error } = useReviewPullRequestQuery({
-        provider: user?.provider || "github", // Default to GitHub if not set
-        repoId,
-        prId,
-    });
+    // const { data, isLoading, error } = useReviewPullRequestQuery({
+    //     provider: user?.provider || "github", // Default to GitHub if not set
+    //     repoId,
+    //     prId,
+    // });
 
     const onStepComplete = () => {
         // You can add your API call or navigation logic here
@@ -206,22 +206,22 @@ const Step4Page = () => {
                         <h3 className="text-[var(--title-50)] font-medium mb-4 text-lg">
                             PR Summary
                         </h3>
-                        <div className="bg-dark-900 border border-dashed p-5 rounded-xl">
-                            {isLoading && (
-                                <p className="text-[var(--subtitle-400)] px-5">
+                        <div className="bg-dark-900 border border-dashed rounded-xl">
+                            {false && (
+                                <p className="text-[var(--subtitle-400)] p-5">
                                     Loading PR summary...
                                 </p>
                             )}
-                            {error && (
-                                <p className="text-[var(--subtitle-400)] px-5">
+                            {false && (
+                                <p className="text-[var(--subtitle-400)] p-7">
                                     Error loading PR summary. Please try again.
                                 </p>
                             )}
-                            {!isLoading &&
+                            {!false &&
                                 (!data ||
                                     !data?.pull_request ||
                                     !data?.analysis) && (
-                                    <div className="flex items-center justify-center h-full text-gray-500">
+                                    <div className="flex items-center justify-center h-full p-7 text-gray-500">
                                         No analysis data available.
                                     </div>
                                 )}

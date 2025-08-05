@@ -167,6 +167,7 @@ export class GithubEventService {
         // Create the comprehensive structure
         const comprehensiveAnalysis: StructuredPRData = {
             pullRequest: {
+                provider: 'github',
                 prId: prData.id.toString(),
                 prUser: prData.user.login,
                 owner: owner,

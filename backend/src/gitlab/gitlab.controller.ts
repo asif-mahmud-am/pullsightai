@@ -2,15 +2,15 @@ import {
     Body,
     Controller,
     Get,
-    Param,
     Post,
     Query,
     Req,
     UseGuards
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
+import { AddWebhookDto } from 'src/common/dto/add-webhook.dto'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
-import { AddWebhookDto } from './dto/add-webhook.dto'
+import { GetPRDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
 import { GitlabService } from './gitlab.service'
 
 @Controller({
@@ -53,73 +53,23 @@ export class GitlabController {
         }
     }
 
-    @Get('user')
-    async getUserProfile(@Query('access_token') accessToken: string) {
-        return {
-            message: 'User profile fetched successfully',
-            result: await this.gitlabService.getUserProfile(accessToken)
-        }
-    }
-
-    @UseGuards(AuthGuard('jwt-cookie'))
-    @Get('repositories/:orgId')
-    async getOrganizationRepositories(
-        @Param('orgId') orgId: string,
-        @Req() req
-    ) {
-        // Check if the orgId is numeric (group) or if it matches a user
-        const isNumeric = /^\d+$/.test(orgId)
-
-        if (isNumeric) {
-            // It's a group ID
-            return {
-                message: 'Group repositories fetched successfully',
-                result: await this.gitlabService.getGroupRepositories(
-                    orgId,
-                    req.user
-                )
-            }
-        } else {
-            // It's a user ID/username
-            return {
-                message: 'User repositories fetched successfully',
-                result: await this.gitlabService.getUserRepositories(
-                    orgId,
-                    req.user
-                )
-            }
-        }
-    }
-
     @UseGuards(AuthGuard('jwt-cookie'))
     @Get('repos-pr-list')
-    async getMergeRequests(
-        @Query('project_id') projectId: string,
-        @Req() req,
-        @Query('state') state?: 'opened' | 'closed' | 'merged' | 'all',
-        @Query('limit') limit?: number
-    ) {
+    async getPullRequests(@Req() req: any, @Query() getPRDto: GetPRDto) {
         return {
             message: 'Merge requests fetched successfully',
-            result: await this.gitlabService.getMergeRequests(
-                projectId,
-                req.user,
-                state,
-                limit
-            )
+            result: await this.gitlabService.getPullRequests(req.user, getPRDto)
         }
     }
 
     @UseGuards(AuthGuard('jwt-cookie'))
     @Post('add-webhook')
-    async addWebhook(@Body() addWebhookDto: AddWebhookDto, @Req() req) {
+    async addWebhook(@Body() addWebhookDto: AddWebhookDto, @Req() req: any) {
         return {
             message: 'Webhook added successfully',
             result: await this.gitlabService.addWebhook(
                 req.user,
-                addWebhookDto.project_id,
-                addWebhookDto.webhookUrl,
-                addWebhookDto.events
+                addWebhookDto.repo
             )
         }
     }
@@ -132,6 +82,19 @@ export class GitlabController {
         return {
             message: 'GitLab events processed successfully',
             result: await this.gitlabService.processGitlabEvent(event, body)
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('review-pr')
+    async reviewPR(@Req() req: any, @Query() prReviewDto: PRReviewDto) {
+        const reviewData = await this.gitlabService.makePRReview(
+            req.user,
+            prReviewDto
+        )
+        return {
+            message: 'Pull request reviewed successfully',
+            result: reviewData
         }
     }
 }

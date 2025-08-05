@@ -1,5 +1,5 @@
 import { HttpService } from '@nestjs/axios'
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { firstValueFrom } from 'rxjs'
 import { PRFile, StructuredPRData } from 'src/common/interfaces/pr.interface'
@@ -23,11 +23,9 @@ export class GitlabEventsService {
             throw new Error('Invalid GitLab merge request payload')
         }
 
-        // Try to get access token from database based on project namespace
-        const namespace =
-            project.namespace || project.path_with_namespace?.split('/')[0]
-        const accessToken = await this.getAccessTokenForNamespace(namespace)
-        // Get merge request files using GitLab API
+        // console.log('Handling GitLab Merge Request:', payload)
+        const workspace = project.namespace.id
+        const accessToken = await this.getAccessTokenForNamespace(workspace)
         const files = await this.fetchMRFiles(
             project.id,
             mergeRequest.iid,
@@ -76,12 +74,13 @@ export class GitlabEventsService {
         // Create the comprehensive structure matching GitHub format
         const comprehensiveAnalysis: StructuredPRData = {
             pullRequest: {
+                provider: 'gitlab',
                 prId: mergeRequest.id.toString(),
                 prUser:
                     mergeRequest.author?.username ||
                     payload.user?.username ||
                     'unknown',
-                owner: project.namespace,
+                owner: project.namespace.path,
                 repo: project.name,
                 prNumber: mergeRequest.iid.toString(),
                 installationId: 'gitlab_integration', // GitLab doesn't have installation concept
@@ -104,81 +103,59 @@ export class GitlabEventsService {
     }
 
     private async getAccessTokenForNamespace(
-        namespace: string
+        workspace: string
     ): Promise<string | null> {
-        try {
-            // Try to find a workspace record first
-            const workspaceRecord = await this.dataService.workspaces.findOne({
-                name: namespace,
-                provider: 'gitlab'
-            })
+        const workspaceRecord = await this.dataService.workspaces.findOne({
+            id: workspace,
+            provider: 'gitlab'
+        })
 
-            if (workspaceRecord?._id) {
-                // Find a user who has this workspace in their workspaces array
-                const userData = await this.dataService.users.findOne(
-                    { workspaces: workspaceRecord._id },
-                    'accessToken refreshToken tokenExpiresAt'
-                )
-
-                if (!userData?.accessToken) {
-                    console.warn(
-                        'No access token found for user with namespace:',
-                        namespace
-                    )
-                    return null
-                }
-
-                // Check if access token is expired or will expire soon (within 5 minutes)
-                const now = new Date()
-                const expiryBuffer = 5 * 60 * 1000 // 5 minutes in milliseconds
-                const isTokenExpired =
-                    userData.tokenExpiresAt &&
-                    new Date(userData.tokenExpiresAt).getTime() <
-                        now.getTime() + expiryBuffer
-
-                if (isTokenExpired && userData.refreshToken) {
-                    console.log(
-                        'Access token expired, attempting to refresh...'
-                    )
-                    const newTokens =
-                        await this.gitlabApiService.refreshAccessToken(
-                            userData.refreshToken
-                        )
-
-                    if (newTokens) {
-                        // Calculate expiration using expires_in from response or default
-                        const tokenExpiresAt = new Date(
-                            Date.now() + (newTokens.expires_in || 7200) * 1000
-                        )
-
-                        // Update user with new tokens
-                        await this.dataService.users.updateOne(
-                            { _id: userData._id },
-                            {
-                                $set: {
-                                    accessToken: newTokens.access_token,
-                                    refreshToken:
-                                        newTokens.refresh_token ||
-                                        userData.refreshToken,
-                                    tokenExpiresAt
-                                }
-                            }
-                        )
-                        return newTokens.access_token
-                    } else {
-                        console.error('Failed to refresh access token')
-                        return null
-                    }
-                }
-
-                return userData.accessToken
-            }
-
-            return null
-        } catch (error) {
-            console.error('Error getting access token for namespace:', error)
-            return null
+        if (!workspaceRecord) {
+            throw new BadRequestException(
+                'Workspace not found for the provided GitLab namespace'
+            )
         }
+
+        // Find a user who has this workspace in their workspaces array
+        const userData = await this.dataService.users.findOne(
+            { workspaces: workspaceRecord._id },
+            'accessToken refreshToken tokenExpiresAt'
+        )
+
+        const now = new Date()
+        const expiryBuffer = 5 * 60 * 1000 // 5 minutes in milliseconds
+        const isTokenExpired =
+            userData?.tokenExpiresAt &&
+            new Date(userData.tokenExpiresAt).getTime() <
+                now.getTime() + expiryBuffer
+
+        if (isTokenExpired && userData.refreshToken) {
+            const newTokens = await this.gitlabApiService.refreshAccessToken(
+                userData.refreshToken
+            )
+
+            if (newTokens) {
+                const tokenExpiresAt = new Date(
+                    Date.now() + (newTokens.expires_in || 7200) * 1000
+                )
+                await this.dataService.users.updateOne(
+                    { _id: userData._id },
+                    {
+                        $set: {
+                            accessToken: newTokens.access_token,
+                            refreshToken:
+                                newTokens.refresh_token ||
+                                userData.refreshToken,
+                            tokenExpiresAt
+                        }
+                    }
+                )
+                return newTokens.access_token
+            } else {
+                throw new BadRequestException('Failed to refresh access token')
+            }
+        }
+        return userData?.accessToken as string
     }
 
     private async fetchMRFiles(

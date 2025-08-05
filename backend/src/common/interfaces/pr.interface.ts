@@ -11,6 +11,7 @@ export interface PRFile {
 }
 
 export interface PullRequestData {
+    provider: string
     prId: string
     prUser: string
     owner: string

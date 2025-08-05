@@ -1,4 +1,3 @@
-import { HttpService } from '@nestjs/axios'
 import {
     BadRequestException,
     Injectable,
@@ -6,6 +5,7 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
+import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
 import {
     PullRequestResponse,
@@ -13,6 +13,7 @@ import {
 } from 'src/common/interfaces/repository.interface'
 import { DatabaseService } from 'src/database/database.service'
 import { Workspace } from 'src/database/schemas/workspace.schema'
+import { GetPRDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
 import { GitlabEventsService } from 'src/gitlab/gitlab-events.service'
 import { GitlabApiService } from './gitlab-api.service'
 
@@ -40,19 +41,6 @@ export class GitlabService {
             userData.currentWorkspace['slug'],
             userData.currentWorkspace['type']
         )
-    }
-
-    async getUserProfile(accessToken: string): Promise<any> {
-        if (!accessToken) {
-            throw new BadRequestException('Access token is required')
-        }
-
-        try {
-            return await this.gitlabApiService.getUserProfile(accessToken)
-        } catch (error) {
-            console.error('Error in GitlabService.getUserProfile:', error)
-            throw error
-        }
     }
 
     async getAllGroups(user: any) {
@@ -88,7 +76,7 @@ export class GitlabService {
         let existingWorkspace = await this.dataService.workspaces.findOne({
             id: workspace.id,
             slug: workspace.slug,
-            provider: 'bitbucket'
+            provider: 'gitlab'
         })
 
         if (!existingWorkspace) {
@@ -118,27 +106,6 @@ export class GitlabService {
         return existingWorkspace
     }
 
-    async getGroupRepositories(
-        groupId: string,
-        user: any
-    ): Promise<Repository[]> {
-        const userData = await this.dataService.users.findOne(
-            { _id: user.sub },
-            'accessToken'
-        )
-        if (!userData?.accessToken) {
-            throw new BadRequestException('Access token is required')
-        }
-
-        if (!groupId) {
-            throw new BadRequestException('Group ID is required')
-        }
-        return await this.gitlabApiService.getGroupRepositories(
-            userData.accessToken,
-            groupId
-        )
-    }
-
     async getUserRepositories(
         userId: string,
         user: any
@@ -160,31 +127,22 @@ export class GitlabService {
         )
     }
 
-    async addWebhook(
-        user: any,
-        projectId: string,
-        webhookUrl?: string,
-        events?: string[]
-    ): Promise<any> {
-        const userData = await this.dataService.users.findOne(
-            { _id: user.sub },
-            'accessToken'
-        )
-        if (!userData?.accessToken) {
-            throw new BadRequestException('Access token is required')
+    async addWebhook(user: any, repo: string): Promise<any> {
+        const userData = await this.dataService.users
+            .findOne({ _id: user.sub })
+            .populate('currentWorkspace')
+        if (
+            !userData ||
+            !userData?.accessToken ||
+            !userData?.currentWorkspace
+        ) {
+            throw new Error(
+                'User or current workspace not found or installation ID missing'
+            )
         }
 
-        if (!projectId) {
-            throw new BadRequestException('Project ID is required')
-        }
-
-        // Default webhook URL if not provided
-        const finalWebhookUrl =
-            webhookUrl ||
-            `${this.configService.get('BASE_URL') || 'http://localhost:3001'}/v1/gitlab/callback`
-
-        // Default events if not provided
-        const finalEvents = events || [
+        const webhookUrl = `${this.configService.get('BASE_URL')}/v1/gitlab/events`
+        const events = [
             'push',
             'merge_requests',
             'issues',
@@ -197,21 +155,12 @@ export class GitlabService {
             'release'
         ]
 
-        try {
-            if (userData?.accessToken) {
-                return await this.gitlabApiService.addWebhook(
-                    userData?.accessToken,
-                    projectId,
-                    finalWebhookUrl,
-                    finalEvents
-                )
-            }
-        } catch (error) {
-            console.error(
-                `Error in GitlabService.addWebhook for project ${projectId}:`,
-                error
-            )
-        }
+        return await this.gitlabApiService.addWebhook(
+            userData?.accessToken,
+            repo,
+            webhookUrl,
+            events
+        )
     }
 
     async handleOAuthCallback(code: string): Promise<any> {
@@ -229,52 +178,75 @@ export class GitlabService {
         }
     }
 
-    async getMergeRequests(
-        projectId: string,
+    async getPullRequests(
         user: any,
-        state?: string,
-        limit?: number
+        getPRDto: GetPRDto
     ): Promise<PullRequestResponse[]> {
-        const userData = await this.dataService.users.findOne(
-            { _id: user.sub },
-            'accessToken'
-        )
+        const userData = await this.dataService.users
+            .findOne({ _id: user.sub }, 'accessToken currentWorkspace')
+            .populate('currentWorkspace', 'slug type')
 
-        if (!userData?.accessToken) {
-            throw new BadRequestException('Access token is required')
+        if (!userData?.accessToken || !userData?.currentWorkspace) {
+            throw new BadRequestException(
+                'Access token is required or workspace not set'
+            )
         }
 
-        if (!projectId) {
-            throw new BadRequestException('Project ID is required')
-        }
-
-        return await this.gitlabApiService.getMergeRequests(
+        return await this.gitlabApiService.getPrList(
             userData.accessToken,
-            projectId,
-            state,
-            limit
+            getPRDto.repo,
+            getPRDto.status,
+            +getPRDto.limit
         )
     }
 
     async processGitlabEvent(event: any, payload: any) {
-        let mergeRequestFormattedData: StructuredPRData | boolean
+        let pullRequestFormattedData: StructuredPRData | boolean
         switch (event) {
             case 'Merge Request Hook':
-                mergeRequestFormattedData =
+                pullRequestFormattedData =
                     await this.gitlabEventsService.handleGitlabMergeRequest(
                         payload
                     )
                 break
             default:
-                mergeRequestFormattedData = false
+                pullRequestFormattedData = false
         }
-        console.log('mergeRequestFormattedData', mergeRequestFormattedData)
-        if (mergeRequestFormattedData) {
+        if (pullRequestFormattedData) {
             await this.httpService.post(
                 this.configService.get('AI_AGENT_PR_POST_URL') as string,
-                mergeRequestFormattedData
+                pullRequestFormattedData
             )
         }
-        return mergeRequestFormattedData
+        return pullRequestFormattedData
+    }
+
+    async makePRReview(user: any, prReviewDto: PRReviewDto) {
+        const userData = await this.dataService.users
+            .findOne({ _id: user.sub })
+            .populate('currentWorkspace')
+
+        if (!userData || !userData?.currentWorkspace) {
+            throw new BadRequestException(
+                'User or current workspace not found or installation ID missing'
+            )
+        }
+        const PrAndRepo = await this.gitlabApiService.getPRAndRepo(
+            userData.accessToken as string,
+            userData?.currentWorkspace['slug'] as string,
+            prReviewDto.repo,
+            +prReviewDto.prNumber
+        )
+        const pullRequestFormattedData: StructuredPRData =
+            await this.gitlabEventsService.handleGitlabMergeRequest(PrAndRepo)
+
+        const response = await this.httpService.post(
+            this.configService.get('AI_AGENT_PR_REVIEW_URL') as string,
+            pullRequestFormattedData
+        )
+        return {
+            ...pullRequestFormattedData,
+            ...response
+        }
     }
 }

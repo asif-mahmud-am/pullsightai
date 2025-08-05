@@ -4,11 +4,11 @@ export interface Repository {
     fullName: string
     private: boolean
     author: {
-        name: string
+        username: string
         avatarUrl: string
     }
-    createdAt: string
-    updatedAt: string
+    createdOn: string
+    updatedOn: string
     openIssues: number
 }
 

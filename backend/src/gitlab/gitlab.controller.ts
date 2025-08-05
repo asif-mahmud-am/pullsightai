@@ -9,6 +9,7 @@ import {
     UseGuards
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
+import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
 import { AddWebhookDto } from './dto/add-webhook.dto'
 import { GitlabService } from './gitlab.service'
 
@@ -20,7 +21,31 @@ export class GitlabController {
     constructor(private readonly gitlabService: GitlabService) {}
 
     @UseGuards(AuthGuard('jwt-cookie'))
-    @Get('repositories')
+    @Get('organizations')
+    async getAllGroups(@Req() req) {
+        return {
+            message: 'Organizations fetched successfully',
+            result: await this.gitlabService.getAllGroups(req.user)
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Post('add-workspace')
+    async addWorkspace(
+        @Req() req: any,
+        @Body() addWorkspaceDto: AddWorkspaceDto
+    ) {
+        return {
+            message: 'Workspace added successfully',
+            result: await this.gitlabService.addWorkspace(
+                req.user,
+                addWorkspaceDto
+            )
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('org-repos')
     async getAllRepositories(@Req() req) {
         return {
             message: 'All repositories fetched successfully',
@@ -33,15 +58,6 @@ export class GitlabController {
         return {
             message: 'User profile fetched successfully',
             result: await this.gitlabService.getUserProfile(accessToken)
-        }
-    }
-
-    @UseGuards(AuthGuard('jwt-cookie'))
-    @Get('organizations')
-    async getAllGroups(@Req() req) {
-        return {
-            message: 'Organizations fetched successfully',
-            result: await this.gitlabService.getAllGroups(req.user)
         }
     }
 

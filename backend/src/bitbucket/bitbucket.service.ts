@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config'
 import { BitbucketEventsService } from 'src/bitbucket/bitbucket-events.service'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
+import { Repository } from 'src/common/interfaces/repository.interface'
 import { DatabaseService } from 'src/database/database.service'
 import { Workspace } from 'src/database/schemas/workspace.schema'
 import { GetPRDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
@@ -100,7 +101,7 @@ export class BitbucketService {
         return existingWorkspace
     }
 
-    async getWorkspaceRepositories(user: any) {
+    async getWorkspaceRepositories(user: any): Promise<Repository[]> {
         const userData = await this.dataService.users
             .findOne({ _id: user.sub })
             .populate('currentWorkspace')

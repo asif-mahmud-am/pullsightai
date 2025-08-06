@@ -30,15 +30,6 @@ export class BitbucketApiService {
     }
 
     /**
-     * Get user profile information
-     */
-    async getUserProfile(accessToken: string): Promise<any> {
-        return await this.httpService.get(`${this.baseUrl}/user`, {
-            headers: this.getAuthHeaders(accessToken)
-        })
-    }
-
-    /**
      * Get all workspaces for the authenticated user
      */
     async getAllWorkspaces(accessToken: string): Promise<Workspace[]> {
@@ -166,6 +157,7 @@ export class BitbucketApiService {
             id: repo.uuid,
             name: repo.name,
             fullName: repo.full_name,
+            slug: repo.slug,
             createdOn: repo.created_on,
             updatedOn: repo.updated_on,
             author: {
@@ -212,13 +204,13 @@ export class BitbucketApiService {
                     username: pr.author.nickname,
                     avatarUrl: pr.author.links?.avatar?.href
                 },
-                createdAt: pr.created_on,
-                updatedAt: pr.updated_on,
-                closedAt:
+                createdOn: pr.created_on,
+                updatedOn: pr.updated_on,
+                closedOn:
                     pr.state === 'DECLINED' || pr.state === 'SUPERSEDED'
                         ? pr.updated_on
                         : null,
-                mergedAt: pr.state === 'MERGED' ? pr.updated_on : null,
+                mergedOn: pr.state === 'MERGED' ? pr.updated_on : null,
                 url: pr.links.html.href
             })
         })
@@ -276,5 +268,33 @@ export class BitbucketApiService {
             pullrequest,
             repository
         }
+    }
+
+    async fetchPRDiff(
+        workspace: string,
+        repository: string,
+        pullRequestId: number,
+        accessToken: string
+    ): Promise<string | null> {
+        const apiUrl = `${this.baseUrl}/repositories/${workspace}/${repository}/pullrequests/${pullRequestId}/diff`
+        return await this.httpService.get(apiUrl, {
+            headers: this.getAuthHeaders(accessToken)
+        })
+    }
+
+    extractFileDiff(fullDiff: string | null, filePath: string): string {
+        if (!fullDiff || !filePath) {
+            return 'No diff available'
+        }
+
+        const escapedFileName = filePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        const filePattern = new RegExp(
+            `diff --git a/${escapedFileName} b/${escapedFileName}[\\s\\S]*?(?=diff --git|$)`,
+            'g'
+        )
+        const fileDiffMatch = fullDiff.match(filePattern)
+        return fileDiffMatch
+            ? fileDiffMatch[0].trim()
+            : 'No diff available for this file'
     }
 }

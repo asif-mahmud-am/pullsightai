@@ -1,4 +1,3 @@
-import { HttpService } from '@nestjs/axios'
 import {
     BadRequestException,
     Injectable,
@@ -7,6 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { BitbucketEventsService } from 'src/bitbucket/bitbucket-events.service'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
+import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { Repository } from 'src/common/interfaces/repository.interface'
 import { DatabaseService } from 'src/database/database.service'
@@ -23,19 +23,6 @@ export class BitbucketService {
         private readonly httpService: HttpService,
         private readonly bitbucketEventsService: BitbucketEventsService
     ) {}
-
-    async getUserProfile(accessToken: string): Promise<any> {
-        if (!accessToken) {
-            throw new BadRequestException('Access token is required')
-        }
-
-        try {
-            return await this.bitbucketApiService.getUserProfile(accessToken)
-        } catch (error) {
-            console.error('Error in BitbucketService.getUserProfile:', error)
-            throw error
-        }
-    }
 
     async getAllWorkspaces(user: any): Promise<Workspace[]> {
         const userData = await this.dataService.users.findOne(
@@ -117,15 +104,7 @@ export class BitbucketService {
         )
     }
 
-    async addWebhook(
-        user: any,
-        repo: string
-        // accessToken: string,
-        // repository: string,
-        // workspace: string,
-        // webhookUrl?: string,
-        // events?: string[]
-    ): Promise<any> {
+    async addWebhook(user: any, repo: string): Promise<any> {
         const userData = await this.dataService.users
             .findOne({ _id: user.sub })
             .populate('currentWorkspace')
@@ -207,7 +186,7 @@ export class BitbucketService {
             .populate('currentWorkspace')
 
         if (!userData || !userData?.currentWorkspace) {
-            throw new Error(
+            throw new BadRequestException(
                 'User or current workspace not found or installation ID missing'
             )
         }
@@ -217,6 +196,7 @@ export class BitbucketService {
             prReviewDto.repo,
             +prReviewDto.prNumber
         )
+        console.log('PrAndRepo:', PrAndRepo)
         const pullRequestFormattedData =
             await this.bitbucketEventsService.handleBitbucketPullRequest(
                 PrAndRepo
@@ -226,7 +206,6 @@ export class BitbucketService {
             this.configService.get('AI_AGENT_PR_REVIEW_URL') as string,
             pullRequestFormattedData
         )
-        console.log('AI Agent response:', response)
         return {
             ...pullRequestFormattedData,
             ...response

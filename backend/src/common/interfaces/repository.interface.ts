@@ -2,6 +2,7 @@ export interface Repository {
     id: number
     name: string
     fullName: string
+    slug: string
     private: boolean
     author: {
         username: string
@@ -22,9 +23,9 @@ export interface PullRequestResponse {
         username: string
         avatarUrl: string
     }
-    createdAt: string // ISO date string
-    updatedAt: string
-    closedAt: string | null
-    mergedAt: string | null
+    createdOn: string // ISO date string
+    updatedOn: string
+    closedOn: string | null
+    mergedOn: string | null
     url: string
 }

@@ -25,7 +25,7 @@ export class Workspace {
     @Prop({ required: true, trim: true })
     reposUrl: string
 
-    @Prop({ required: true, trim: true })
+    @Prop({ required: false })
     avatarUrl: string
 
     @Prop({ required: true, trim: true })

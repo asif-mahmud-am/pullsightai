@@ -10,8 +10,8 @@ import {
 import { AuthGuard } from '@nestjs/passport'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
 import { GetPRDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
+import { AddWebhookDto } from '../common/dto/add-webhook.dto'
 import { BitbucketService } from './bitbucket.service'
-import { AddWebhookDto } from './dto/add-webhook.dto'
 
 @Controller({
     path: 'bitbucket',
@@ -26,14 +26,6 @@ export class BitbucketController {
         return {
             message: 'Organizations fetched successfully',
             result: await this.bitbucketService.getAllWorkspaces(req.user)
-        }
-    }
-
-    @Get('user')
-    async getUserProfile(@Query('access_token') accessToken: string) {
-        return {
-            message: 'User profile fetched successfully',
-            result: await this.bitbucketService.getUserProfile(accessToken)
         }
     }
 
@@ -103,8 +95,6 @@ export class BitbucketController {
     @Post('events')
     async bitbucketEvents(@Body() body: any, @Req() req) {
         const event = req.headers['x-event-key']
-        console.log('Received Bitbucket event:', event)
-        console.log('Event payload:', body)
         return {
             message: 'Bitbucket events processed successfully',
             result: await this.bitbucketService.processBitbucketEvent(

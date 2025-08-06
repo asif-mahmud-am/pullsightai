@@ -54,6 +54,7 @@ export class GitlabApiService {
                         id: project.id.toString(),
                         name: project.name,
                         fullName: project.path_with_namespace,
+                        slug: project.path_with_namespace,
                         createdOn: project.created_at,
                         updatedOn:
                             project.last_activity_at || project.updated_at,
@@ -158,7 +159,6 @@ export class GitlabApiService {
             const group = await this.httpService.get(url, {
                 headers: this.getAuthHeaders(accessToken)
             })
-
             return {
                 id: group.id.toString(),
                 name: group.name,
@@ -211,6 +211,7 @@ export class GitlabApiService {
                     id: project.id.toString(),
                     name: project.name,
                     fullName: project.path_with_namespace,
+                    slug: project.path_with_namespace,
                     createdOn: project.created_at,
                     updatedOn: project.last_activity_at || project.updated_at,
                     author: {
@@ -246,6 +247,7 @@ export class GitlabApiService {
                     id: project.id.toString(),
                     name: project.name,
                     fullName: project.path_with_namespace,
+                    slug: project.path_with_namespace,
                     createdOn: project.created_at,
                     updatedOn: project.last_activity_at || project.updated_at,
                     author: {
@@ -267,7 +269,7 @@ export class GitlabApiService {
      */
     async addWebhook(
         accessToken: string,
-        projectId: string,
+        slug: string,
         webhookUrl: string,
         events: string[]
     ): Promise<any> {
@@ -315,10 +317,9 @@ export class GitlabApiService {
             ...gitlabEvents,
             enable_ssl_verification: true
         }
-        console.log(`Adding webhook to ${projectId} with data:`, webhookData)
 
         return await this.httpService.post(
-            `${this.baseUrl}/projects/${encodeURIComponent(projectId)}/hooks`,
+            `${this.baseUrl}/projects/${encodeURIComponent(slug)}/hooks`,
             webhookData,
             {
                 headers: this.getAuthHeaders(accessToken)
@@ -393,54 +394,47 @@ export class GitlabApiService {
     /**
      * Get merge requests (pull requests) for a repository
      */
-    async getMergeRequests(
+    async getPrList(
         accessToken: string,
-        projectId: string,
+        slug: string,
         state?: string,
         limit?: number
     ): Promise<PullRequestResponse[]> {
-        try {
-            const params = new URLSearchParams()
-            if (state) {
-                // Map states: opened, closed, merged, all
-                params.append('state', state.toLowerCase())
-            }
-            if (limit) {
-                params.append('per_page', limit.toString())
-            }
-            params.append('order_by', 'updated_at')
-            params.append('sort', 'desc')
-
-            const mergeRequests = await this.httpService.get(
-                `${this.baseUrl}/projects/${encodeURIComponent(projectId)}/merge_requests?${params.toString()}`,
-                {
-                    headers: this.getAuthHeaders(accessToken)
-                }
-            )
-
-            return mergeRequests.map((mr: any) => ({
-                id: mr.id,
-                nodeId: mr.id.toString(),
-                prNumber: mr.iid,
-                title: mr.title,
-                status: mr.state,
-                user: {
-                    username: mr.author?.username || 'unknown',
-                    avatarUrl: mr.author?.avatar_url || null
-                },
-                createdAt: mr.created_at,
-                updatedAt: mr.updated_at,
-                closedAt: mr.closed_at,
-                mergedAt: mr.merged_at,
-                url: mr.web_url
-            }))
-        } catch (error) {
-            console.error(
-                `Error in GitlabApiService.getMergeRequests for ${projectId}:`,
-                error
-            )
-            throw error
+        const params = new URLSearchParams()
+        if (state) {
+            params.append('state', state.toLowerCase())
         }
+        if (limit) {
+            params.append('per_page', limit.toString())
+        }
+        params.append('order_by', 'updated_at')
+        params.append('sort', 'desc')
+
+        const mergeRequests = await this.httpService.get(
+            `${this.baseUrl}/projects/${encodeURIComponent(slug)}/merge_requests?${params.toString()}`,
+            {
+                headers: this.getAuthHeaders(accessToken)
+            }
+        )
+        return mergeRequests.map(
+            (mr: any) =>
+                ({
+                    id: mr.id,
+                    nodeId: `GL_${mr.id}`,
+                    prNumber: mr.iid,
+                    title: mr.title,
+                    status: mr.state,
+                    author: {
+                        username: mr.author?.username || 'unknown',
+                        avatarUrl: mr.author?.avatar_url || null
+                    },
+                    createdOn: mr.created_at,
+                    updatedOn: mr.updated_at,
+                    closedOn: mr.closed_at,
+                    mergedOn: mr.merged_at,
+                    url: mr.web_url
+                }) as PullRequestResponse
+        )
     }
 
     async refreshAccessToken(refreshToken: string): Promise<{
@@ -448,37 +442,63 @@ export class GitlabApiService {
         refresh_token?: string
         expires_in: number
     } | null> {
-        try {
-            const gitlabTokenUrl =
-                this.configService.get('GITLAB_TOKEN_URL') ||
-                'https://gitlab.com/oauth/token'
-            const clientId = this.configService.get('GITLAB_CLIENT_ID')
-            const clientSecret = this.configService.get('GITLAB_CLIENT_SECRET')
+        const gitlabTokenUrl =
+            this.configService.get('GITLAB_TOKEN_URL') ||
+            'https://gitlab.com/oauth/token'
+        const clientId = this.configService.get('GITLAB_CLIENT_ID')
+        const clientSecret = this.configService.get('GITLAB_CLIENT_SECRET')
 
-            if (!clientId || !clientSecret) {
-                console.error('GitLab client credentials not configured')
-                return null
-            }
-
-            const response = await this.httpService.post(
-                gitlabTokenUrl,
-                {
-                    grant_type: 'refresh_token',
-                    refresh_token: refreshToken,
-                    client_id: clientId,
-                    client_secret: clientSecret
-                },
-                {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                }
-            )
-
-            return response.data
-        } catch (error) {
-            console.error('Error refreshing GitLab access token:', error)
+        if (!clientId || !clientSecret) {
+            console.error('GitLab client credentials not configured')
             return null
+        }
+
+        const response = await this.httpService.post(
+            gitlabTokenUrl,
+            {
+                grant_type: 'refresh_token',
+                refresh_token: refreshToken,
+                client_id: clientId,
+                client_secret: clientSecret
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+        )
+
+        return response.data
+    }
+
+    /**
+     *  Get pull request and repository details by ID
+     *  @param accessToken - The access token of the user
+     *  @param workspace - The workspace slug
+     *  @param repo - The repository slug
+     * @param prId - The pull request ID
+     */
+    async getPRAndRepo(
+        accessToken: string,
+        workspace: string,
+        repo: string,
+        prId: number
+    ) {
+        const object_attributes = await this.httpService.get(
+            `${this.baseUrl}/projects/${encodeURIComponent(repo)}/merge_requests/${prId}`,
+            {
+                headers: this.getAuthHeaders(accessToken)
+            }
+        )
+        const project = await this.httpService.get(
+            `${this.baseUrl}/projects/${encodeURIComponent(repo)}`,
+            {
+                headers: this.getAuthHeaders(accessToken)
+            }
+        )
+        return {
+            object_attributes,
+            project
         }
     }
 }

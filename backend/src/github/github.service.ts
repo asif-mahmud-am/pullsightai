@@ -202,14 +202,13 @@ export class GithubService {
                     username: pr.user?.login || 'Unknown',
                     avatarUrl: pr.user?.avatar_url || ''
                 },
-                createdAt: pr.created_at,
-                updatedAt: pr.updated_at,
-                closedAt: pr.closed_at,
-                mergedAt: pr.merged_at,
+                createdOn: pr.created_at,
+                updatedOn: pr.updated_at,
+                closedOn: pr.closed_at,
+                mergedOn: pr.merged_at,
                 url: pr.html_url
-            })
+            } as PullRequestResponse)
         })
-
         return prList
     }
 
@@ -268,6 +267,7 @@ export class GithubService {
                     id: repo.id,
                     name: repo.name,
                     fullName: repo.full_name,
+                    slug: repo.name,
                     private: repo.private,
                     author: {
                         username: repo.owner.login,

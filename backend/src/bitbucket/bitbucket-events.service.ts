@@ -1,5 +1,5 @@
 import { HttpService } from '@nestjs/axios'
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { firstValueFrom } from 'rxjs'
 import { PRFile, StructuredPRData } from 'src/common/interfaces/pr.interface'
@@ -38,6 +38,12 @@ export class BitbucketEventsService {
 
         const prFiles: PRFile[] = []
 
+        const fullDiff = await this.bitbucketApiService.fetchPRDiff(
+            workspace,
+            repository.name,
+            pullRequest.id,
+            accessToken
+        )
         // Process each file to get before/after content
         for (let i = 0; i < files.length; i++) {
             const file = files[i]
@@ -67,7 +73,10 @@ export class BitbucketEventsService {
                     contentBefore || 'File not found in destination branch',
                 prFileContentAfter:
                     contentAfter || 'File not found in source branch',
-                prFileDiff: 'Diff not available in webhook', // Bitbucket doesn't provide diff in webhook
+                prFileDiff: this.bitbucketApiService.extractFileDiff(
+                    fullDiff,
+                    file.new?.path || file.old?.path
+                ),
                 prFileBlobUrl:
                     file.new?.links?.self?.href ||
                     file.old?.links?.self?.href ||
@@ -77,6 +86,7 @@ export class BitbucketEventsService {
 
         const comprehensiveAnalysis: StructuredPRData = {
             pullRequest: {
+                provider: 'bitbucket',
                 prId: pullRequest.id.toString(),
                 prUser: pullRequest.author?.username || 'unknown',
                 owner: repository.owner?.username || 'unknown',
@@ -103,75 +113,69 @@ export class BitbucketEventsService {
 
     private async getAccessTokenForWorkspace(
         workspace: string
-    ): Promise<string | null> {
-        try {
-            // Try to find a workspace record first
-            const workspaceRecord = await this.dataService.workspaces.findOne({
-                slug: workspace,
-                provider: 'bitbucket'
-            })
+    ): Promise<string> {
+        const workspaceRecord = await this.dataService.workspaces.findOne({
+            slug: workspace,
+            provider: 'bitbucket'
+        })
 
-            if (workspaceRecord?._id) {
-                // Find a user who has this workspace in their workspaces array
-                let userData = await this.dataService.users.findOne(
-                    { workspaces: workspaceRecord._id },
-                    'accessToken refreshToken tokenExpiresAt'
+        if (workspaceRecord?._id) {
+            let userData = await this.dataService.users.findOne(
+                { workspaces: workspaceRecord._id },
+                'accessToken refreshToken tokenExpiresAt'
+            )
+
+            if (!userData?.accessToken) {
+                throw new BadRequestException(
+                    'No user found with access token for the provided Bitbucket workspace'
                 )
-
-                if (!userData?.accessToken) {
-                    return null
-                }
-
-                // Check if access token is expired or will expire soon (within 5 minutes)
-                const now = new Date()
-                const expiryBuffer = 5 * 60 * 1000 // 5 minutes in milliseconds
-                const isTokenExpired =
-                    userData.tokenExpiresAt &&
-                    new Date(userData.tokenExpiresAt).getTime() <
-                        now.getTime() + expiryBuffer
-
-                if (isTokenExpired && userData.refreshToken) {
-                    console.log(
-                        'Access token expired, attempting to refresh...'
-                    )
-                    const newTokens =
-                        await this.bitbucketApiService.refreshAccessToken(
-                            userData.refreshToken
-                        )
-
-                    if (newTokens) {
-                        // Calculate expiration using expires_in from response or default
-                        const tokenExpiresAt = new Date(
-                            Date.now() + (newTokens.expires_in || 3600) * 1000
-                        )
-
-                        // Update user with new tokens
-                        await this.dataService.users.updateOne(
-                            { _id: userData._id },
-                            {
-                                $set: {
-                                    accessToken: newTokens.access_token,
-                                    refreshToken:
-                                        newTokens.refresh_token ||
-                                        userData.refreshToken,
-                                    tokenExpiresAt
-                                }
-                            }
-                        )
-                        return newTokens.access_token
-                    } else {
-                        console.error('Failed to refresh access token')
-                        return null
-                    }
-                }
-
-                return userData.accessToken
             }
 
-            return null
-        } catch (error) {
-            console.error('Error getting access token for workspace:', error)
-            return null
+            const now = new Date()
+            const expiryBuffer = 5 * 60 * 1000 // 5 minutes in milliseconds
+            const isTokenExpired =
+                userData.tokenExpiresAt &&
+                new Date(userData.tokenExpiresAt).getTime() <
+                    now.getTime() + expiryBuffer
+
+            if (isTokenExpired && userData.refreshToken) {
+                console.log('Access token expired, attempting to refresh...')
+                const newTokens =
+                    await this.bitbucketApiService.refreshAccessToken(
+                        userData.refreshToken
+                    )
+
+                if (newTokens) {
+                    const tokenExpiresAt = new Date(
+                        Date.now() + (newTokens.expires_in || 3600) * 1000
+                    )
+
+                    // Update user with new tokens
+                    await this.dataService.users.updateOne(
+                        { _id: userData._id },
+                        {
+                            $set: {
+                                accessToken: newTokens.access_token,
+                                refreshToken:
+                                    newTokens.refresh_token ||
+                                    userData.refreshToken,
+                                tokenExpiresAt
+                            }
+                        }
+                    )
+                    return newTokens.access_token
+                } else {
+                    throw new BadRequestException(
+                        'Failed to refresh access token'
+                    )
+                }
+            }
+
+            return userData.accessToken
+        } else {
+            throw new BadRequestException(
+                'No workspace found for the provided Bitbucket slug'
+            )
         }
     }
 

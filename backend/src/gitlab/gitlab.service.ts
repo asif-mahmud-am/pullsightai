@@ -185,7 +185,6 @@ export class GitlabService {
         const userData = await this.dataService.users
             .findOne({ _id: user.sub }, 'accessToken currentWorkspace')
             .populate('currentWorkspace', 'slug type')
-
         if (!userData?.accessToken || !userData?.currentWorkspace) {
             throw new BadRequestException(
                 'Access token is required or workspace not set'

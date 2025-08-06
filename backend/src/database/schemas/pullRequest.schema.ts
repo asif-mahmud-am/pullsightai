@@ -38,6 +38,9 @@ export class PRFile {
 @Schema({ timestamps: true, versionKey: false })
 export class PullRequest {
     @Prop({ required: true })
+    provider: string
+
+    @Prop({ required: true })
     prId: string
 
     @Prop({ required: true })
@@ -52,19 +55,19 @@ export class PullRequest {
     @Prop({ required: true })
     prNumber: string
 
-    @Prop({ type: String })
+    @Prop({ nullable: true })
     installationId: string
 
-    @Prop({ required: true })
+    @Prop({ nullable: true })
     prRepoName: string
 
-    @Prop({ required: true })
+    @Prop({ nullable: true })
     prTitle: string
 
     @Prop({ type: String })
     prBody: string
 
-    @Prop({ required: true })
+    @Prop({ nullable: true })
     prState: string
 
     @Prop({ type: String })
@@ -73,16 +76,16 @@ export class PullRequest {
     @Prop({ type: String })
     prUpdatedAt: string
 
-    @Prop({ required: true })
+    @Prop({ nullable: true })
     prHeadBranch: string
 
-    @Prop({ required: true })
+    @Prop({ nullable: true })
     prBaseBranch: string
 
-    @Prop({ required: true })
+    @Prop({ nullable: true })
     prHeadSha: string
 
-    @Prop({ required: true })
+    @Prop({ nullable: true })
     prBaseSha: string
 
     @Prop({ default: 0 })

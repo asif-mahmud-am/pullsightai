@@ -106,5 +106,5 @@ class PRFileInfo(BaseModel):
 
 
 class PRPayloadV2(BaseModel):
-    pull_request: dict  # Use dict for now, can be further typed if needed
+    pullRequest: dict  # Use dict for now, can be further typed if needed
     # The structure of pull_request matches the provided JSON

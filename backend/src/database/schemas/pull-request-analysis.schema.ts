@@ -27,6 +27,9 @@ export class PullRequestAnalysis {
     @Prop({ required: true, type: String })
     prNumber: string
 
+    @Prop({ nullable: true })
+    installationId: string
+
     @Prop({ type: String, default: null })
     summary: string
 

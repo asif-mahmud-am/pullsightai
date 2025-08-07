@@ -7,10 +7,10 @@ export type PullRequestDocument = PullRequest & Document
 
 @Schema({ timestamps: false, versionKey: false, id: false })
 export class PRFile {
-    @Prop({ required: true })
+    @Prop({ nullable: true })
     prFileName: string
 
-    @Prop({ required: true })
+    @Prop({ nullable: true })
     prFileStatus: string
 
     @Prop({ default: 0 })
@@ -22,16 +22,16 @@ export class PRFile {
     @Prop({ default: 0 })
     prFileChanges: number
 
-    @Prop({ type: String })
+    @Prop({ nullable: true })
     prFileContentBefore: string
 
-    @Prop({ type: String })
+    @Prop({ nullable: true })
     prFileContentAfter: string
 
-    @Prop({ type: String })
+    @Prop({ nullable: true })
     prFileDiff: string
 
-    @Prop({ type: String })
+    @Prop({ nullable: true })
     prFileBlobUrl: string
 }
 
@@ -64,16 +64,16 @@ export class PullRequest {
     @Prop({ nullable: true })
     prTitle: string
 
-    @Prop({ type: String })
+    @Prop({ nullable: true })
     prBody: string
 
     @Prop({ nullable: true })
     prState: string
 
-    @Prop({ type: String })
+    @Prop({ nullable: true })
     prCreatedAt: string
 
-    @Prop({ type: String })
+    @Prop({ nullable: true })
     prUpdatedAt: string
 
     @Prop({ nullable: true })

@@ -362,18 +362,18 @@ export class GitlabApiService {
                 }
             )
 
-            if (response.data.access_token) {
+            if (response.access_token) {
                 // Get user profile with the access token
                 const userProfile = await this.getUserProfile(
-                    response.data.access_token
+                    response.access_token
                 )
 
                 return {
-                    accessToken: response.data.access_token,
-                    refreshToken: response.data.refresh_token,
-                    tokenType: response.data.token_type,
-                    expiresIn: response.data.expires_in,
-                    scope: response.data.scope,
+                    accessToken: response.access_token,
+                    refreshToken: response.access_token,
+                    tokenType: response.access_token,
+                    expiresIn: response.access_token,
+                    scope: response.access_token,
                     user: userProfile
                 }
             } else {
@@ -467,8 +467,7 @@ export class GitlabApiService {
                 }
             }
         )
-
-        return response.data
+        return response
     }
 
     /**

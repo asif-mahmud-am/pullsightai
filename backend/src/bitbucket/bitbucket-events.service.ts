@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { firstValueFrom } from 'rxjs'
 import { HttpService } from 'src/common/http/http.service'
 import { PRFile, StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { DatabaseService } from 'src/database/database.service'
@@ -199,16 +198,14 @@ export class BitbucketEventsService {
                 'https://api.bitbucket.org/2.0'
             const apiUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/pullrequests/${pullRequestId}/diffstat`
 
-            const response = await firstValueFrom(
-                this.httpService.get(apiUrl, {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                        Accept: 'application/json'
-                    }
-                })
-            )
+            const response = await this.httpService.get(apiUrl, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    Accept: 'application/json'
+                }
+            })
 
-            return response.data.values || []
+            return response.values || []
         } catch (error) {
             console.error('Error details:', {
                 message: error.message,
@@ -245,14 +242,12 @@ export class BitbucketEventsService {
 
             const apiUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/src/${encodedBranch}/${encodedFilePath}`
 
-            const response = await firstValueFrom(
-                this.httpService.get(apiUrl, {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`
-                    }
-                })
-            )
-            return response.data
+            const response = await this.httpService.get(apiUrl, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
+                }
+            })
+            return response
         } catch (error) {
             console.error('File content error details:', {
                 workspace,

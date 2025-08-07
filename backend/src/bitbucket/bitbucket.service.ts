@@ -196,19 +196,18 @@ export class BitbucketService {
             prReviewDto.repo,
             +prReviewDto.prNumber
         )
-        console.log('PrAndRepo:', PrAndRepo)
         const pullRequestFormattedData =
             await this.bitbucketEventsService.handleBitbucketPullRequest(
                 PrAndRepo
             )
 
-        // const response = await this.httpService.post(
-        //     this.configService.get('AI_AGENT_PR_REVIEW_URL') as string,
-        //     pullRequestFormattedData
-        // )
+        const response = await this.httpService.post(
+            this.configService.get('AI_AGENT_PR_REVIEW_URL') as string,
+            pullRequestFormattedData
+        )
         return {
             ...pullRequestFormattedData,
-            // ...response
+            ...response
         }
     }
 }

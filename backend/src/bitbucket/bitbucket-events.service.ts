@@ -1,7 +1,7 @@
-import { HttpService } from '@nestjs/axios'
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { firstValueFrom } from 'rxjs'
+import { HttpService } from 'src/common/http/http.service'
 import { PRFile, StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { DatabaseService } from 'src/database/database.service'
 import { BitbucketApiService } from './bitbucket-api.service'
@@ -10,6 +10,7 @@ import { PostSummeryDto } from './dto/post-summery.dto'
 
 @Injectable()
 export class BitbucketEventsService {
+    private readonly baseUrl = 'https://api.bitbucket.org/2.0'
     constructor(
         private readonly httpService: HttpService,
         private readonly configService: ConfigService,
@@ -266,77 +267,54 @@ export class BitbucketEventsService {
     }
 
     async addPRReviewComments(postReviewDto: PostReviewDto): Promise<any> {
-        try {
+        const accessToken = await this.getAccessTokenForWorkspace(
+            postReviewDto.workspace
+        )
 
-            const accessToken = await this.getAccessTokenForWorkspace(
-                postReviewDto.workspace
-            )
-
-            const bitbucketApiUrl =
-                this.configService.get('BITBUCKET_API_URL') ||
-                'https://api.bitbucket.org/2.0'
-
-            const results: any[] = []
-            for (const comment of postReviewDto.comments) {
-                const commentData = {
-                    content: {
-                        raw: comment.body
-                    },
-                    inline: {
-                        to: comment.position,
-                        path: comment.path
-                    }
+        const bitbucketApiUrl = this.baseUrl
+        const results: any[] = []
+        for (const comment of postReviewDto.comments) {
+            const commentData = {
+                content: {
+                    raw: comment.body
+                },
+                inline: {
+                    to: comment.position,
+                    path: comment.path
                 }
-
-                const apiUrl = `${bitbucketApiUrl}/repositories/${postReviewDto.owner}/${postReviewDto.repo}/pullrequests/${postReviewDto.prNumber}/comments`
-
-                const response = await firstValueFrom(
-                    this.httpService.post(apiUrl, commentData, {
-                        headers: {
-                            Authorization: `Bearer ${accessToken}`,
-                            'Content-Type': 'application/json'
-                        }
-                    })
-                )
-                results.push(response.data)
             }
-            return results
-        } catch (error) {
-            console.error('Error posting review comments:', error)
-            throw new BadRequestException('Failed to post review comments')
+
+            const apiUrl = `${bitbucketApiUrl}/repositories/${postReviewDto.owner}/${postReviewDto.repo}/pullrequests/${postReviewDto.prNumber}/comments`
+
+            const response = await this.httpService.post(apiUrl, commentData, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            results.push(response)
         }
+        return results
     }
 
     async addPRSummery(postSummeryDto: PostSummeryDto): Promise<any> {
-        try {
-            const accessToken = await this.getAccessTokenForWorkspace(
-                postSummeryDto.workspace
-            )
-
-            const bitbucketApiUrl =
-                this.configService.get('BITBUCKET_API_URL') ||
-                'https://api.bitbucket.org/2.0'
-
-            const commentData = {
-                content: {
-                    raw: postSummeryDto.body
-                }
+        const accessToken = await this.getAccessTokenForWorkspace(
+            postSummeryDto.workspace
+        )
+        const commentData = {
+            content: {
+                raw: postSummeryDto.body
             }
-
-            const apiUrl = `${bitbucketApiUrl}/repositories/${postSummeryDto.owner}/${postSummeryDto.repo}/pullrequests/${postSummeryDto.prNumber}/comments`
-
-            const response = await firstValueFrom(
-                this.httpService.post(apiUrl, commentData, {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json'
-                    }
-                })
-            )
-            return response.data
-        } catch (error) {
-            console.error('Error posting summary:', error)
-            throw new BadRequestException('Failed to post summary')
         }
+
+        const apiUrl = `${this.baseUrl}/repositories/${postSummeryDto.owner}/${postSummeryDto.repo}/pullrequests/${postSummeryDto.prNumber}/comments`
+
+        const response = this.httpService.post(apiUrl, commentData, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        return response
     }
 }

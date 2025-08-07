@@ -200,6 +200,11 @@ export class GitlabService {
     }
 
     async processGitlabEvent(event: any, payload: any) {
+        await this.dataService.eventLogs.create({
+            eventName: event,
+            provider: 'github',
+            eventPayload: payload
+        })
         let pullRequestFormattedData: StructuredPRData | boolean
         switch (event) {
             case 'Merge Request Hook':
@@ -212,9 +217,31 @@ export class GitlabService {
                 pullRequestFormattedData = false
         }
         if (pullRequestFormattedData) {
+            const savedPullRequestFormattedData =
+                await this.dataService.pullRequests.create({
+                    ...pullRequestFormattedData.pullRequest
+                })
+            const pullRequestAnalysis =
+                await this.dataService.pullRequestAnalysis.create({
+                    prId: savedPullRequestFormattedData.prId,
+                    provider: savedPullRequestFormattedData.provider,
+                    prUser: savedPullRequestFormattedData.prUser,
+                    workspaceSlug: savedPullRequestFormattedData.owner,
+                    repositorySlug: savedPullRequestFormattedData.repo,
+                    prNumber: savedPullRequestFormattedData.prNumber,
+                    installationId:
+                        savedPullRequestFormattedData.installationId,
+                    inProgress: true,
+                    startedAt: new Date()
+                })
             await this.httpService.post(
                 this.configService.get('AI_AGENT_PR_POST_URL') as string,
-                pullRequestFormattedData
+                {
+                    pullRequest: {
+                        ...pullRequestFormattedData.pullRequest,
+                        pullRequestAnalysisId: pullRequestAnalysis['_id']
+                    }
+                }
             )
         }
         return pullRequestFormattedData
@@ -239,10 +266,37 @@ export class GitlabService {
         const pullRequestFormattedData: StructuredPRData =
             await this.gitlabEventsService.handleGitlabMergeRequest(PrAndRepo)
 
+        // const response = await this.httpService.post(
+        //     this.configService.get('AI_AGENT_PR_REVIEW_URL') as string,
+        //     pullRequestFormattedData
+        // )
+
+        const savedPullRequestFormattedData =
+            await this.dataService.pullRequests.create({
+                ...pullRequestFormattedData.pullRequest
+            })
+        const pullRequestAnalysis =
+            await this.dataService.pullRequestAnalysis.create({
+                prId: savedPullRequestFormattedData.prId,
+                provider: savedPullRequestFormattedData.provider,
+                prUser: savedPullRequestFormattedData.prUser,
+                workspaceSlug: savedPullRequestFormattedData.owner,
+                repositorySlug: savedPullRequestFormattedData.repo,
+                prNumber: savedPullRequestFormattedData.prNumber,
+                installationId: savedPullRequestFormattedData.installationId,
+                inProgress: true,
+                startedAt: new Date()
+            })
         const response = await this.httpService.post(
             this.configService.get('AI_AGENT_PR_REVIEW_URL') as string,
-            pullRequestFormattedData
+            {
+                pullRequest: {
+                    ...pullRequestFormattedData.pullRequest,
+                    pullRequestAnalysisId: pullRequestAnalysis['_id']
+                }
+            }
         )
+
         return {
             ...pullRequestFormattedData,
             ...response

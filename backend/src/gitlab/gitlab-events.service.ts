@@ -185,7 +185,7 @@ export class GitlabEventsService {
                 }
             )
 
-            const changes = response.data.changes || []
+            const changes = response.changes || []
 
             if (changes.length === 0) {
                 // No more files to fetch
@@ -222,31 +222,26 @@ export class GitlabEventsService {
         branch: string,
         accessToken?: string | null
     ): Promise<string | null> {
-        try {
-            if (!accessToken) {
-                console.warn(
-                    'No access token provided for GitLab file content API call'
-                )
-                return null
-            }
-            const gitlabApiUrl =
-                this.configService.get('GITLAB_API_URL') ||
-                'https://gitlab.com/api/v4'
-
-            const response = await this.httpService.get(
-                `${gitlabApiUrl}/projects/${projectId}/repository/files/${encodeURIComponent(filePath)}/raw`,
-                {
-                    params: { ref: branch },
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`
-                    }
-                }
+        if (!accessToken) {
+            console.warn(
+                'No access token provided for GitLab file content API call'
             )
-            return response.data
-        } catch (error) {
-            console.error('Error fetching GitLab file content:', error)
             return null
         }
+        const gitlabApiUrl =
+            this.configService.get('GITLAB_API_URL') ||
+            'https://gitlab.com/api/v4'
+
+        const response = await this.httpService.get(
+            `${gitlabApiUrl}/projects/${projectId}/repository/files/${encodeURIComponent(filePath)}/raw`,
+            {
+                params: { ref: branch },
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
+                }
+            }
+        )
+        return response
     }
 
     async addPRReviewComments(postReviewDto: PostReviewDto): Promise<any> {
@@ -303,7 +298,7 @@ export class GitlabEventsService {
                     }
                 )
 
-                results.push(fallbackResponse.data)
+                results.push(fallbackResponse)
                 continue
             }
 
@@ -328,8 +323,7 @@ export class GitlabEventsService {
                 }
             })
 
-            results.push(response.data)
-            console.log('Successfully posted inline comment')
+            results.push(response)
         }
         return results
     }
@@ -358,7 +352,7 @@ export class GitlabEventsService {
             }
         })
 
-        return response.data
+        return response
     }
 
     private async getMergeRequestDiffs(
@@ -379,12 +373,7 @@ export class GitlabEventsService {
             }
         })
 
-        console.log(
-            'Merge Request Diffs fetched:',
-            response.data.length,
-            'files'
-        )
-        return response.data
+        return response
     }
 
     private findLineCode(
@@ -423,7 +412,7 @@ export class GitlabEventsService {
                 'Content-Type': 'application/json'
             }
         })
-        return response.data
+        return response
     }
 
     private async getAccessTokenForProject(projectId: string): Promise<string> {

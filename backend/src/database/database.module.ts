@@ -5,6 +5,7 @@ import { DatabaseService } from 'src/database/database.service'
 import { EventLogSchema } from 'src/database/schemas/event-log.schema'
 import { PullRequestAnalysisCommentSchema } from 'src/database/schemas/pull-request-analysis-comment.schema'
 import { PullRequestAnalysisSchema } from 'src/database/schemas/pull-request-analysis.schema'
+import { PullRequestSchema } from 'src/database/schemas/pull-request.schema'
 import { RepositorySchema } from 'src/database/schemas/repository.schema'
 import { UserSchema } from 'src/database/schemas/user.schema'
 import { WorkspaceSchema } from 'src/database/schemas/workspace.schema'
@@ -31,7 +32,8 @@ import { WorkspaceSchema } from 'src/database/schemas/workspace.schema'
                 schema: PullRequestAnalysisSchema
             },
             { name: 'Repository', schema: RepositorySchema },
-            { name: 'EventLog', schema: EventLogSchema }
+            { name: 'EventLog', schema: EventLogSchema },
+            { name: 'PullRequest', schema: PullRequestSchema }
         ])
     ],
     controllers: [],

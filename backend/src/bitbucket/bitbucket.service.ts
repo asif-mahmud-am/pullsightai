@@ -159,6 +159,11 @@ export class BitbucketService {
     }
 
     async processBitbucketEvent(event: any, payload: any) {
+        await this.dataService.eventLogs.create({
+            eventName: event,
+            provider: 'bitbucket',
+            eventPayload: payload
+        })
         let pullRequestFormattedData: StructuredPRData | boolean
         switch (event) {
             case 'pullrequest:created':
@@ -172,9 +177,31 @@ export class BitbucketService {
                 pullRequestFormattedData = false
         }
         if (pullRequestFormattedData) {
+            const savedPullRequestFormattedData =
+                await this.dataService.pullRequests.create({
+                    ...pullRequestFormattedData.pullRequest
+                })
+            const pullRequestAnalysis =
+                await this.dataService.pullRequestAnalysis.create({
+                    prId: savedPullRequestFormattedData.prId,
+                    provider: savedPullRequestFormattedData.provider,
+                    prUser: savedPullRequestFormattedData.prUser,
+                    workspaceSlug: savedPullRequestFormattedData.owner,
+                    repositorySlug: savedPullRequestFormattedData.repo,
+                    prNumber: savedPullRequestFormattedData.prNumber,
+                    installationId:
+                        savedPullRequestFormattedData.installationId,
+                    inProgress: true,
+                    startedAt: new Date()
+                })
             await this.httpService.post(
                 this.configService.get('AI_AGENT_PR_POST_URL') as string,
-                pullRequestFormattedData
+                {
+                    pullRequest: {
+                        ...pullRequestFormattedData.pullRequest,
+                        pullRequestAnalysisId: pullRequestAnalysis['_id']
+                    }
+                }
             )
         }
         return pullRequestFormattedData
@@ -201,10 +228,36 @@ export class BitbucketService {
                 PrAndRepo
             )
 
+        const savedPullRequestFormattedData =
+            await this.dataService.pullRequests.create({
+                ...pullRequestFormattedData.pullRequest
+            })
+        const pullRequestAnalysis =
+            await this.dataService.pullRequestAnalysis.create({
+                prId: savedPullRequestFormattedData.prId,
+                provider: savedPullRequestFormattedData.provider,
+                prUser: savedPullRequestFormattedData.prUser,
+                workspaceSlug: savedPullRequestFormattedData.owner,
+                repositorySlug: savedPullRequestFormattedData.repo,
+                prNumber: savedPullRequestFormattedData.prNumber,
+                installationId: savedPullRequestFormattedData.installationId,
+                inProgress: true,
+                startedAt: new Date()
+            })
         const response = await this.httpService.post(
             this.configService.get('AI_AGENT_PR_REVIEW_URL') as string,
-            pullRequestFormattedData
+            {
+                pullRequest: {
+                    ...pullRequestFormattedData.pullRequest,
+                    pullRequestAnalysisId: pullRequestAnalysis['_id']
+                }
+            }
         )
+
+        // const response = await this.httpService.post(
+        //     this.configService.get('AI_AGENT_PR_REVIEW_URL') as string,
+        //     pullRequestFormattedData
+        // )
         return {
             ...pullRequestFormattedData,
             ...response

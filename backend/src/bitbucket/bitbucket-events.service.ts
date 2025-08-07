@@ -1,7 +1,6 @@
-import { HttpService } from '@nestjs/axios'
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { firstValueFrom } from 'rxjs'
+import { HttpService } from 'src/common/http/http.service'
 import { PRFile, StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { DatabaseService } from 'src/database/database.service'
 import { BitbucketApiService } from './bitbucket-api.service'
@@ -12,6 +11,7 @@ import * as path from 'path'
 
 @Injectable()
 export class BitbucketEventsService {
+    private readonly baseUrl = 'https://api.bitbucket.org/2.0'
     constructor(
         private readonly httpService: HttpService,
         private readonly configService: ConfigService,
@@ -189,36 +189,40 @@ export class BitbucketEventsService {
         pullRequestId: number,
         accessToken?: string | null
     ): Promise<any[]> {
-        try {
-            if (!accessToken) {
-                console.warn('No access token provided for Bitbucket API call')
-                return []
-            }
-
-            const bitbucketApiUrl =
-                this.configService.get('BITBUCKET_API_URL') ||
-                'https://api.bitbucket.org/2.0'
-            const apiUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/pullrequests/${pullRequestId}/diffstat`
-
-            const response = await firstValueFrom(
-                this.httpService.get(apiUrl, {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                        Accept: 'application/json'
-                    }
-                })
-            )
-
-            return response.data.values || []
-        } catch (error) {
-            console.error('Error details:', {
-                message: error.message,
-                status: error.response?.status,
-                statusText: error.response?.statusText,
-                data: error.response?.data
-            })
+        if (!accessToken) {
+            console.warn('No access token provided for Bitbucket API call')
             return []
         }
+        const bitbucketApiUrl = this.baseUrl || 'https://api.bitbucket.org/2.0'
+
+        let allFiles: any[] = []
+        let nextUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/pullrequests/${pullRequestId}/diffstat`
+        while (nextUrl) {
+            const response = await this.httpService.get(nextUrl, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    Accept: 'application/json'
+                }
+            })
+
+            // Add current page files to the collection
+            if (response.values && Array.isArray(response.values)) {
+                allFiles = allFiles.concat(response.values)
+            }
+
+            // Check if there's a next page
+            nextUrl = response.next || null
+
+            // Optional: Add a safety limit to prevent infinite loops
+            if (allFiles.length > 10000) {
+                console.warn(
+                    `Too many files in PR ${pullRequestId}, stopping at ${allFiles.length} files`
+                )
+                break
+            }
+        }
+
+        return allFiles
     }
 
     private async fetchFileContent(
@@ -228,118 +232,81 @@ export class BitbucketEventsService {
         branch: string,
         accessToken?: string | null
     ): Promise<string | null> {
-        try {
-            if (!accessToken || !filePath) {
-                console.warn(
-                    'No access token or file path provided for Bitbucket file content API call'
-                )
-                return null
-            }
-
-            const bitbucketApiUrl =
-                this.configService.get('BITBUCKET_API_URL') ||
-                'https://api.bitbucket.org/2.0'
-
-            // URL encode the branch name and file path to handle special characters like '/'
-            const encodedBranch = encodeURIComponent(branch)
-            const encodedFilePath = encodeURIComponent(filePath)
-
-            const apiUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/src/${encodedBranch}/${encodedFilePath}`
-
-            const response = await firstValueFrom(
-                this.httpService.get(apiUrl, {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`
-                    }
-                })
+        if (!accessToken || !filePath) {
+            console.warn(
+                'No access token or file path provided for Bitbucket file content API call'
             )
-            return response.data
-        } catch (error) {
-            console.error('File content error details:', {
-                workspace,
-                repository,
-                filePath,
-                branch,
-                message: error.message,
-                status: error.response?.status
-            })
             return null
         }
+
+        const bitbucketApiUrl =
+            this.configService.get('BITBUCKET_API_URL') ||
+            'https://api.bitbucket.org/2.0'
+
+        // URL encode the branch name and file path to handle special characters like '/'
+        const encodedBranch = encodeURIComponent(branch)
+        const encodedFilePath = encodeURIComponent(filePath)
+
+        const apiUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/src/${encodedBranch}/${encodedFilePath}`
+
+        const response = await this.httpService.get(apiUrl, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`
+            }
+        })
+        return response
     }
 
     async addPRReviewComments(postReviewDto: PostReviewDto): Promise<any> {
-        try {
+        const accessToken = await this.getAccessTokenForWorkspace(
+            postReviewDto.workspace
+        )
 
-            const accessToken = await this.getAccessTokenForWorkspace(
-                postReviewDto.workspace
-            )
-
-            const bitbucketApiUrl =
-                this.configService.get('BITBUCKET_API_URL') ||
-                'https://api.bitbucket.org/2.0'
-
-            const results: any[] = []
-            for (const comment of postReviewDto.comments) {
-                const commentData = {
-                    content: {
-                        raw: comment.body
-                    },
-                    inline: {
-                        to: comment.position,
-                        path: comment.path
-                    }
+        const bitbucketApiUrl = this.baseUrl
+        const results: any[] = []
+        for (const comment of postReviewDto.comments) {
+            const commentData = {
+                content: {
+                    raw: comment.body
+                },
+                inline: {
+                    to: comment.position,
+                    path: comment.path
                 }
-
-                const apiUrl = `${bitbucketApiUrl}/repositories/${postReviewDto.owner}/${postReviewDto.repo}/pullrequests/${postReviewDto.prNumber}/comments`
-
-                const response = await firstValueFrom(
-                    this.httpService.post(apiUrl, commentData, {
-                        headers: {
-                            Authorization: `Bearer ${accessToken}`,
-                            'Content-Type': 'application/json'
-                        }
-                    })
-                )
-                results.push(response.data)
             }
-            return results
-        } catch (error) {
-            console.error('Error posting review comments:', error)
-            throw new BadRequestException('Failed to post review comments')
+
+            const apiUrl = `${bitbucketApiUrl}/repositories/${postReviewDto.owner}/${postReviewDto.repo}/pullrequests/${postReviewDto.prNumber}/comments`
+
+            const response = await this.httpService.post(apiUrl, commentData, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            results.push(response)
         }
+        return results
     }
 
     async addPRSummery(postSummeryDto: PostSummeryDto): Promise<any> {
-        try {
-            const accessToken = await this.getAccessTokenForWorkspace(
-                postSummeryDto.workspace
-            )
-
-            const bitbucketApiUrl =
-                this.configService.get('BITBUCKET_API_URL') ||
-                'https://api.bitbucket.org/2.0'
-
-            const commentData = {
-                content: {
-                    raw: postSummeryDto.body
-                }
+        const accessToken = await this.getAccessTokenForWorkspace(
+            postSummeryDto.workspace
+        )
+        const commentData = {
+            content: {
+                raw: postSummeryDto.body
             }
-
-            const apiUrl = `${bitbucketApiUrl}/repositories/${postSummeryDto.owner}/${postSummeryDto.repo}/pullrequests/${postSummeryDto.prNumber}/comments`
-
-            const response = await firstValueFrom(
-                this.httpService.post(apiUrl, commentData, {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json'
-                    }
-                })
-            )
-            return response.data
-        } catch (error) {
-            console.error('Error posting summary:', error)
-            throw new BadRequestException('Failed to post summary')
         }
+
+        const apiUrl = `${this.baseUrl}/repositories/${postSummeryDto.owner}/${postSummeryDto.repo}/pullrequests/${postSummeryDto.prNumber}/comments`
+
+        const response = this.httpService.post(apiUrl, commentData, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        return response
     }
 
     private parseDiffHunks(diffContent: string): string[] {

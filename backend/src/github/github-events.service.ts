@@ -95,10 +95,13 @@ export class GithubEventService {
     // Fetch PR files and changes
     async fetchPRFiles(owner, repo, prNumber, installationId) {
         const octokit = await this.initOctokitApp(installationId)
-        const { data: files } = await octokit.pulls.listFiles({
+
+        // Use paginate to get ALL files, not just the first 30
+        const files = await octokit.paginate(octokit.pulls.listFiles, {
             owner,
             repo,
-            pull_number: prNumber
+            pull_number: prNumber,
+            per_page: 100 // Fetch 100 files per page for efficiency
         })
         return files
     }

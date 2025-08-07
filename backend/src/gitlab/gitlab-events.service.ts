@@ -5,7 +5,10 @@ import { PRFile, StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { DatabaseService } from 'src/database/database.service'
 import { PostReviewDto } from './dto/post-review.dto'
 import { PostSummeryDto } from './dto/post-summery.dto'
+import * as fs from 'fs'
+import * as path from 'path'
 import { GitlabApiService } from './gitlab-api.service'
+
 
 @Injectable()
 export class GitlabEventsService {
@@ -69,6 +72,7 @@ export class GitlabEventsService {
                 prFileContentAfter:
                     contentAfter || 'File not found in source branch',
                 prFileDiff: file.diff || 'No diff available',
+                prFileDiffHunks: this.parseDiffHunks(file.diff || ''),
                 prFileBlobUrl: `${project.web_url}/-/blob/${mergeRequest.source_branch}/${file.new_path}`
             })
         }
@@ -449,5 +453,19 @@ export class GitlabEventsService {
                 'No workspace found for the provided GitLab project'
             )
         }
+    }
+
+    private parseDiffHunks(diffContent: string): string[] {
+        if (!diffContent) return []
+        
+        const hunks: string[] = []
+        const hunkRegex = /@@[^@]*@@.*?(?=@@|$)/gs
+        
+        let match
+        while ((match = hunkRegex.exec(diffContent)) !== null) {
+            hunks.push(match[0])
+        }
+        
+        return hunks
     }
 }

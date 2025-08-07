@@ -7,6 +7,8 @@ import { DatabaseService } from 'src/database/database.service'
 import { BitbucketApiService } from './bitbucket-api.service'
 import { PostReviewDto } from './dto/post-review.dto'
 import { PostSummeryDto } from './dto/post-summery.dto'
+import * as fs from 'fs'
+import * as path from 'path'
 
 @Injectable()
 export class BitbucketEventsService {
@@ -75,9 +77,9 @@ export class BitbucketEventsService {
                     contentBefore || 'File not found in destination branch',
                 prFileContentAfter:
                     contentAfter || 'File not found in source branch',
-                prFileDiff: this.bitbucketApiService.extractFileDiff(
-                    fullDiff,
-                    file.new?.path || file.old?.path
+                prFileDiff: fullDiff || '',
+                prFileDiffHunks: this.parseDiffHunks(
+                    fullDiff || ''
                 ),
                 prFileBlobUrl:
                     file.new?.links?.self?.href ||
@@ -338,5 +340,19 @@ export class BitbucketEventsService {
             console.error('Error posting summary:', error)
             throw new BadRequestException('Failed to post summary')
         }
+    }
+
+    private parseDiffHunks(diffContent: string): string[] {
+        if (!diffContent) return []
+        
+        const hunks: string[] = []
+        const hunkRegex = /@@[^@]*@@.*?(?=@@|$)/gs
+        
+        let match
+        while ((match = hunkRegex.exec(diffContent)) !== null) {
+            hunks.push(match[0])
+        }
+        
+        return hunks
     }
 }

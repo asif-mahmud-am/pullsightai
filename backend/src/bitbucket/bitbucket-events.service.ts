@@ -187,34 +187,40 @@ export class BitbucketEventsService {
         pullRequestId: number,
         accessToken?: string | null
     ): Promise<any[]> {
-        try {
-            if (!accessToken) {
-                console.warn('No access token provided for Bitbucket API call')
-                return []
-            }
+        if (!accessToken) {
+            console.warn('No access token provided for Bitbucket API call')
+            return []
+        }
+        const bitbucketApiUrl = this.baseUrl || 'https://api.bitbucket.org/2.0'
 
-            const bitbucketApiUrl =
-                this.configService.get('BITBUCKET_API_URL') ||
-                'https://api.bitbucket.org/2.0'
-            const apiUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/pullrequests/${pullRequestId}/diffstat`
-
-            const response = await this.httpService.get(apiUrl, {
+        let allFiles: any[] = []
+        let nextUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/pullrequests/${pullRequestId}/diffstat`
+        while (nextUrl) {
+            const response = await this.httpService.get(nextUrl, {
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
                     Accept: 'application/json'
                 }
             })
 
-            return response.values || []
-        } catch (error) {
-            console.error('Error details:', {
-                message: error.message,
-                status: error.response?.status,
-                statusText: error.response?.statusText,
-                data: error.response?.data
-            })
-            return []
+            // Add current page files to the collection
+            if (response.values && Array.isArray(response.values)) {
+                allFiles = allFiles.concat(response.values)
+            }
+
+            // Check if there's a next page
+            nextUrl = response.next || null
+
+            // Optional: Add a safety limit to prevent infinite loops
+            if (allFiles.length > 10000) {
+                console.warn(
+                    `Too many files in PR ${pullRequestId}, stopping at ${allFiles.length} files`
+                )
+                break
+            }
         }
+
+        return allFiles
     }
 
     private async fetchFileContent(
@@ -224,41 +230,29 @@ export class BitbucketEventsService {
         branch: string,
         accessToken?: string | null
     ): Promise<string | null> {
-        try {
-            if (!accessToken || !filePath) {
-                console.warn(
-                    'No access token or file path provided for Bitbucket file content API call'
-                )
-                return null
-            }
-
-            const bitbucketApiUrl =
-                this.configService.get('BITBUCKET_API_URL') ||
-                'https://api.bitbucket.org/2.0'
-
-            // URL encode the branch name and file path to handle special characters like '/'
-            const encodedBranch = encodeURIComponent(branch)
-            const encodedFilePath = encodeURIComponent(filePath)
-
-            const apiUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/src/${encodedBranch}/${encodedFilePath}`
-
-            const response = await this.httpService.get(apiUrl, {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`
-                }
-            })
-            return response
-        } catch (error) {
-            console.error('File content error details:', {
-                workspace,
-                repository,
-                filePath,
-                branch,
-                message: error.message,
-                status: error.response?.status
-            })
+        if (!accessToken || !filePath) {
+            console.warn(
+                'No access token or file path provided for Bitbucket file content API call'
+            )
             return null
         }
+
+        const bitbucketApiUrl =
+            this.configService.get('BITBUCKET_API_URL') ||
+            'https://api.bitbucket.org/2.0'
+
+        // URL encode the branch name and file path to handle special characters like '/'
+        const encodedBranch = encodeURIComponent(branch)
+        const encodedFilePath = encodeURIComponent(filePath)
+
+        const apiUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/src/${encodedBranch}/${encodedFilePath}`
+
+        const response = await this.httpService.get(apiUrl, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`
+            }
+        })
+        return response
     }
 
     async addPRReviewComments(postReviewDto: PostReviewDto): Promise<any> {

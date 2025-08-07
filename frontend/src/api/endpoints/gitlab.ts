@@ -7,6 +7,11 @@ export const gitlabEndpoints = {
     getOrgs: async (): Promise<ApiResponse<Organization[]>> => {
         return apiClient.get("/gitlab/organizations").then((res) => res.data);
     },
+    addOrg: async ({ slug, type }: { slug: string; type?: string }) => {
+        return apiClient
+            .post("/gitlab/add-workspace", { slug, type })
+            .then((res) => res.data);
+    },
     getRepos: async ({
         orgName,
     }: {

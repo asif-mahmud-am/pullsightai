@@ -38,7 +38,9 @@ const Step1Page = () => {
         mutateAsync: addOrganization,
         isPending: isAddingOrg,
         error: addOrgError,
-    } = useOrganizationAddMutation();
+    } = useOrganizationAddMutation({
+        ...(provider === "github" ? {} : { provider }),
+    });
 
     const onStepComplete = async () => {
         if (!selectedOrg) return;
@@ -54,9 +56,10 @@ const Step1Page = () => {
                 .catch((error) => {
                     console.error("Error updating user:", error);
                 });
-        } else if (provider === "bitbucket") {
+        } else if (provider === "bitbucket" || provider === "gitlab") {
             addOrganization({
-                slug: selectedOrg.slug,
+                slug: selectedOrg?.slug || "",
+                ...(provider === "gitlab" ? { type: selectedOrg?.type } : {}),
             })
                 .then(() => {
                     // Redirect to the next step after adding organization
@@ -131,6 +134,7 @@ const Step1Page = () => {
                                             title: org.name,
                                             subtitle: org.name,
                                             avatar: org.avatarUrl,
+                                            timestamp: org?.createdOn,
                                         })
                                     )}
                                     selectedId={selectedOrg?.id}
@@ -161,9 +165,12 @@ const Step1Page = () => {
             <ActionFooter
                 buttonText="Connect Organization"
                 isEnabled={
-                    Boolean(selectedOrg) && !isLoading && !isUpdatingUser
+                    Boolean(selectedOrg) &&
+                    !isLoading &&
+                    !isUpdatingUser &&
+                    !isAddingOrg
                 }
-                isLoading={isLoading || isUpdatingUser}
+                isLoading={isLoading || isUpdatingUser || isAddingOrg}
                 onClick={onStepComplete}
             />
         </>

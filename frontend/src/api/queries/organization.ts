@@ -40,10 +40,31 @@ export const useOrganizationQuery = ({
     });
 };
 
-export const useOrganizationAddMutation = () => {
-    return useMutation<Organization, Error, Partial<Organization>>({
-        mutationFn: async ({ slug }) => {
-            const response = await bitbucketEndpoints.addOrg(slug || "");
+export const useOrganizationAddMutation = ({
+    provider = "bitbucket",
+}: {
+    provider?: "bitbucket" | "gitlab";
+}) => {
+    const queryFn: Record<
+        "bitbucket" | "gitlab",
+        (params: {
+            slug: string;
+            type?: string;
+        }) => Promise<ApiResponse<Organization>>
+    > = {
+        bitbucket: bitbucketEndpoints.addOrg,
+        gitlab: gitlabEndpoints.addOrg,
+    };
+
+    return useMutation<Organization, Error, { slug: string; type?: string }>({
+        mutationFn: async ({ slug, type }) => {
+            const response = await queryFn[provider]({
+                slug: slug as string,
+                ...(type ? { type } : {}),
+            });
+            if (!response?.data) {
+                throw new Error("No data received from response");
+            }
             return response.data;
         },
     });

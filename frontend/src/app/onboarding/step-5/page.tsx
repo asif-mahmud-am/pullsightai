@@ -7,7 +7,7 @@ import { useState } from "react";
 import { redirect } from "next/navigation";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
 
-const organizations: Organization[] = [
+const organizations = [
     {
         name: "sroy-dev",
         id: "44993145",
@@ -76,7 +76,7 @@ const Step5Page = () => {
                                 items={organizations.map((org) => ({
                                     id: String(org.id),
                                     title: org.name,
-                                    subtitle: org.author,
+                                    subtitle: org.name,
                                 }))}
                                 selectedId={selectedOrg}
                                 onSelect={(id) => setSelectedOrg(id)}

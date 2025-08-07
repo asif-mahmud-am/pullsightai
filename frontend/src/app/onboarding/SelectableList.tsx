@@ -94,7 +94,7 @@ const SelectableList: FC<SelectableListProps> = ({
 
                         <div className="flex items-center col-span-1">
                             <div className="flex items-center">
-                                <div className="w-8 h-8 rounded-full overflow-hidden bg-[var(--subtitle-500)] flex items-center justify-center mr-2">
+                                <div className="w-8 h-8 rounded-full overflow-hidden bg-[var(--subtitle-500)] flex items-center justify-center mr-2 flex-shrink-0">
                                     {item.avatar ? (
                                         <Image
                                             src={item.avatar}

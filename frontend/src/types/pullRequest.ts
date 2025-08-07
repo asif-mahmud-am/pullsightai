@@ -6,13 +6,15 @@ export interface PullRequest {
     status: string;
     merged: boolean;
     title: string;
-    createdAt: string;
     html_url: string;
     additions: number;
     deletions: number;
     changed_files: number;
     avatar_url?: string | null;
     time?: string;
+    createdOn?: string;
+    updatedOn?: string;
+    createdAt: string;
     updatedAt?: string;
     provider: "github" | "gitlab" | "bitbucket";
     user?: {

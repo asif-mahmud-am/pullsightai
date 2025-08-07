@@ -3,10 +3,11 @@ export interface Repository {
     external_id: number;
     name: string;
     author?: {
-        name: string;
+        username: string;
         avatarUrl: string;
     };
     slug: string;
+    createdOn?: string;
     createdAt: string;
     updatedAt: string;
     time?: string;

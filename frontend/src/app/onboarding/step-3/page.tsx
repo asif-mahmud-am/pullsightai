@@ -97,7 +97,6 @@ const Step3Page = () => {
                                         pullRequests?.map((pr) => ({
                                             id: String(pr.prNumber),
                                             title: pr.title,
-                                            timestamp: pr.createdAt,
                                             avatar:
                                                 pr.user?.avatarUrl ||
                                                 pr.author?.avatarUrl,
@@ -107,11 +106,13 @@ const Step3Page = () => {
                                             status: {
                                                 label: pr.status,
                                                 colorClass:
-                                                    pr.status === "closed"
+                                                    pr.status === "closed" ||
+                                                    pr.status === "merged"
                                                         ? "bg-red-500 text-white"
                                                         : "bg-green-500 text-white",
                                             },
-                                            updatedAt: pr.updatedAt,
+                                            timestamp: pr.createdOn,
+                                            updatedAt: pr.updatedOn,
                                         })) || []
                                     }
                                     selectedId={selectedPR}

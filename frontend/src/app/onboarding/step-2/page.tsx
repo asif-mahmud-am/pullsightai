@@ -9,9 +9,10 @@ import { useRepositoryQuery } from "@/api/queries/repository";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
+import { Repository } from "@/types/repository";
 
 const Step2Page = () => {
-    const [selectedRepo, setSelectedRepo] = useState<string>("");
+    const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
 
     const router = useRouter();
     const user = useAuthStore((s) => s.user);
@@ -33,7 +34,7 @@ const Step2Page = () => {
     const onStepComplete = () => {
         if (!selectedRepo) return;
         router.push(
-            ROUTE_CONSTANTS.ONBOARDING_STEP_3 + `?repoId=${selectedRepo}`
+            ROUTE_CONSTANTS.ONBOARDING_STEP_3 + `?repoId=${selectedRepo.slug}`
         );
     };
 
@@ -86,13 +87,18 @@ const Step2Page = () => {
                                 items={repositories.map((repo) => ({
                                     id: String(repo.name),
                                     title: repo.name,
-                                    subtitle: repo.author?.name,
+                                    subtitle: repo.author?.username,
                                     avatar: repo.author?.avatarUrl,
-                                    timestamp: repo.createdAt,
-                                    updatedAt: repo.updatedAt,
+                                    timestamp: repo.createdOn,
                                 }))}
-                                selectedId={selectedRepo}
-                                onSelect={(id) => setSelectedRepo(id)}
+                                selectedId={selectedRepo?.name}
+                                onSelect={(id) =>
+                                    setSelectedRepo(
+                                        repositories?.find(
+                                            (repo) => repo.name === id
+                                        ) || null
+                                    )
+                                }
                             />
                         )}
                     </div>

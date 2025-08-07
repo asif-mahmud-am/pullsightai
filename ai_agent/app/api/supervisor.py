@@ -8,6 +8,7 @@ import os
 import json
 import re
 from app.api.review_parser import parse_review_response, parse_review_response_ui
+import json 
 
 supervisor = APIRouter(prefix="", tags=["Supervisor"])
 
@@ -19,36 +20,40 @@ BACKEND_REVIEW_ENDPOINT = os.getenv("BACKEND_REVIEW_ENDPOINT", "http://backend/v
 @supervisor.post("/ai_agent")
 async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: BackgroundTasks):
     llm_service = ClaudeService()
-    pr = payload.pull_request
+    pr = payload.pullRequest  # Changed from pull_request to pullRequest
     print("Input PR", pr)
+    
+    # Extract provider and handle installationId properly
+    provider = pr.get("provider", "unknown")
+    installation_id = pr.get("installationId", "0")
+    
+    # Try to convert installationId to int, but handle string values gracefully
+    try:
+        installation_id_int = int(installation_id)
+    except (ValueError, TypeError):
+        installation_id_int = 0
+        print(f"Warning: Could not convert installationId '{installation_id}' to integer, using 0")
     
     # Parse the new PR data structure
     prNumber = pr["prNumber"]
-    pr_title = pr["pr_title"]
-    pr_description = pr.get("pr_body", "")
-    author_name = pr.get("pr_user", "")
-    repo_structure_summary = pr.get("pr_repo_name", "")
+    prTitle = pr["prTitle"]
+    prBody = pr.get("prBody", "")
+    author_name = pr.get("prUser", "")
+    repo_structure_summary = pr.get("prRepoName", "")
     
-    # Handle the new file structure where pr_files is a list of file objects
+    # Handle the new file structure where prFiles is a list of file objects
     changed_files = []
     pr_diff = ""
     
-    if "pr_files" in pr and isinstance(pr["pr_files"], list):
-        # New structure: pr_files is a list of file objects
-        for file_info in pr["pr_files"]:
-            changed_files.append(file_info["pr_file_name"])
-            pr_diff += f"\n\n--- File: {file_info['pr_file_name']} ---\n{file_info['pr_file_diff']}"
-    else:
-        # Fallback for old structure: pr_files as dictionary
-        changed_files = list(pr.get("pr_files", {}).keys())
-        pr_diff = "\n\n".join([
-            file_info[f"{file_key}_diff"]
-            for file_key, file_info in pr.get("pr_files", {}).items()
-        ])
+    if "prFiles" in pr and isinstance(pr["prFiles"], list):
+        # New structure: prFiles is a list of file objects
+        for file_info in pr["prFiles"]:
+            changed_files.append(file_info["prFileName"])
+            pr_diff += f"\n\n--- File: {file_info['prFileName']} ---\n{file_info['prFileDiff']}"
 
     summary_variables = {
-        "pr_title": pr_title,
-        "pr_description": pr_description,
+        "prTitle": prTitle,
+        "prBody": prBody,
         "author_name": author_name,
         "prNumber": prNumber,
         "changed_files": ", ".join(changed_files),
@@ -62,49 +67,33 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
             "owner": pr.get("owner", ""),
             "repo": pr.get("repo", ""),
             "prNumber": prNumber,
+            "provider": provider,
             "body": summary.pr_summary,
-            "installationId": int(pr.get("installationId", "0"))
+            "installationId": installation_id_int
         }
+
         await client.post(BACKEND_SUMMARY_ENDPOINT, json=summary_payload)
         
         # Format reviews for the new endpoint structure
         all_comments = []
         
-        if "pr_files" in pr and isinstance(pr["pr_files"], list):
+        if "prFiles" in pr and isinstance(pr["prFiles"], list):
             # New structure: process each file object in the list
-            for file_info in pr["pr_files"]:
+            for file_info in pr["prFiles"]:
                 review_variables = {
-                    "pr_title": pr_title,
-                    "pr_description": pr_description,
+                    "prTitle": prTitle,
+                    "prBody": prBody,
                     "author_name": author_name,
                     "prNumber": prNumber,
-                    "changed_files": file_info["pr_file_name"],
+                    "changed_files": file_info["prFileName"],
                     "repo_structure_summary": repo_structure_summary,
-                    "pr_diff": file_info["pr_file_diff"],
-                    "pr_file_content_before": file_info.get("pr_file_content_before", "")
+                    "pr_diff": file_info["prFileDiff"],
+                    "prFileContentBefore": file_info.get("prFileContentBefore", "")
                 }
                 review = await generate_review_response(review_variables, llm_service)
                 
                 # Parse the review response to extract line-specific comments
-                file_comments = parse_review_response(review.pr_review_and_suggestion, file_info["pr_file_name"])
-                all_comments.extend(file_comments)
-        else:
-            # Fallback for old structure
-            for file_key, file_info in pr.get("pr_files", {}).items():
-                review_variables = {
-                    "pr_title": pr_title,
-                    "pr_description": pr_description,
-                    "author_name": author_name,
-                    "prNumber": prNumber,
-                    "changed_files": file_info[f"{file_key}_name"],
-                    "repo_structure_summary": repo_structure_summary,
-                    "pr_diff": file_info[f"{file_key}_diff"],
-                    "pr_file_content_before": file_info.get("pr_file_content_before", "")
-                }
-                review = await generate_review_response(review_variables, llm_service)
-                
-                # Parse the review response to extract line-specific comments
-                file_comments = parse_review_response(review.pr_review_and_suggestion, file_info[f"{file_key}_name"])
+                file_comments = parse_review_response(review.pr_review_and_suggestion, file_info["prFileName"])
                 all_comments.extend(file_comments)
         
         # Send review comments in the new format
@@ -112,42 +101,56 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
             "owner": pr.get("owner", ""),
             "repo": pr.get("repo", ""),
             "prNumber": prNumber,
+            "provider": provider,
             "comments": all_comments,
-            "installationId": int(pr.get("installationId", "0"))
+            "installationId": installation_id_int
         }
         print(review_payload)
+
         await client.post(BACKEND_REVIEW_ENDPOINT, json=review_payload)
     return {"status": "completed"} 
 
 @supervisor.post("/agent")
 async def agent_summary_and_review(payload: PRPayloadV2):
     llm_service = ClaudeService()
-    pr = payload.pull_request
+    pr = payload.pullRequest  # Changed from pull_request to pullRequest
+    
+    print("Agent endpoint - Input PR structure:", pr.keys())
+    print("Agent endpoint - prFiles type:", type(pr.get("prFiles")))
+    if "prFiles" in pr:
+        print("Agent endpoint - prFiles length:", len(pr["prFiles"]) if isinstance(pr["prFiles"], list) else "Not a list")
+
+    # Extract provider and handle installationId properly
+    provider = pr.get("provider", "unknown")
+    installation_id = pr.get("installationId", "0")
+    
+    # Try to convert installationId to int, but handle string values gracefully
+    try:
+        installation_id_int = int(installation_id)
+    except (ValueError, TypeError):
+        installation_id_int = 0
+        print(f"Warning: Could not convert installationId '{installation_id}' to integer, using 0")
 
     prNumber = pr["prNumber"]
-    pr_title = pr["pr_title"]
-    pr_description = pr.get("pr_body", "")
-    author_name = pr.get("pr_user", "")
-    repo_structure_summary = pr.get("pr_repo_name", "")
+    prTitle = pr["prTitle"]
+    prBody = pr.get("prBody", "")
+    author_name = pr.get("prUser", "")
+    repo_structure_summary = pr.get("prRepoName", "")
 
     changed_files = []
     pr_diff = ""
 
-    if "pr_files" in pr and isinstance(pr["pr_files"], list):
-        for file_info in pr["pr_files"]:
-            changed_files.append(file_info["pr_file_name"])
-            pr_diff += f"\n\n--- File: {file_info['pr_file_name']} ---\n{file_info['pr_file_diff']}"
-    else:
-        changed_files = list(pr.get("pr_files", {}).keys())
-        pr_diff = "\n\n".join([
-            file_info[f"{file_key}_diff"]
-            for file_key, file_info in pr.get("pr_files", {}).items()
-        ])
+    if "prFiles" in pr and isinstance(pr["prFiles"], list):
+        for file_info in pr["prFiles"]:
+            changed_files.append(file_info["prFileName"])
+            pr_diff += f"\n\n--- File: {file_info['prFileName']} ---\n{file_info['prFileDiff']}"
+
 
     summary_variables = {
-        "pr_title": pr_title,
-        "pr_description": pr_description,
+        "prTitle": prTitle,
+        "prBody": prBody,
         "author_name": author_name,
+        "prNumber": prNumber,
         "changed_files": ", ".join(changed_files),
         "repo_structure_summary": repo_structure_summary,
         "pr_diff": pr_diff
@@ -156,42 +159,37 @@ async def agent_summary_and_review(payload: PRPayloadV2):
 
     all_comments = []
 
-    if "pr_files" in pr and isinstance(pr["pr_files"], list):
-        for file_info in pr["pr_files"]:
+    if "prFiles" in pr and isinstance(pr["prFiles"], list):
+        for file_info in pr["prFiles"]:
             review_variables = {
-                "pr_title": pr_title,
-                "pr_description": pr_description,
+                "prTitle": prTitle,
+                "prBody": prBody,
                 "author_name": author_name,
-                "changed_files": file_info["pr_file_name"],
+                "prNumber": prNumber,
+                "changed_files": file_info["prFileName"],
                 "repo_structure_summary": repo_structure_summary,
-                "pr_diff": file_info["pr_file_diff"]
+                "pr_diff": file_info["prFileDiff"],
+                "prFileContentBefore": file_info.get("prFileContentBefore", "")
             }
             review = await generate_review_response(review_variables, llm_service)
-            file_comments = parse_review_response_ui(review.pr_review_and_suggestion, file_info["pr_file_name"])
-            all_comments.extend(file_comments)
-    else:
-        for file_key, file_info in pr.get("pr_files", {}).items():
-            review_variables = {
-                "pr_title": pr_title,
-                "pr_description": pr_description,
-                "author_name": author_name,
-                "changed_files": file_info[f"{file_key}_name"],
-                "repo_structure_summary": repo_structure_summary,
-                "pr_diff": file_info[f"{file_key}_diff"]
-            }
-            review = await generate_review_response(review_variables, llm_service)
-            file_comments = parse_review_response(review.pr_review_and_suggestion, file_info[f"{file_key}_name"])
+            print(f"Agent endpoint - Generated review for {file_info['prFileName']}:", review.pr_review_and_suggestion[:200] + "..." if len(review.pr_review_and_suggestion) > 200 else review.pr_review_and_suggestion)
+            file_comments = parse_review_response_ui(review.pr_review_and_suggestion, file_info["prFileName"])
+            print(f"Agent endpoint - Parsed comments for {file_info['prFileName']}:", len(file_comments), "comments")
             all_comments.extend(file_comments)
 
     response_payload = {
         "owner": pr.get("owner", ""),
         "repo": pr.get("repo", ""),
         "prNumber": prNumber,
-        "installationId": int(pr.get("installationId", "0")),
+        "provider": provider,
+        "installationId": installation_id_int,
         "analysis": {
             "summary": summary.pr_summary,
             "comments": all_comments
         }
     }
+
+    print("Agent endpoint - Final response payload:", response_payload)
+    print("Agent endpoint - Total comments generated:", len(all_comments))
 
     return response_payload

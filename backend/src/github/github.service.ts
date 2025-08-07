@@ -66,13 +66,15 @@ export class GithubService {
             workspace = await this.dataService.workspaces.create({
                 id: org.id.toString(),
                 name: org.login,
+                slug: org.login,
                 nodeId: org.node_id,
                 url: org.url,
                 reposUrl: org.repos_url,
                 avatarUrl: org.avatar_url,
                 type: org.type,
                 provider: 'github',
-                ownerId: user.sub
+                ownerId: user.sub,
+                createdOn: org.created_at
             })
         }
         await this.dataService.users.updateOne(

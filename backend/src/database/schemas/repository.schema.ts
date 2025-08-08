@@ -1,0 +1,69 @@
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
+import { Document, Types } from 'mongoose'
+import * as mongoosePaginate from 'mongoose-paginate-v2'
+import * as uniqueValidator from 'mongoose-unique-validator'
+
+export type RepositoryDocument = Repository & Document
+
+export interface Author {
+    username: string
+    avatarUrl: string
+}
+
+@Schema({ timestamps: true, versionKey: false })
+export class Repository {
+    @Prop({ required: true, trim: true })
+    id: string
+
+    @Prop({ required: true, trim: true })
+    name: string
+
+    @Prop({ required: true, trim: true })
+    fullName: string
+
+    @Prop({ required: false, trim: true })
+    slug: string
+
+    @Prop({ required: true, trim: true })
+    provider: string
+
+    @Prop({ required: false, trim: true })
+    url: string
+
+    @Prop({ required: false })
+    private?: boolean
+
+    @Prop({ required: false })
+    createdOn?: string
+
+    @Prop({ required: false })
+    updatedOn?: string
+
+    @Prop({ required: false })
+    webhookSecret?: string
+
+    @Prop({ required: false, type: Object })
+    author: Author
+
+    @Prop({ required: false })
+    isActives?: boolean
+
+    @Prop({
+        required: true,
+        type: Types.ObjectId,
+        ref: 'Workspace',
+        set: (value) =>
+            Types.ObjectId.isValid(value)
+                ? value
+                : Types.ObjectId.createFromHexString(value)
+    })
+    workspace?: Types.ObjectId
+}
+
+const schema = SchemaFactory.createForClass(Repository)
+
+schema.plugin(uniqueValidator, {
+    message: '{PATH} already exists!'
+})
+schema.plugin(mongoosePaginate)
+export const RepositorySchema = schema

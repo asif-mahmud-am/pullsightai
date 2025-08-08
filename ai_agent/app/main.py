@@ -16,7 +16,7 @@ async def health_check():
     return {
         "status": "healthy",
         "endpoints": {
-            "basic": "/ai_agent/"
+            "basic": "/ai_agent/",
             # "enhanced": "/enhanced_ai_agent/",
             # "chunked": "/enhanced_ai_agent/chunked_review"
         }

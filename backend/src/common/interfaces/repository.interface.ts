@@ -1,15 +1,15 @@
 export interface Repository {
     id: number
-    // nodeId: string
     name: string
     fullName: string
+    slug: string
     private: boolean
     author: {
-        name: string
+        username: string
         avatarUrl: string
     }
-    createdAt: string
-    updatedAt: string
+    createdOn: string
+    updatedOn: string
     openIssues: number
 }
 
@@ -23,9 +23,9 @@ export interface PullRequestResponse {
         username: string
         avatarUrl: string
     }
-    createdAt: string // ISO date string
-    updatedAt: string
-    closedAt: string | null
-    mergedAt: string | null
+    createdOn: string // ISO date string
+    updatedOn: string
+    closedOn: string | null
+    mergedOn: string | null
     url: string
 }

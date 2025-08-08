@@ -23,7 +23,6 @@ export class BitbucketStrategy extends PassportStrategy(Strategy, 'bitbucket') {
         refreshToken: string,
         profile: Profile
     ) {
-        console.log('Bitbucket profile:', profile)
         return this.authService.findOrCreateUser(
             profile,
             'bitbucket',

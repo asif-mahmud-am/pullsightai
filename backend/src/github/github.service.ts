@@ -66,13 +66,15 @@ export class GithubService {
             workspace = await this.dataService.workspaces.create({
                 id: org.id.toString(),
                 name: org.login,
+                slug: org.login,
                 nodeId: org.node_id,
                 url: org.url,
                 reposUrl: org.repos_url,
                 avatarUrl: org.avatar_url,
                 type: org.type,
                 provider: 'github',
-                ownerId: user.sub
+                ownerId: user.sub,
+                createdOn: org.created_at
             })
         }
         await this.dataService.users.updateOne(
@@ -131,6 +133,7 @@ export class GithubService {
             workspace = await this.dataService.workspaces.create({
                 id: org.id.toString(),
                 name: org.login,
+                slug: org.login,
                 nodeId: org.node_id,
                 url: org.url,
                 reposUrl: org.repos_url,
@@ -138,7 +141,9 @@ export class GithubService {
                 type: org.type,
                 provider: 'github',
                 ownerId: installCallbackDto.state,
-                installationId: installCallbackDto.installation_id
+                installationId: installCallbackDto.installation_id,
+                createdOn: org.created_at,
+                isPrivate: org.private
             })
         }
 
@@ -199,14 +204,13 @@ export class GithubService {
                     username: pr.user?.login || 'Unknown',
                     avatarUrl: pr.user?.avatar_url || ''
                 },
-                createdAt: pr.created_at,
-                updatedAt: pr.updated_at,
-                closedAt: pr.closed_at,
-                mergedAt: pr.merged_at,
+                createdOn: pr.created_at,
+                updatedOn: pr.updated_at,
+                closedOn: pr.closed_at,
+                mergedOn: pr.merged_at,
                 url: pr.html_url
-            })
+            } as PullRequestResponse)
         })
-
         return prList
     }
 
@@ -265,13 +269,14 @@ export class GithubService {
                     id: repo.id,
                     name: repo.name,
                     fullName: repo.full_name,
+                    slug: repo.name,
                     private: repo.private,
                     author: {
-                        name: repo.owner.login,
+                        username: repo.owner.login,
                         avatarUrl: repo.owner.avatar_url
                     },
-                    createdAt: repo.created_at,
-                    updatedAt: repo.pushed_at,
+                    createdOn: repo.created_at,
+                    updatedOn: repo.pushed_at,
                     openIssues: repo.open_issues_count
                 }) as Repository
         )
@@ -304,17 +309,45 @@ export class GithubService {
                 userData.currentWorkspace['installationId']
             )
 
+        // const response = await this.httpService.post(
+        //     this.configService.get('AI_AGENT_PR_REVIEW_URL') as string,
+        //     pullRequestFormattedData
+        // )
+        const savedPullRequestFormattedData =
+            await this.dataService.pullRequests.create({
+                ...pullRequestFormattedData.pullRequest
+            })
+        const pullRequestAnalysis =
+            await this.dataService.pullRequestAnalysis.create({
+                prId: savedPullRequestFormattedData.prId,
+                provider: savedPullRequestFormattedData.provider,
+                prUser: savedPullRequestFormattedData.prUser,
+                workspaceSlug: savedPullRequestFormattedData.owner,
+                repositorySlug: savedPullRequestFormattedData.repo,
+                prNumber: savedPullRequestFormattedData.prNumber,
+                installationId: savedPullRequestFormattedData.installationId,
+                inProgress: true,
+                startedAt: new Date()
+            })
         const response = await this.httpService.post(
             this.configService.get('AI_AGENT_PR_REVIEW_URL') as string,
-            pullRequestFormattedData
+            {
+                pullRequest: {
+                    ...pullRequestFormattedData.pullRequest,
+                    pullRequestAnalysisId: pullRequestAnalysis['_id']
+                }
+            }
         )
-        return {
-            ...pullRequestFormattedData,
-            ...response
-        }
+
+        return { ...pullRequestFormattedData, ...response }
     }
 
     async processGithubEvent(event: any, payload: any) {
+        await this.dataService.eventLogs.create({
+            eventName: event,
+            provider: 'github',
+            eventPayload: payload
+        })
         let pullRequestFormattedData: StructuredPRData | boolean
         switch (event) {
             case 'pull_request':
@@ -329,9 +362,31 @@ export class GithubService {
                 pullRequestFormattedData = false
         }
         if (pullRequestFormattedData) {
+            const savedPullRequestFormattedData =
+                await this.dataService.pullRequests.create({
+                    ...pullRequestFormattedData.pullRequest
+                })
+            const pullRequestAnalysis =
+                await this.dataService.pullRequestAnalysis.create({
+                    prId: savedPullRequestFormattedData.prId,
+                    provider: savedPullRequestFormattedData.provider,
+                    prUser: savedPullRequestFormattedData.prUser,
+                    workspaceSlug: savedPullRequestFormattedData.owner,
+                    repositorySlug: savedPullRequestFormattedData.repo,
+                    prNumber: savedPullRequestFormattedData.prNumber,
+                    installationId:
+                        savedPullRequestFormattedData.installationId,
+                    inProgress: true,
+                    startedAt: new Date()
+                })
             await this.httpService.post(
                 this.configService.get('AI_AGENT_PR_POST_URL') as string,
-                pullRequestFormattedData
+                {
+                    pullRequest: {
+                        ...pullRequestFormattedData.pullRequest,
+                        pullRequestAnalysisId: pullRequestAnalysis['_id']
+                    }
+                }
             )
         }
         return pullRequestFormattedData

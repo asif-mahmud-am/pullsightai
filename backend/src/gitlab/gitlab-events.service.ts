@@ -1,13 +1,18 @@
-import { HttpService } from '@nestjs/axios'
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { firstValueFrom } from 'rxjs'
+import { HttpService } from 'src/common/http/http.service'
 import { PRFile, StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { DatabaseService } from 'src/database/database.service'
+import { PostReviewDto } from './dto/post-review.dto'
+import { PostSummeryDto } from './dto/post-summery.dto'
+import * as fs from 'fs'
+import * as path from 'path'
 import { GitlabApiService } from './gitlab-api.service'
+
 
 @Injectable()
 export class GitlabEventsService {
+    private readonly baseUrl = 'https://gitlab.com/api/v4'
     constructor(
         private readonly httpService: HttpService,
         private readonly configService: ConfigService,
@@ -23,11 +28,9 @@ export class GitlabEventsService {
             throw new Error('Invalid GitLab merge request payload')
         }
 
-        // Try to get access token from database based on project namespace
-        const namespace =
-            project.namespace || project.path_with_namespace?.split('/')[0]
-        const accessToken = await this.getAccessTokenForNamespace(namespace)
-        // Get merge request files using GitLab API
+        // console.log('Handling GitLab Merge Request:', payload)
+        const workspace = project.namespace.id
+        const accessToken = await this.getAccessTokenForNamespace(workspace)
         const files = await this.fetchMRFiles(
             project.id,
             mergeRequest.iid,
@@ -55,49 +58,50 @@ export class GitlabEventsService {
             )
 
             prFiles.push({
-                pr_file_name: file.new_path,
-                pr_file_status: file.new_file
+                prFileName: file.new_path,
+                prFileStatus: file.new_file
                     ? 'added'
                     : file.deleted_file
                       ? 'removed'
                       : 'modified',
-                pr_file_additions: 0, // GitLab doesn't provide this in webhook
-                pr_file_deletions: 0, // GitLab doesn't provide this in webhook
-                pr_file_changes: 0, // GitLab doesn't provide this in webhook
-                pr_file_content_before:
+                prFileAdditions: 0, // GitLab doesn't provide this in webhook
+                prFileDeletions: 0, // GitLab doesn't provide this in webhook
+                prFileChanges: 0, // GitLab doesn't provide this in webhook
+                prFileContentBefore:
                     contentBefore || 'File not found in target branch',
-                pr_file_content_after:
+                prFileContentAfter:
                     contentAfter || 'File not found in source branch',
-                pr_file_diff: file.diff || 'No diff available',
-                pr_file_blob_url: `${project.web_url}/-/blob/${mergeRequest.source_branch}/${file.new_path}`
+                prFileDiff: file.diff || 'No diff available',
+                prFileDiffHunks: this.parseDiffHunks(file.diff || ''),
+                prFileBlobUrl: `${project.web_url}/-/blob/${mergeRequest.source_branch}/${file.new_path}`
             })
         }
 
         // Create the comprehensive structure matching GitHub format
         const comprehensiveAnalysis: StructuredPRData = {
-            pull_request: {
-                pr_id: mergeRequest.id.toString(),
-                pr_user:
+            pullRequest: {
+                provider: 'gitlab',
+                prId: mergeRequest.id.toString(),
+                prUser:
                     mergeRequest.author?.username ||
                     payload.user?.username ||
                     'unknown',
-                owner: project.namespace,
+                owner: project.namespace.path,
                 repo: project.name,
                 prNumber: mergeRequest.iid.toString(),
                 installationId: 'gitlab_integration', // GitLab doesn't have installation concept
-                pr_repo_name: project.path_with_namespace,
-                pr_number: mergeRequest.iid,
-                pr_title: mergeRequest.title,
-                pr_body: mergeRequest.description || '',
-                pr_state: mergeRequest.state,
-                pr_created_at: mergeRequest.created_at,
-                pr_updated_at: mergeRequest.updated_at,
-                pr_head_branch: mergeRequest.source_branch,
-                pr_base_branch: mergeRequest.target_branch,
-                pr_head_sha: mergeRequest.last_commit?.id || 'unknown',
-                pr_base_sha: 'unknown', // Not provided in webhook
-                pr_files_changed: files.length,
-                pr_files: prFiles
+                prRepoName: project.path_with_namespace,
+                prTitle: mergeRequest.title,
+                prBody: mergeRequest.description || '',
+                prState: mergeRequest.state,
+                prCreatedAt: mergeRequest.created_at,
+                prUpdatedAt: mergeRequest.updated_at,
+                prHeadBranch: mergeRequest.source_branch,
+                prBaseBranch: mergeRequest.target_branch,
+                prHeadSha: mergeRequest.last_commit?.id || 'unknown',
+                prBaseSha: 'unknown', // Not provided in webhook
+                prFilesChanged: files.length,
+                prFiles: prFiles
             }
         }
 
@@ -105,113 +109,115 @@ export class GitlabEventsService {
     }
 
     private async getAccessTokenForNamespace(
-        namespace: string
-    ): Promise<string | null> {
-        try {
-            // Try to find a workspace record first
-            const workspaceRecord = await this.dataService.workspaces.findOne({
-                name: namespace,
-                provider: 'gitlab'
-            })
+        workspace: string
+    ): Promise<string> {
+        const workspaceRecord = await this.dataService.workspaces.findOne({
+            id: workspace,
+            provider: 'gitlab'
+        })
 
-            if (workspaceRecord?._id) {
-                // Find a user who has this workspace in their workspaces array
-                const userData = await this.dataService.users.findOne(
-                    { workspaces: workspaceRecord._id },
-                    'accessToken refreshToken tokenExpiresAt'
-                )
-
-                if (!userData?.accessToken) {
-                    console.warn(
-                        'No access token found for user with namespace:',
-                        namespace
-                    )
-                    return null
-                }
-
-                // Check if access token is expired or will expire soon (within 5 minutes)
-                const now = new Date()
-                const expiryBuffer = 5 * 60 * 1000 // 5 minutes in milliseconds
-                const isTokenExpired =
-                    userData.tokenExpiresAt &&
-                    new Date(userData.tokenExpiresAt).getTime() <
-                        now.getTime() + expiryBuffer
-
-                if (isTokenExpired && userData.refreshToken) {
-                    console.log(
-                        'Access token expired, attempting to refresh...'
-                    )
-                    const newTokens =
-                        await this.gitlabApiService.refreshAccessToken(
-                            userData.refreshToken
-                        )
-
-                    if (newTokens) {
-                        // Calculate expiration using expires_in from response or default
-                        const tokenExpiresAt = new Date(
-                            Date.now() + (newTokens.expires_in || 7200) * 1000
-                        )
-
-                        // Update user with new tokens
-                        await this.dataService.users.updateOne(
-                            { _id: userData._id },
-                            {
-                                $set: {
-                                    accessToken: newTokens.access_token,
-                                    refreshToken:
-                                        newTokens.refresh_token ||
-                                        userData.refreshToken,
-                                    tokenExpiresAt
-                                }
-                            }
-                        )
-                        return newTokens.access_token
-                    } else {
-                        console.error('Failed to refresh access token')
-                        return null
-                    }
-                }
-
-                return userData.accessToken
-            }
-
-            return null
-        } catch (error) {
-            console.error('Error getting access token for namespace:', error)
-            return null
+        if (!workspaceRecord) {
+            throw new BadRequestException(
+                'Workspace not found for the provided GitLab namespace'
+            )
         }
+
+        // Find a user who has this workspace in their workspaces array
+        const userData = await this.dataService.users.findOne(
+            { workspaces: workspaceRecord._id },
+            'accessToken refreshToken tokenExpiresAt'
+        )
+
+        const now = new Date()
+        const expiryBuffer = 5 * 60 * 1000 // 5 minutes in milliseconds
+        const isTokenExpired =
+            userData?.tokenExpiresAt &&
+            new Date(userData.tokenExpiresAt).getTime() <
+                now.getTime() + expiryBuffer
+
+        if (isTokenExpired && userData.refreshToken) {
+            const newTokens = await this.gitlabApiService.refreshAccessToken(
+                userData.refreshToken
+            )
+
+            if (newTokens) {
+                const tokenExpiresAt = new Date(
+                    Date.now() + (newTokens.expires_in || 7200) * 1000
+                )
+                await this.dataService.users.updateOne(
+                    { _id: userData._id },
+                    {
+                        $set: {
+                            accessToken: newTokens.access_token,
+                            refreshToken:
+                                newTokens.refresh_token ||
+                                userData.refreshToken,
+                            tokenExpiresAt
+                        }
+                    }
+                )
+                return newTokens.access_token
+            } else {
+                throw new BadRequestException('Failed to refresh access token')
+            }
+        }
+        return userData?.accessToken as string
     }
 
     private async fetchMRFiles(
         projectId: number,
         mergeRequestIid: number,
-        accessToken?: string | null
+        accessToken: string
     ): Promise<any[]> {
-        try {
-            if (!accessToken) {
-                console.warn('No access token provided for GitLab API call')
-                return []
+        const gitlabApiUrl = this.baseUrl
+
+        let allFiles: any[] = []
+        let page = 1
+        const perPage = 100 // GitLab default is 20, max is 100
+
+        while (true) {
+            const response = await this.httpService.get(
+                `${gitlabApiUrl}/projects/${projectId}/merge_requests/${mergeRequestIid}/changes`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`
+                    },
+                    params: {
+                        page: page,
+                        per_page: perPage
+                    }
+                }
+            )
+
+            const changes = response.changes || []
+
+            if (changes.length === 0) {
+                // No more files to fetch
+                break
             }
 
-            const gitlabApiUrl =
-                this.configService.get('GITLAB_API_URL') ||
-                'https://gitlab.com/api/v4'
+            allFiles = allFiles.concat(changes)
 
-            const response = await firstValueFrom(
-                this.httpService.get(
-                    `${gitlabApiUrl}/projects/${projectId}/merge_requests/${mergeRequestIid}/changes`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${accessToken}`
-                        }
-                    }
+            // Check if we got fewer results than requested, meaning this is the last page
+            if (changes.length < perPage) {
+                break
+            }
+
+            page++
+
+            // Safety limit to prevent infinite loops
+            if (allFiles.length > 10000) {
+                console.warn(
+                    `Too many files in MR ${mergeRequestIid}, stopping at ${allFiles.length} files`
                 )
-            )
-            return response.data.changes || []
-        } catch (error) {
-            console.error('Error fetching GitLab MR files:', error)
-            return []
+                break
+            }
         }
+
+        console.log(
+            `Fetched ${allFiles.length} files for MR ${mergeRequestIid}`
+        )
+        return allFiles
     }
 
     private async fetchFileContent(
@@ -220,32 +226,235 @@ export class GitlabEventsService {
         branch: string,
         accessToken?: string | null
     ): Promise<string | null> {
-        try {
-            if (!accessToken) {
-                console.warn(
-                    'No access token provided for GitLab file content API call'
-                )
-                return null
-            }
-            const gitlabApiUrl =
-                this.configService.get('GITLAB_API_URL') ||
-                'https://gitlab.com/api/v4'
+        if (!accessToken) {
+            console.warn(
+                'No access token provided for GitLab file content API call'
+            )
+            return null
+        }
+        const gitlabApiUrl =
+            this.configService.get('GITLAB_API_URL') ||
+            'https://gitlab.com/api/v4'
 
-            const response = await firstValueFrom(
-                this.httpService.get(
-                    `${gitlabApiUrl}/projects/${projectId}/repository/files/${encodeURIComponent(filePath)}/raw`,
+        const response = await this.httpService.get(
+            `${gitlabApiUrl}/projects/${projectId}/repository/files/${encodeURIComponent(filePath)}/raw`,
+            {
+                params: { ref: branch },
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
+                }
+            }
+        )
+        return response
+    }
+
+    async addPRReviewComments(postReviewDto: PostReviewDto): Promise<any> {
+        const accessToken = await this.getAccessTokenForProject(
+            postReviewDto.projectId
+        )
+
+        const actualProjectId = encodeURIComponent(postReviewDto.projectId)
+
+        // Get merge request details to obtain SHA values
+        const mrDetails = await this.getMergeRequestDetails(
+            actualProjectId,
+            postReviewDto.prNumber,
+            accessToken
+        )
+
+        // Get merge request diffs to find line codes
+        const diffs = await this.getMergeRequestDiffs(
+            actualProjectId,
+            postReviewDto.prNumber,
+            accessToken
+        )
+
+        const gitlabApiUrl =
+            this.configService.get('GITLAB_API_URL') ||
+            'https://gitlab.com/api/v4'
+
+        const results: any[] = []
+        for (const comment of postReviewDto.comments) {
+            // Find the line_code for the specific file and line
+            const lineCode = this.findLineCode(
+                diffs,
+                comment.path,
+                comment.position
+            )
+            console.log('lineCode', lineCode)
+            if (!lineCode) {
+                console.warn(
+                    `Could not find line_code for ${comment.path}:${comment.position}`
+                )
+                // Fallback to general note if line_code not found
+                const fallbackData = {
+                    body: `**📁 File:** \`${comment.path}\` **📍 Line:** ${comment.position}\n\n${comment.body}`
+                }
+                const fallbackUrl = `${gitlabApiUrl}/projects/${actualProjectId}/merge_requests/${postReviewDto.prNumber}/notes`
+                const fallbackResponse = await this.httpService.post(
+                    fallbackUrl,
+                    fallbackData,
                     {
-                        params: { ref: branch },
                         headers: {
-                            Authorization: `Bearer ${accessToken}`
+                            Authorization: `Bearer ${accessToken}`,
+                            'Content-Type': 'application/json'
                         }
                     }
                 )
-            )
-            return response.data
-        } catch (error) {
-            console.error('Error fetching GitLab file content:', error)
-            return null
+
+                results.push(fallbackResponse)
+                continue
+            }
+
+            const commentData = {
+                body: comment.body,
+                position: {
+                    position_type: 'text',
+                    base_sha: mrDetails.diff_refs.base_sha,
+                    start_sha: mrDetails.diff_refs.start_sha,
+                    head_sha: mrDetails.diff_refs.head_sha,
+                    new_path: comment.path,
+                    old_path: comment.path,
+                    new_line: comment.position,
+                    old_line: null // For new lines, old_line can be null
+                }
+            }
+            const apiUrl = `${gitlabApiUrl}/projects/${actualProjectId}/merge_requests/${postReviewDto.prNumber}/discussions`
+            const response = await this.httpService.post(apiUrl, commentData, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+
+            results.push(response)
         }
+        return results
+    }
+
+    async addPRSummery(postSummeryDto: PostSummeryDto): Promise<any> {
+        const accessToken = await this.getAccessTokenForProject(
+            postSummeryDto.projectId
+        )
+
+        const actualProjectId = encodeURIComponent(postSummeryDto.projectId)
+
+        const gitlabApiUrl =
+            this.configService.get('GITLAB_API_URL') ||
+            'https://gitlab.com/api/v4'
+
+        const commentData = {
+            body: postSummeryDto.body
+        }
+
+        const apiUrl = `${gitlabApiUrl}/projects/${actualProjectId}/merge_requests/${postSummeryDto.prNumber}/notes`
+
+        const response = await this.httpService.post(apiUrl, commentData, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            }
+        })
+
+        return response
+    }
+
+    private async getMergeRequestDiffs(
+        projectId: string,
+        mrNumber: number,
+        accessToken: string
+    ): Promise<any[]> {
+        const gitlabApiUrl =
+            this.configService.get('GITLAB_API_URL') ||
+            'https://gitlab.com/api/v4'
+
+        const apiUrl = `${gitlabApiUrl}/projects/${projectId}/merge_requests/${mrNumber}/diffs`
+
+        const response = await this.httpService.get(apiUrl, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            }
+        })
+
+        return response
+    }
+
+    private findLineCode(
+        diffs: any[],
+        filePath: string,
+        lineNumber: number
+    ): string | null {
+        console.log('Looking for line code for:', filePath, 'line:', lineNumber)
+
+        for (const diff of diffs) {
+            if (diff.new_path === filePath || diff.old_path === filePath) {
+                // Simple line code format - GitLab expects specific format
+                const lineCode = `${diff.new_path}_0_${lineNumber}`
+                return lineCode
+            }
+        }
+
+        console.log('No matching file found in diffs')
+        return null
+    }
+
+    private async getMergeRequestDetails(
+        projectId: string,
+        mrNumber: number,
+        accessToken: string
+    ): Promise<any> {
+        const gitlabApiUrl =
+            this.configService.get('GITLAB_API_URL') ||
+            'https://gitlab.com/api/v4'
+
+        const apiUrl = `${gitlabApiUrl}/projects/${projectId}/merge_requests/${mrNumber}`
+
+        const response = await this.httpService.get(apiUrl, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        return response
+    }
+
+    private async getAccessTokenForProject(projectId: string): Promise<string> {
+        const workspaceRecord = await this.dataService.workspaces.findOne({
+            slug: projectId,
+            provider: 'gitlab'
+        })
+
+        if (workspaceRecord?._id) {
+            const userData = await this.dataService.users.findOne(
+                { workspaces: workspaceRecord._id },
+                'accessToken'
+            )
+
+            if (!userData?.accessToken) {
+                throw new BadRequestException(
+                    'No user found with access token for the provided GitLab project'
+                )
+            }
+            return userData.accessToken
+        } else {
+            throw new BadRequestException(
+                'No workspace found for the provided GitLab project'
+            )
+        }
+    }
+
+    private parseDiffHunks(diffContent: string): string[] {
+        if (!diffContent) return []
+        
+        const hunks: string[] = []
+        const hunkRegex = /@@[^@]*@@.*?(?=@@|$)/gs
+        
+        let match
+        while ((match = hunkRegex.exec(diffContent)) !== null) {
+            hunks.push(match[0])
+        }
+        
+        return hunks
     }
 }

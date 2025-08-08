@@ -1,66 +1,12 @@
-import { HttpService } from '@nestjs/axios'
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { firstValueFrom } from 'rxjs'
-
-export interface GitlabRepository {
-    name: string
-    fullName: string
-    createdOn: string
-    updatedOn: string
-    id: string
-    author: {
-        username: string
-        displayName: string
-        type: string
-    }
-}
-
-export interface GitlabRepositoriesResponse {
-    repositories: GitlabRepository[]
-}
-
-export interface GitlabPullRequest {
-    id: number
-    nodeId: string
-    prNumber: number
-    title: string
-    status: string
-    user: {
-        username: string
-        avatarUrl?: string
-    }
-    createdAt: string
-    updatedAt: string
-    closedAt: string | null
-    mergedAt: string | null
-    url: string
-}
-
-export interface GitlabPullRequestsResponse {
-    message: string
-    repository: {
-        workspace: string
-        name: string
-        fullName: string
-    }
-    filters: {
-        state: string
-        limit: string
-    }
-    totalCount: number
-    pullRequests: GitlabPullRequest[]
-    summary: {
-        total: number
-        byState: Record<string, number>
-        withReviewers: number
-        withComments: number
-        withTasks: number
-        authors: number
-        averageComments: number
-        averageTasks: number
-    }
-}
+import { OrgType } from 'src/common/enums/org.enum'
+import { HttpService } from 'src/common/http/http.service'
+import {
+    PullRequestResponse,
+    Repository
+} from 'src/common/interfaces/repository.interface'
+import { Workspace } from 'src/database/schemas/workspace.schema'
 
 @Injectable()
 export class GitlabApiService {
@@ -84,87 +30,44 @@ export class GitlabApiService {
     }
 
     /**
-     * Generic method to make API calls to GitLab
-     */
-    private async makeApiCall<T>(
-        endpoint: string,
-        accessToken: string,
-        method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
-        data?: any
-    ): Promise<T> {
-        try {
-            const url = `${this.baseUrl}${endpoint}`
-            const headers = this.getAuthHeaders(accessToken)
-
-            const response = await firstValueFrom(
-                this.httpService.request({
-                    method,
-                    url,
-                    headers,
-                    data
-                })
-            )
-
-            return response.data
-        } catch (error) {
-            console.error('GitLab API Error:', {
-                endpoint,
-                error: error.response?.data || error.message,
-                status: error.response?.status
-            })
-
-            throw new HttpException(
-                error.response?.data?.message ||
-                    error.response?.data?.error ||
-                    error.message ||
-                    'GitLab API request failed',
-                error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR
-            )
-        }
-    }
-
-    /**
      * Get all repositories for the authenticated user
      */
     async getAllRepositories(
-        accessToken: string
-    ): Promise<GitlabRepositoriesResponse> {
-        try {
-            const projects = await this.makeApiCall<any[]>(
-                `/projects?membership=true&per_page=100&order_by=updated_at&sort=desc`,
-                accessToken
+        accessToken: string,
+        slug: string,
+        type: string
+    ): Promise<Repository[]> {
+        if (slug && type === OrgType.ORGANIZATION) {
+            return await this.getGroupRepositories(accessToken, slug)
+        } else if (slug && type === OrgType.USER) {
+            return await this.getUserRepositories(accessToken, slug)
+        } else {
+            const projects = await this.httpService.get(
+                `${this.baseUrl}/projects?membership=true&per_page=100&order_by=updated_at&sort=desc`,
+                {
+                    headers: this.getAuthHeaders(accessToken)
+                }
             )
-
-            const repositories: GitlabRepository[] = projects.map(
-                (project: any) => ({
-                    id: project.id.toString(),
-                    name: project.name,
-                    fullName: project.path_with_namespace,
-                    createdOn: project.created_at,
-                    updatedOn: project.last_activity_at || project.updated_at,
-                    author: {
-                        username:
-                            project.owner?.username ||
-                            project.namespace?.name ||
-                            'unknown',
-                        displayName:
-                            project.owner?.name ||
-                            project.namespace?.full_name ||
-                            'Unknown',
-                        type: project.namespace?.kind || 'user'
-                    }
-                })
+            const repositories: Repository[] = projects.map(
+                (project: any) =>
+                    ({
+                        id: project.id.toString(),
+                        name: project.name,
+                        fullName: project.path_with_namespace,
+                        slug: project.path_with_namespace,
+                        createdOn: project.created_at,
+                        updatedOn:
+                            project.last_activity_at || project.updated_at,
+                        author: {
+                            username:
+                                project.owner?.username ||
+                                project.namespace?.name ||
+                                'unknown',
+                            avatarUrl: project.owner?.avatar_url || null
+                        }
+                    }) as Repository
             )
-
-            return {
-                repositories
-            }
-        } catch (error) {
-            console.error(
-                'Error in GitlabApiService.getAllRepositories:',
-                error
-            )
-            throw error
+            return repositories
         }
     }
 
@@ -172,85 +75,119 @@ export class GitlabApiService {
      * Get a specific repository
      */
     async getRepository(accessToken: string, projectId: string): Promise<any> {
-        try {
-            return await this.makeApiCall(
-                `/projects/${encodeURIComponent(projectId)}`,
-                accessToken
-            )
-        } catch (error) {
-            console.error(
-                `Error in GitlabApiService.getRepository for ${projectId}:`,
-                error
-            )
-            throw error
-        }
+        return await this.httpService.get(
+            `${this.baseUrl}/projects/${encodeURIComponent(projectId)}`,
+            {
+                headers: this.getAuthHeaders(accessToken)
+            }
+        )
     }
 
     /**
      * Get user profile information
      */
     async getUserProfile(accessToken: string): Promise<any> {
-        try {
-            return await this.makeApiCall('/user', accessToken)
-        } catch (error) {
-            console.error('Error in GitlabApiService.getUserProfile:', error)
-            throw error
-        }
+        return await this.httpService.get(`${this.baseUrl}/user`, {
+            headers: this.getAuthHeaders(accessToken)
+        })
     }
 
     /**
      * Get all groups (equivalent to workspaces in Bitbucket)
      */
-    async getAllGroups(accessToken: string): Promise<any> {
-        try {
-            // First get user profile to add as the personal workspace
-            const userProfile = await this.getUserProfile(accessToken)
+    async getAllGroups(accessToken: string): Promise<Workspace[]> {
+        const userProfile = await this.getUserProfile(accessToken)
+        const groups = await this.httpService.get(
+            `${this.baseUrl}/groups?per_page=100&order_by=name&sort=asc`,
+            {
+                headers: this.getAuthHeaders(accessToken)
+            }
+        )
 
-            const groups = await this.makeApiCall<any[]>(
-                `/groups?per_page=100&order_by=name&sort=asc`,
-                accessToken
-            )
+        const transformedGroups = groups.map(
+            (group: any) =>
+                ({
+                    id: group.id.toString(),
+                    name: group.name,
+                    slug: group.path,
+                    provider: 'gitlab',
+                    url: group.web_url,
+                    reposUrl: `${this.baseUrl}/groups/${group.id}/projects`,
+                    avatarUrl: group.avatar_url || null,
+                    type: OrgType.ORGANIZATION,
+                    nodeId: `GL_${group.id}`,
+                    description: group.description || '',
+                    isPrivate: group.visibility === 'private',
+                    createdOn: group.created_at
+                }) as Workspace
+        )
 
-            const transformedGroups = groups.map((group: any) => ({
+        // Add user profile as the first organization (personal workspace)
+        const personalWorkspace: Workspace = {
+            id: userProfile.id.toString(),
+            name: userProfile.name || userProfile.username,
+            slug: userProfile.username,
+            provider: 'gitlab',
+            url: userProfile.web_url,
+            reposUrl: `${this.baseUrl}/users/${userProfile.id}/projects`,
+            avatarUrl: userProfile.avatar_url || null,
+            type: OrgType.USER,
+            nodeId: `GL_${userProfile.id}`,
+            createdOn: userProfile.created_at,
+            isPrivate: false
+        }
+
+        // Put personal workspace first, then all groups
+        const finalGroups = [personalWorkspace, ...transformedGroups]
+
+        return finalGroups
+    }
+
+    /**
+     * Get a single workspace by slug
+     * @param accessToken - The access token of the user
+     * @param slug - The slug of the workspace to fetch
+     */
+    async getSingleWorkspace(
+        accessToken: string,
+        slug: string,
+        type: string
+    ): Promise<Workspace> {
+        if (type == OrgType.ORGANIZATION) {
+            const encodedId = encodeURIComponent(slug)
+            const url = `${this.baseUrl}/groups/${encodedId}`
+            const group = await this.httpService.get(url, {
+                headers: this.getAuthHeaders(accessToken)
+            })
+            return {
                 id: group.id.toString(),
                 name: group.name,
                 slug: group.path,
-                fullName: group.full_name,
-                description: group.description || '',
-                visibility: group.visibility,
+                provider: 'gitlab',
+                url: group.web_url,
+                reposUrl: `${this.baseUrl}/groups/${group.id}/projects`,
                 avatarUrl: group.avatar_url || null,
-                webUrl: group.web_url,
-                projectsUrl: `${this.baseUrl}/groups/${group.id}/projects`,
-                createdAt: group.created_at,
+                type: OrgType.ORGANIZATION,
+                nodeId: `GL_${group.id}`,
+                description: group.description || '',
                 isPrivate: group.visibility === 'private',
-                type: 'group'
-            }))
-
-            // Add user profile as the first organization (personal workspace)
-            const personalWorkspace = {
+                createdOn: group.created_at
+            }
+        } else {
+            const userProfile = await this.getUserProfile(accessToken)
+            return {
                 id: userProfile.id.toString(),
                 name: userProfile.name || userProfile.username,
                 slug: userProfile.username,
-                fullName: userProfile.name || userProfile.username,
-                description: userProfile.bio || '',
-                visibility: 'public',
+                provider: 'gitlab',
+                url: userProfile.web_url,
+                reposUrl: `${this.baseUrl}/users/${userProfile.id}/projects`,
                 avatarUrl: userProfile.avatar_url || null,
-                webUrl: userProfile.web_url,
-                projectsUrl: `${this.baseUrl}/users/${userProfile.id}/projects`,
-                createdAt: userProfile.created_at,
-                isPrivate: false,
-                type: 'user'
+                type: OrgType.USER,
+                nodeId: `GL_${userProfile.id}`,
+                createdOn: userProfile.created_at,
+                isPrivate: false
             }
-
-            // Put personal workspace first, then all groups
-            const finalGroups = [personalWorkspace, ...transformedGroups]
-
-            return {
-                groups: finalGroups
-            }
-        } catch (error) {
-            console.error('Error in GitlabApiService.getAllGroups:', error)
-            throw error
         }
     }
 
@@ -260,18 +197,21 @@ export class GitlabApiService {
     async getGroupRepositories(
         accessToken: string,
         groupId: string
-    ): Promise<GitlabRepositoriesResponse> {
-        try {
-            const projects = await this.makeApiCall<any[]>(
-                `/groups/${encodeURIComponent(groupId)}/projects?per_page=100&order_by=updated_at&sort=desc`,
-                accessToken
-            )
+    ): Promise<Repository[]> {
+        const projects = await this.httpService.get(
+            `${this.baseUrl}/groups/${encodeURIComponent(groupId)}/projects?per_page=100&order_by=updated_at&sort=desc`,
+            {
+                headers: this.getAuthHeaders(accessToken)
+            }
+        )
 
-            const repositories: GitlabRepository[] = projects.map(
-                (project: any) => ({
+        const repositories: Repository[] = projects.map(
+            (project: any) =>
+                ({
                     id: project.id.toString(),
                     name: project.name,
                     fullName: project.path_with_namespace,
+                    slug: project.path_with_namespace,
                     createdOn: project.created_at,
                     updatedOn: project.last_activity_at || project.updated_at,
                     author: {
@@ -279,25 +219,13 @@ export class GitlabApiService {
                             project.owner?.username ||
                             project.namespace?.name ||
                             'unknown',
-                        displayName:
-                            project.owner?.name ||
-                            project.namespace?.full_name ||
-                            'Unknown',
-                        type: project.namespace?.kind || 'group'
-                    }
-                })
-            )
-
-            return {
-                repositories
-            }
-        } catch (error) {
-            console.error(
-                `Error in GitlabApiService.getGroupRepositories for ${groupId}:`,
-                error
-            )
-            throw error
-        }
+                        avatarUrl: project.owner?.avatar_url || null
+                    },
+                    private: project.visibility === 'private',
+                    openIssues: project.open_issues_count
+                }) as Repository
+        )
+        return repositories
     }
 
     /**
@@ -306,18 +234,20 @@ export class GitlabApiService {
     async getUserRepositories(
         accessToken: string,
         userId: string
-    ): Promise<GitlabRepositoriesResponse> {
-        try {
-            const projects = await this.makeApiCall<any[]>(
-                `/users/${encodeURIComponent(userId)}/projects?per_page=100&order_by=updated_at&sort=desc`,
-                accessToken
-            )
-
-            const repositories: GitlabRepository[] = projects.map(
-                (project: any) => ({
+    ): Promise<Repository[]> {
+        const projects = await this.httpService.get(
+            `${this.baseUrl}/users/${encodeURIComponent(userId)}/projects?per_page=100&order_by=updated_at&sort=desc`,
+            {
+                headers: this.getAuthHeaders(accessToken)
+            }
+        )
+        const repositories: Repository[] = projects.map(
+            (project: any) =>
+                ({
                     id: project.id.toString(),
                     name: project.name,
                     fullName: project.path_with_namespace,
+                    slug: project.path_with_namespace,
                     createdOn: project.created_at,
                     updatedOn: project.last_activity_at || project.updated_at,
                     author: {
@@ -325,25 +255,13 @@ export class GitlabApiService {
                             project.owner?.username ||
                             project.namespace?.name ||
                             'unknown',
-                        displayName:
-                            project.owner?.name ||
-                            project.namespace?.full_name ||
-                            'Unknown',
-                        type: project.namespace?.kind || 'user'
-                    }
-                })
-            )
-
-            return {
-                repositories
-            }
-        } catch (error) {
-            console.error(
-                `Error in GitlabApiService.getUserRepositories for ${userId}:`,
-                error
-            )
-            throw error
-        }
+                        avatarUrl: project.owner?.avatar_url || null
+                    },
+                    private: project.visibility === 'private',
+                    openIssues: project.open_issues_count
+                }) as Repository
+        )
+        return repositories
     }
 
     /**
@@ -351,76 +269,62 @@ export class GitlabApiService {
      */
     async addWebhook(
         accessToken: string,
-        projectId: string,
+        slug: string,
         webhookUrl: string,
         events: string[]
     ): Promise<any> {
-        try {
-            // Map events to GitLab webhook events
-            const gitlabEvents = {
-                push_events:
-                    events.includes('push_events') ||
-                    events.includes('push') ||
-                    events.includes('repo:push'),
-                merge_requests_events:
-                    events.includes('merge_requests_events') ||
-                    events.includes('merge_requests') ||
-                    events.includes('pullrequest:created') ||
-                    events.includes('pullrequest:updated'),
-                issues_events:
-                    events.includes('issues_events') ||
-                    events.includes('issues') ||
-                    events.includes('issue:created') ||
-                    events.includes('issue:updated'),
-                note_events:
-                    events.includes('note_events') ||
-                    events.includes('note') ||
-                    events.includes('issue:comment_created'),
-                tag_push_events:
-                    events.includes('tag_push_events') ||
-                    events.includes('tag_push'),
-                wiki_page_events:
-                    events.includes('wiki_page_events') ||
-                    events.includes('wiki_page'),
-                deployment_events:
-                    events.includes('deployment_events') ||
-                    events.includes('deployment'),
-                job_events:
-                    events.includes('job_events') || events.includes('job'),
-                pipeline_events:
-                    events.includes('pipeline_events') ||
-                    events.includes('pipeline'),
-                release_events:
-                    events.includes('release_events') ||
-                    events.includes('release'),
-                confidential_issues_events:
-                    events.includes('confidential_issues_events') ||
-                    events.includes('confidential_issues')
-            }
-
-            const webhookData = {
-                url: webhookUrl,
-                ...gitlabEvents,
-                enable_ssl_verification: true
-            }
-            console.log(
-                `Adding webhook to ${projectId} with data:`,
-                webhookData
-            )
-
-            return await this.makeApiCall(
-                `/projects/${encodeURIComponent(projectId)}/hooks`,
-                accessToken,
-                'POST',
-                webhookData
-            )
-        } catch (error) {
-            console.error(
-                `Error in GitlabApiService.addWebhook for ${projectId}:`,
-                error
-            )
-            throw error
+        const gitlabEvents = {
+            push_events:
+                events.includes('push_events') ||
+                events.includes('push') ||
+                events.includes('repo:push'),
+            merge_requests_events:
+                events.includes('merge_requests_events') ||
+                events.includes('merge_requests') ||
+                events.includes('pullrequest:created') ||
+                events.includes('pullrequest:updated'),
+            issues_events:
+                events.includes('issues_events') ||
+                events.includes('issues') ||
+                events.includes('issue:created') ||
+                events.includes('issue:updated'),
+            note_events:
+                events.includes('note_events') ||
+                events.includes('note') ||
+                events.includes('issue:comment_created'),
+            tag_push_events:
+                events.includes('tag_push_events') ||
+                events.includes('tag_push'),
+            wiki_page_events:
+                events.includes('wiki_page_events') ||
+                events.includes('wiki_page'),
+            deployment_events:
+                events.includes('deployment_events') ||
+                events.includes('deployment'),
+            job_events: events.includes('job_events') || events.includes('job'),
+            pipeline_events:
+                events.includes('pipeline_events') ||
+                events.includes('pipeline'),
+            release_events:
+                events.includes('release_events') || events.includes('release'),
+            confidential_issues_events:
+                events.includes('confidential_issues_events') ||
+                events.includes('confidential_issues')
         }
+
+        const webhookData = {
+            url: webhookUrl,
+            ...gitlabEvents,
+            enable_ssl_verification: true
+        }
+
+        return await this.httpService.post(
+            `${this.baseUrl}/projects/${encodeURIComponent(slug)}/hooks`,
+            webhookData,
+            {
+                headers: this.getAuthHeaders(accessToken)
+            }
+        )
     }
 
     /**
@@ -447,27 +351,29 @@ export class GitlabApiService {
                 redirect_uri: redirectUri
             }
 
-            const response = await firstValueFrom(
-                this.httpService.post(`${this.oauthBaseUrl}/token`, tokenData, {
+            const response = await this.httpService.post(
+                `${this.oauthBaseUrl}/token`,
+                tokenData,
+                {
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                         Accept: 'application/json'
                     }
-                })
+                }
             )
 
-            if (response.data.access_token) {
+            if (response.access_token) {
                 // Get user profile with the access token
                 const userProfile = await this.getUserProfile(
-                    response.data.access_token
+                    response.access_token
                 )
 
                 return {
-                    accessToken: response.data.access_token,
-                    refreshToken: response.data.refresh_token,
-                    tokenType: response.data.token_type,
-                    expiresIn: response.data.expires_in,
-                    scope: response.data.scope,
+                    accessToken: response.access_token,
+                    refreshToken: response.access_token,
+                    tokenType: response.access_token,
+                    expiresIn: response.access_token,
+                    scope: response.access_token,
                     user: userProfile
                 }
             } else {
@@ -488,86 +394,110 @@ export class GitlabApiService {
     /**
      * Get merge requests (pull requests) for a repository
      */
-    async getMergeRequests(
+    async getPrList(
         accessToken: string,
-        projectId: string,
+        slug: string,
         state?: string,
         limit?: number
-    ): Promise<GitlabPullRequest[]> {
-        try {
-            const params = new URLSearchParams()
-            if (state) {
-                // Map states: opened, closed, merged, all
-                params.append('state', state.toLowerCase())
-            }
-            if (limit) {
-                params.append('per_page', limit.toString())
-            }
-            params.append('order_by', 'updated_at')
-            params.append('sort', 'desc')
-
-            const mergeRequests = await this.makeApiCall<any[]>(
-                `/projects/${encodeURIComponent(projectId)}/merge_requests?${params.toString()}`,
-                accessToken
-            )
-
-            return mergeRequests.map((mr: any) => ({
-                id: mr.id,
-                nodeId: mr.id.toString(),
-                prNumber: mr.iid,
-                title: mr.title,
-                status: mr.state,
-                user: {
-                    username: mr.author?.username || 'unknown',
-                    avatarUrl: mr.author?.avatar_url || null
-                },
-                createdAt: mr.created_at,
-                updatedAt: mr.updated_at,
-                closedAt: mr.closed_at,
-                mergedAt: mr.merged_at,
-                url: mr.web_url
-            }))
-        } catch (error) {
-            console.error(
-                `Error in GitlabApiService.getMergeRequests for ${projectId}:`,
-                error
-            )
-            throw error
+    ): Promise<PullRequestResponse[]> {
+        const params = new URLSearchParams()
+        if (state) {
+            params.append('state', state.toLowerCase())
         }
+        if (limit) {
+            params.append('per_page', limit.toString())
+        }
+        params.append('order_by', 'updated_at')
+        params.append('sort', 'desc')
+
+        const mergeRequests = await this.httpService.get(
+            `${this.baseUrl}/projects/${encodeURIComponent(slug)}/merge_requests?${params.toString()}`,
+            {
+                headers: this.getAuthHeaders(accessToken)
+            }
+        )
+        return mergeRequests.map(
+            (mr: any) =>
+                ({
+                    id: mr.id,
+                    nodeId: `GL_${mr.id}`,
+                    prNumber: mr.iid,
+                    title: mr.title,
+                    status: mr.state,
+                    author: {
+                        username: mr.author?.username || 'unknown',
+                        avatarUrl: mr.author?.avatar_url || null
+                    },
+                    createdOn: mr.created_at,
+                    updatedOn: mr.updated_at,
+                    closedOn: mr.closed_at,
+                    mergedOn: mr.merged_at,
+                    url: mr.web_url
+                }) as PullRequestResponse
+        )
     }
 
     async refreshAccessToken(refreshToken: string): Promise<{
-        access_token: string;
-        refresh_token?: string;
-        expires_in: number;
+        access_token: string
+        refresh_token?: string
+        expires_in: number
     } | null> {
-        try {
-            const gitlabTokenUrl = this.configService.get('GITLAB_TOKEN_URL') || 'https://gitlab.com/oauth/token'
-            const clientId = this.configService.get('GITLAB_CLIENT_ID')
-            const clientSecret = this.configService.get('GITLAB_CLIENT_SECRET')
+        const gitlabTokenUrl =
+            this.configService.get('GITLAB_TOKEN_URL') ||
+            'https://gitlab.com/oauth/token'
+        const clientId = this.configService.get('GITLAB_CLIENT_ID')
+        const clientSecret = this.configService.get('GITLAB_CLIENT_SECRET')
 
-            if (!clientId || !clientSecret) {
-                console.error('GitLab client credentials not configured')
-                return null
-            }
-            
-            const response = await firstValueFrom(
-                this.httpService.post(gitlabTokenUrl, {
-                    grant_type: 'refresh_token',
-                    refresh_token: refreshToken,
-                    client_id: clientId,
-                    client_secret: clientSecret
-                }, {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                })
-            )
-
-            return response.data
-        } catch (error) {
-            console.error('Error refreshing GitLab access token:', error)
+        if (!clientId || !clientSecret) {
+            console.error('GitLab client credentials not configured')
             return null
+        }
+
+        const response = await this.httpService.post(
+            gitlabTokenUrl,
+            {
+                grant_type: 'refresh_token',
+                refresh_token: refreshToken,
+                client_id: clientId,
+                client_secret: clientSecret
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+        )
+        return response
+    }
+
+    /**
+     *  Get pull request and repository details by ID
+     *  @param accessToken - The access token of the user
+     *  @param workspace - The workspace slug
+     *  @param repo - The repository slug
+     * @param prId - The pull request ID
+     */
+    async getPRAndRepo(
+        accessToken: string,
+        workspace: string,
+        repo: string,
+        prId: number
+    ) {
+        const object_attributes = await this.httpService.get(
+            `${this.baseUrl}/projects/${encodeURIComponent(repo)}/merge_requests/${prId}`,
+            {
+                headers: this.getAuthHeaders(accessToken)
+            }
+        )
+        const project = await this.httpService.get(
+            `${this.baseUrl}/projects/${encodeURIComponent(repo)}`,
+            {
+                headers: this.getAuthHeaders(accessToken)
+            }
+        )
+        return {
+            object_attributes,
+            project
         }
     }
 }

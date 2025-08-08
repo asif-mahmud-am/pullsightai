@@ -2,39 +2,29 @@ import {
     Body,
     Controller,
     Get,
-    Param,
     Post,
     Query,
     Req,
     UseGuards
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
+import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
+import { GetPRDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
+import { AddWebhookDto } from '../common/dto/add-webhook.dto'
 import { BitbucketService } from './bitbucket.service'
-import { AddWebhookDto } from './dto/add-webhook.dto'
+import { BitbucketEventsService } from './bitbucket-events.service'
+import { PostReviewDto } from './dto/post-review.dto'
+import { PostSummeryDto } from './dto/post-summery.dto'
 
 @Controller({
     path: 'bitbucket',
     version: '1'
 })
 export class BitbucketController {
-    constructor(private readonly bitbucketService: BitbucketService) {}
-
-    @UseGuards(AuthGuard('jwt-cookie'))
-    @Get('repositories')
-    async getAllRepositories(@Req() req) {
-        return {
-            message: 'All repositories fetched successfully',
-            result: await this.bitbucketService.getAllRepositories(req.user)
-        }
-    }
-
-    @Get('user')
-    async getUserProfile(@Query('access_token') accessToken: string) {
-        return {
-            message: 'User profile fetched successfully',
-            result: await this.bitbucketService.getUserProfile(accessToken)
-        }
-    }
+    constructor(
+        private readonly bitbucketService: BitbucketService,
+        private readonly bitbucketEventsService: BitbucketEventsService
+    ) {}
 
     @UseGuards(AuthGuard('jwt-cookie'))
     @Get('organizations')
@@ -46,51 +36,64 @@ export class BitbucketController {
     }
 
     @UseGuards(AuthGuard('jwt-cookie'))
-    @Get('repositories/:workspace')
-    async getWorkspaceRepositories(
-        @Param('workspace') workspace: string,
-        @Req() req
-    ) {
+    @Get('org-repos')
+    async getWorkspaceRepositories(@Req() req: any) {
         return {
             message: 'Workspace repositories fetched successfully',
             result: await this.bitbucketService.getWorkspaceRepositories(
-                workspace,
                 req.user
             )
         }
     }
 
     @UseGuards(AuthGuard('jwt-cookie'))
-    @Get('repos-pr-list')
-    async getPullRequests(
-        @Query('workspace') workspace: string,
-        @Query('repo') repository: string,
-        @Req() req,
-        @Query('state') state?: 'OPEN' | 'MERGED' | 'DECLINED' | 'SUPERSEDED',
-        @Query('limit') limit?: number
+    @Post('add-workspace')
+    async addWorkspace(
+        @Req() req: any,
+        @Body() addWorkspaceDto: AddWorkspaceDto
     ) {
         return {
-            message: 'Pull requests fetched successfully',
-            result: await this.bitbucketService.getPullRequests(
-                workspace,
-                repository,
+            message: 'Workspace added successfully',
+            result: await this.bitbucketService.addWorkspace(
                 req.user,
-                state,
-                limit
+                addWorkspaceDto
             )
         }
     }
 
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('repos-pr-list')
+    async getPullRequests(@Req() req: any, @Query() getPRDto: GetPRDto) {
+        return {
+            message: 'Pull requests fetched successfully',
+            result: await this.bitbucketService.getPullRequests(
+                req.user,
+                getPRDto
+            )
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('review-pr')
+    async reviewPR(@Req() req: any, @Query() prReviewDto: PRReviewDto) {
+        const reviewData = await this.bitbucketService.makePRReview(
+            req.user,
+            prReviewDto
+        )
+        return {
+            message: 'Pull request reviewed successfully',
+            result: reviewData
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
     @Post('add-webhook')
-    async addWebhook(@Body() addWebhookDto: AddWebhookDto) {
+    async addWebhook(@Body() addWebhookDto: AddWebhookDto, @Req() req: any) {
         return {
             message: 'Webhook added successfully',
             result: await this.bitbucketService.addWebhook(
-                addWebhookDto.access_token,
-                addWebhookDto.repository,
-                addWebhookDto.workspace,
-                addWebhookDto.webhook_url,
-                addWebhookDto.events
+                req.user,
+                addWebhookDto.repo
             )
         }
     }
@@ -100,7 +103,28 @@ export class BitbucketController {
         const event = req.headers['x-event-key']
         return {
             message: 'Bitbucket events processed successfully',
-            result: await this.bitbucketService.processBitbucketEvent(event, body)
+            result: await this.bitbucketService.processBitbucketEvent(
+                event,
+                body
+            )
+        }
+    }
+
+    @Post('reviews')
+    async postReview(@Body() postReviewDto: PostReviewDto) {
+        return {
+            message: 'Review posted successfully',
+            result: await this.bitbucketEventsService.addPRReviewComments(
+                postReviewDto
+            )
+        }
+    }
+
+    @Post('summary')
+    async postSummary(@Body() postSummery: PostSummeryDto) {
+        return {
+            message: 'Summary posted successfully',
+            result: await this.bitbucketEventsService.addPRSummery(postSummery)
         }
     }
 }

@@ -14,7 +14,7 @@ export class Workspace {
     name: string
 
     @Prop({ required: false, trim: true })
-    slug?: string
+    slug: string
 
     @Prop({ required: true, trim: true })
     provider: string
@@ -25,7 +25,7 @@ export class Workspace {
     @Prop({ required: true, trim: true })
     reposUrl: string
 
-    @Prop({ required: true, trim: true })
+    @Prop({ required: false })
     avatarUrl: string
 
     @Prop({ required: true, trim: true })

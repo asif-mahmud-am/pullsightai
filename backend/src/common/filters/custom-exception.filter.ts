@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { HttpAdapterHost } from '@nestjs/core'
+import { AxiosError } from 'axios'
 import { isArray } from 'class-validator'
 import { MongoServerError } from 'mongodb'
 import mongoose from 'mongoose'
@@ -43,6 +44,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
                 message: 'Duplicate field value error',
                 error: `${Object.keys(exception.keyValue).join(', ')} already exists!`
             }
+        } else if (exception instanceof AxiosError) {
+            const status = exception.response?.status || HttpStatus.BAD_GATEWAY
+            const errorData = exception.response?.data
+            responseBody = {
+                statusCode: status,
+                message:
+                    errorData?.error_description ||
+                    errorData?.message ||
+                    exception.message,
+                error: errorData?.error || 'External API Error'
+            }
         } else if (exception instanceof HttpException) {
             const exceptionData = Object.assign({}, exception.getResponse())
             responseBody = {
@@ -66,6 +78,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
             return response.redirect(
                 this.configService.get('CLIENT_URL') as string
             )
+        }
+
+        if (responseBody.statusCode == 401) {
+            response.clearCookie('accessToken', {
+                httpOnly: true,
+                sameSite: 'lax',
+                domain: `.${this.configService.get<string>('DOMAIN')}`
+            })
         }
 
         responseBody = {

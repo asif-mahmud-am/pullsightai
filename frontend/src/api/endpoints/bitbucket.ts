@@ -12,7 +12,7 @@ export const bitbucketEndpoints = {
 
     addOrg: async ({ slug, type }: { slug: string; type?: string }) => {
         return apiClient
-            .post("/bitbucket/add-workspace", { slug })
+            .post("/bitbucket/add-workspace", { slug, type })
             .then((res) => res.data);
     },
 

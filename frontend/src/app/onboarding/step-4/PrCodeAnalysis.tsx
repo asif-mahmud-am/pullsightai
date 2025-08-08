@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
     const [showAllComments, setShowAllComments] = useState(true);
 
-    const { pull_request: pr, analysis } = data;
+    const { pullRequest: pr, analysis } = data;
 
     // Filter out any null comments to prevent crashes
     const validComments = analysis.comments
@@ -27,11 +27,11 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
 
     const getSeverityColor = (severity: string) => {
         switch (severity) {
-            case "high":
+            case "Critical":
                 return "bg-red-900/30 text-red-300 border-red-700";
-            case "medium":
+            case "warning":
                 return "bg-yellow-900/30 text-yellow-300 border-yellow-700";
-            case "low":
+            case "info":
                 return "bg-blue-900/30 text-blue-300 border-blue-700";
             default:
                 return "bg-gray-900/30 text-gray-300 border-gray-700";
@@ -48,9 +48,9 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
             <div className="border-b border-gray-700 p-4">
                 <div className="flex items-start gap-3">
                     <div className="w-10 h-10">
-                        {pr.pr_user && (
+                        {pr.prUser && (
                             <div className="w-10 h-10 rounded-full bg-gray-700 text-gray-200 flex items-center justify-center font-bold">
-                                {pr.pr_user.slice(0, 2).toUpperCase()}
+                                {pr.prUser.slice(0, 2).toUpperCase()}
                             </div>
                             // ) : (
                             //     <img
@@ -65,7 +65,7 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
                     <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                             <span className="font-semibold text-gray-200">
-                                {pr.pr_user}
+                                {pr.prUser}
                             </span>
                             <Badge className="bg-purple-900/30 text-purple-300 border-purple-700">
                                 {pr.merged ? (
@@ -73,10 +73,10 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
                                 ) : (
                                     <GitPullRequest className="w-3 h-3 mr-1" />
                                 )}
-                                PR #{pr.pr_number} • {pr.pr_state}
+                                PR #{pr.prNumber} • {pr.prState}
                             </Badge>
                             <span className="text-gray-400 text-sm">
-                                {humanizeDate(pr.pr_created_at)}
+                                {humanizeDate(pr.prCreatedAt)}
                             </span>
                             <a
                                 href={pr.html_url}
@@ -89,19 +89,19 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
                         </div>
 
                         <h3 className="text-lg font-semibold text-gray-200 mb-2">
-                            {pr.pr_title}
+                            {pr.prTitle}
                         </h3>
 
                         <div className="flex items-center gap-4 text-sm text-gray-400">
                             <span className="text-green-400">
-                                +{pr.pr_additions}
+                                +{pr.prAdditions}
                             </span>
                             <span className="text-red-400">
-                                -{pr.pr_deletions}
+                                -{pr.prDeletions}
                             </span>
                             <span>
-                                {pr.pr_files_changed} file
-                                {pr.pr_files_changed !== 1 ? "s" : ""} changed
+                                {pr.prFilesChanged} file
+                                {pr.prFilesChanged !== 1 ? "s" : ""} changed
                             </span>
                         </div>
                     </div>
@@ -136,7 +136,9 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
                                 <AlertCircle className="w-3 h-3 text-red-400" />
                                 {
                                     validComments.filter(
-                                        (c) => c.severity === "critical"
+                                        (c) =>
+                                            c.severity.toLocaleLowerCase() ===
+                                            "critical"
                                     ).length
                                 }{" "}
                                 Critical
@@ -145,7 +147,9 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
                                 <AlertTriangle className="w-3 h-3 text-yellow-400" />
                                 {
                                     validComments.filter(
-                                        (c) => c.severity === "warning"
+                                        (c) =>
+                                            c.severity.toLocaleLowerCase() ===
+                                            "warning"
                                     ).length
                                 }{" "}
                                 Warnings
@@ -154,7 +158,9 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
                                 <Info className="w-3 h-3 text-blue-400" />
                                 {
                                     validComments.filter(
-                                        (c) => c.severity === "info"
+                                        (c) =>
+                                            c.severity.toLocaleLowerCase() ===
+                                            "info"
                                     ).length
                                 }{" "}
                                 Info
@@ -190,7 +196,7 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
                             </div>
 
                             <div className="text-gray-300 text-sm mb-3">
-                                <Markdown>{comment.suggestion}</Markdown>
+                                <Markdown>{comment.issue}</Markdown>
                             </div>
 
                             {comment.code_snippet && (

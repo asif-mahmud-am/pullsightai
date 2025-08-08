@@ -2,6 +2,7 @@ export interface AIComment {
     path: string;
     line_start: number;
     line_end: number;
+    issue: string;
     suggestion: string;
     code_snippet: string;
     code_snippet_line_start: number;
@@ -9,21 +10,21 @@ export interface AIComment {
 }
 
 export interface PRAnalysisData {
-    pull_request: {
-        pr_title: string;
-        pr_number: number;
-        pr_state: string;
+    pullRequest: {
+        prTitle: string;
+        prNumber: number;
+        prState: string;
         merged: boolean;
-        pr_user: string;
+        prUser: string;
         // user: {
         //     login: string;
         //     avatar_url: string;
         // };
         html_url: string;
-        pr_created_at: string;
-        pr_additions: number;
-        pr_deletions: number;
-        pr_files_changed: number;
+        prCreatedAt: string;
+        prAdditions: number;
+        prDeletions: number;
+        prFilesChanged: number;
     };
     analysis: {
         summary: string;

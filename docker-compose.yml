@@ -61,8 +61,7 @@ services:
     container_name: pullsightai-ai-agent
     environment:
       - CLAUDE_API_KEY=${CLAUDE_API_KEY}
-      - BACKEND_SUMMARY_ENDPOINT=${BACKEND_SUMMARY_ENDPOINT}
-      - BACKEND_REVIEW_ENDPOINT=${BACKEND_REVIEW_ENDPOINT}
+      - BACKEND_BASE_URL=${BACKEND_BASE_URL}
     depends_on:
       - pullsightai-backend
     networks:

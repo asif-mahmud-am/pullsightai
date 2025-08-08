@@ -59,7 +59,7 @@ const Step1Page = () => {
         } else if (provider === "bitbucket" || provider === "gitlab") {
             addOrganization({
                 slug: selectedOrg?.slug || "",
-                ...(provider === "gitlab" ? { type: selectedOrg?.type } : {}),
+                type: selectedOrg?.type || "",
             })
                 .then(() => {
                     // Redirect to the next step after adding organization

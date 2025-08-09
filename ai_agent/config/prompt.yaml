@@ -78,7 +78,7 @@ review: |
   - codeSnippetLineStart (integer): The line number of the first line of the code snippet
   - severity (string: Critical | Warning | Info)
   - category (string: Bug | Logic | Style | Security | Performance | Readability)
-  - suggestion (string): Must include a code block with the suggested fix
+  - suggestion (string: Must include a codeblock with the suggested fix in beautiful markdown format)
 
   Example:
   [
@@ -90,7 +90,7 @@ review: |
       "codeSnippetLineStart": 23,
       "severity": "Critical",
       "category": "Logic",
-      "suggestion": "```python\nfrom utils.discounts import calculate_discount\ncart.total -= calculate_discount(cart.total)\n```"
+      "suggestion": "```from utils.discounts import calculate_discount\ncart.total -= calculate_discount(cart.total)\n```"
     }},
     {{
       "lineStart": 30,
@@ -100,7 +100,7 @@ review: |
       "codeSnippetLineStart": 30,
       "severity": "Info",
       "category": "Style",
-      "suggestion": "```python\ndef calculate_discount(total: float) -> float:\n    return total * 0.9\n```"
+      "suggestion": "```def calculate_discount(total: float) -> float:\n    return total * 0.9```"
     }}
   ]
 

@@ -1,6 +1,7 @@
 from anthropic import AsyncAnthropic
 from config.settings import settings
 from app.services.llm_base import BaseLLMService
+import json
 
 class ClaudeService(BaseLLMService):
     """

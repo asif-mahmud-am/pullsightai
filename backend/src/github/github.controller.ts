@@ -14,8 +14,6 @@ import {
     InstallCallbackDto,
     PRReviewDto
 } from 'src/github/dto/install-repo.dto'
-import { PostReviewDto } from 'src/github/dto/post-review.dto'
-import { PostSummeryDto } from 'src/github/dto/post-summery.dto'
 import { GithubEventService } from 'src/github/github-events.service'
 import { GithubService } from './github.service'
 
@@ -94,30 +92,11 @@ export class GithubController {
 
     @Post('events')
     async githubEvents(@Body() body: any, @Req() req) {
-        // console.log('Received GitHub event:============\n', body)
         const event = req.headers['x-github-event']
-        // console.log('Event type:', event)
+        console.log('========Event type:======', event)
         return {
             message: 'GitHub events processed successfully',
             result: await this.githubService.processGithubEvent(event, body)
-        }
-    }
-
-    @Post('reviews')
-    async postReview(@Body() postReviewDto: PostReviewDto) {
-        return {
-            message: 'Review posted successfully',
-            result: await this.githubEventService.addPRReviewComments(
-                postReviewDto
-            )
-        }
-    }
-
-    @Post('summary')
-    async postSummary(@Body() postSummery: PostSummeryDto) {
-        return {
-            message: 'Summary posted successfully',
-            result: await this.githubEventService.addPRSummery(postSummery)
         }
     }
 

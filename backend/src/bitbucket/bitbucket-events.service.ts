@@ -3,11 +3,9 @@ import { ConfigService } from '@nestjs/config'
 import { HttpService } from 'src/common/http/http.service'
 import { PRFile, StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { DatabaseService } from 'src/database/database.service'
+import { PullRequestAnalysisComment } from 'src/database/schemas/pull-request-analysis-comment.schema'
+import { PullRequestAnalysis } from 'src/database/schemas/pull-request-analysis.schema'
 import { BitbucketApiService } from './bitbucket-api.service'
-import { PostReviewDto } from './dto/post-review.dto'
-import { PostSummeryDto } from './dto/post-summery.dto'
-import * as fs from 'fs'
-import * as path from 'path'
 
 @Injectable()
 export class BitbucketEventsService {
@@ -78,9 +76,7 @@ export class BitbucketEventsService {
                 prFileContentAfter:
                     contentAfter || 'File not found in source branch',
                 prFileDiff: fullDiff || '',
-                prFileDiffHunks: this.parseDiffHunks(
-                    fullDiff || ''
-                ),
+                prFileDiffHunks: this.parseDiffHunks(fullDiff || ''),
                 prFileBlobUrl:
                     file.new?.links?.self?.href ||
                     file.old?.links?.self?.href ||
@@ -257,25 +253,28 @@ export class BitbucketEventsService {
         return response
     }
 
-    async addPRReviewComments(postReviewDto: PostReviewDto): Promise<any> {
+    async addPRReviewComments(
+        analysis: PullRequestAnalysis,
+        comments: PullRequestAnalysisComment[]
+    ): Promise<any> {
         const accessToken = await this.getAccessTokenForWorkspace(
-            postReviewDto.workspace
+            analysis.workspaceSlug
         )
 
         const bitbucketApiUrl = this.baseUrl
         const results: any[] = []
-        for (const comment of postReviewDto.comments) {
+        for (const comment of comments) {
             const commentData = {
                 content: {
-                    raw: comment.body
+                    raw: comment.content
                 },
                 inline: {
-                    to: comment.position,
-                    path: comment.path
+                    to: comment.lineEnd,
+                    path: comment.filePath
                 }
             }
 
-            const apiUrl = `${bitbucketApiUrl}/repositories/${postReviewDto.owner}/${postReviewDto.repo}/pullrequests/${postReviewDto.prNumber}/comments`
+            const apiUrl = `${bitbucketApiUrl}/repositories/${analysis.repositorySlug}/${analysis.repositorySlug}/pullrequests/${analysis.prNumber}/comments`
 
             const response = await this.httpService.post(apiUrl, commentData, {
                 headers: {
@@ -288,17 +287,17 @@ export class BitbucketEventsService {
         return results
     }
 
-    async addPRSummery(postSummeryDto: PostSummeryDto): Promise<any> {
+    async addPRSummery(analysis: PullRequestAnalysis): Promise<any> {
         const accessToken = await this.getAccessTokenForWorkspace(
-            postSummeryDto.workspace
+            analysis.workspaceSlug
         )
         const commentData = {
             content: {
-                raw: postSummeryDto.body
+                raw: analysis.summary
             }
         }
 
-        const apiUrl = `${this.baseUrl}/repositories/${postSummeryDto.owner}/${postSummeryDto.repo}/pullrequests/${postSummeryDto.prNumber}/comments`
+        const apiUrl = `${this.baseUrl}/repositories/${analysis.workspaceSlug}/${analysis.repositorySlug}/pullrequests/${analysis.prNumber}/comments`
 
         const response = this.httpService.post(apiUrl, commentData, {
             headers: {
@@ -311,15 +310,15 @@ export class BitbucketEventsService {
 
     private parseDiffHunks(diffContent: string): string[] {
         if (!diffContent) return []
-        
+
         const hunks: string[] = []
         const hunkRegex = /@@[^@]*@@.*?(?=@@|$)/gs
-        
+
         let match
         while ((match = hunkRegex.exec(diffContent)) !== null) {
             hunks.push(match[0])
         }
-        
+
         return hunks
     }
 }

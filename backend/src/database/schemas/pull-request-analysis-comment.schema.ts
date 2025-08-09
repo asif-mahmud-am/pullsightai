@@ -20,7 +20,7 @@ export class PullRequestAnalysisComment {
     lineStart: number
 
     @Prop({ type: Number, default: null })
-    lineEnd?: number
+    lineEnd: number
 
     @Prop({ required: true, type: String })
     content: string
@@ -44,12 +44,15 @@ export class PullRequestAnalysisComment {
     category: string
 
     @Prop({
-        required: true,
+        required: false,
         type: Types.ObjectId,
         ref: 'PullRequestAnalysis',
-        index: true
+        set: (value) =>
+            Types.ObjectId.isValid(value)
+                ? value
+                : Types.ObjectId.createFromHexString(value)
     })
-    pullRequestAnalysisId: Types.ObjectId
+    pullRequestAnalysisId?: Types.ObjectId
 }
 
 const schema = SchemaFactory.createForClass(PullRequestAnalysisComment)

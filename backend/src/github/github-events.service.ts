@@ -6,8 +6,8 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { PRFile, StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { DatabaseService } from 'src/database/database.service'
-import { PostReviewDto } from 'src/github/dto/post-review.dto'
-import { PostSummeryDto } from 'src/github/dto/post-summery.dto'
+import { PullRequestAnalysisComment } from 'src/database/schemas/pull-request-analysis-comment.schema'
+import { PullRequestAnalysis } from 'src/database/schemas/pull-request-analysis.schema'
 
 @Injectable()
 export class GithubEventService {
@@ -81,13 +81,13 @@ export class GithubEventService {
         }
     }
 
-    async addPRSummery(postSummeryDto: PostSummeryDto) {
-        const octokit = await this.initOctokitApp(postSummeryDto.installationId)
+    async addPRSummery(analysis: PullRequestAnalysis) {
+        const octokit = await this.initOctokitApp(+analysis.installationId)
         await octokit.issues.createComment({
-            owner: postSummeryDto.owner,
-            repo: postSummeryDto.repo,
-            issue_number: postSummeryDto.prNumber,
-            body: postSummeryDto.body
+            owner: analysis.workspaceSlug,
+            repo: analysis.repositorySlug,
+            issue_number: +analysis.prNumber,
+            body: analysis.summary
         })
         return {}
     }
@@ -196,15 +196,23 @@ export class GithubEventService {
     }
 
     // Add review comments to specific lines in PR files
-    async addPRReviewComments(postReviewDto: PostReviewDto) {
-        const octokit = await this.initOctokitApp(postReviewDto.installationId)
+    async addPRReviewComments(
+        analysis: PullRequestAnalysis,
+        comments: PullRequestAnalysisComment[]
+    ) {
+        const commentsFormatted = comments.map((comment) => ({
+            path: comment.filePath,
+            line: comment.lineEnd,
+            body: comment.content
+        }))
+        const octokit = await this.initOctokitApp(+analysis.installationId)
         const reviewData: any = {
-            owner: postReviewDto.owner,
-            repo: postReviewDto.repo,
-            pull_number: postReviewDto.prNumber,
+            owner: analysis.workspaceSlug,
+            repo: analysis.repositorySlug,
+            pull_number: analysis.prNumber,
             body: '🤖 **Automated Code Review by Pullsight-AI**',
             event: 'COMMENT',
-            comments: postReviewDto.comments
+            comments: commentsFormatted
         }
 
         await octokit.pulls.createReview(reviewData)

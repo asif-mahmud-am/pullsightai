@@ -11,6 +11,7 @@ import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { GithubModule } from './github/github.module'
 import { GitlabModule } from './gitlab/gitlab.module';
+import { AnalysisModule } from './analysis/analysis.module';
 
 @Module({
     imports: [
@@ -22,7 +23,8 @@ import { GitlabModule } from './gitlab/gitlab.module';
         AuthModule,
         GithubModule,
         HttpModule,
-        GitlabModule
+        GitlabModule,
+        AnalysisModule
     ],
     controllers: [AppController],
     providers: [

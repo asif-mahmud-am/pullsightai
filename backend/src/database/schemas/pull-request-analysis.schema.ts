@@ -9,7 +9,11 @@ export interface Author {
     username: string
     avatarUrl: string
 }
-
+export enum Status {
+    INPROGRESS = 'inprogress',
+    COMPLETED = 'completed',
+    FAILED = 'failed'
+}
 @Schema({ timestamps: true, versionKey: false })
 export class PullRequestAnalysis {
     @Prop({ required: true, type: String })
@@ -39,8 +43,8 @@ export class PullRequestAnalysis {
     @Prop({ type: Object, default: null })
     usageInfo: any
 
-    @Prop({ type: Boolean, default: false })
-    inProgress: boolean
+    @Prop({ type: String, enum: Status, default: Status.INPROGRESS })
+    status: Status
 
     @Prop({ type: Date, default: null })
     startedAt: Date

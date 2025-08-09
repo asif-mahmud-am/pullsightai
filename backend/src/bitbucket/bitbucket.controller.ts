@@ -11,10 +11,8 @@ import { AuthGuard } from '@nestjs/passport'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
 import { GetPRDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
 import { AddWebhookDto } from '../common/dto/add-webhook.dto'
-import { BitbucketService } from './bitbucket.service'
 import { BitbucketEventsService } from './bitbucket-events.service'
-import { PostReviewDto } from './dto/post-review.dto'
-import { PostSummeryDto } from './dto/post-summery.dto'
+import { BitbucketService } from './bitbucket.service'
 
 @Controller({
     path: 'bitbucket',
@@ -107,24 +105,6 @@ export class BitbucketController {
                 event,
                 body
             )
-        }
-    }
-
-    @Post('reviews')
-    async postReview(@Body() postReviewDto: PostReviewDto) {
-        return {
-            message: 'Review posted successfully',
-            result: await this.bitbucketEventsService.addPRReviewComments(
-                postReviewDto
-            )
-        }
-    }
-
-    @Post('summary')
-    async postSummary(@Body() postSummery: PostSummeryDto) {
-        return {
-            message: 'Summary posted successfully',
-            result: await this.bitbucketEventsService.addPRSummery(postSummery)
         }
     }
 }

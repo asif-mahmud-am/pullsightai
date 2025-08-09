@@ -56,9 +56,19 @@ export class AnalysisService {
     }
 
     async addPRReviewComments(postReviewDto: PullRequestAnalysisCommentsDto) {
-        const analysis = await this.dataService.pullRequestAnalysis.findOne({
-            _id: postReviewDto.pullRequestAnalysisId
-        })
+        const analysis =
+            await this.dataService.pullRequestAnalysis.findOneAndUpdate(
+                {
+                    _id: postReviewDto.pullRequestAnalysisId
+                },
+                {
+                    $set: {
+                        status: Status.COMPLETED,
+                        completedAt: new Date()
+                    }
+                },
+                { new: true }
+            )
 
         if (!analysis) {
             throw new Error('Pull request analysis not found')
@@ -113,8 +123,6 @@ export class AnalysisService {
                 {
                     $set: {
                         summary: postSummery.summary,
-                        status: 'completed',
-                        completedAt: new Date(),
                         modelInfo: postSummery.modelInfo,
                         usageInfo: postSummery.usageInfo
                     }

@@ -4,6 +4,7 @@ import {
     InternalServerErrorException
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { AnalysisService } from 'src/analysis/analysis.service'
 import { BitbucketEventsService } from 'src/bitbucket/bitbucket-events.service'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
 import { HttpService } from 'src/common/http/http.service'
@@ -21,7 +22,8 @@ export class BitbucketService {
         private readonly configService: ConfigService,
         private readonly bitbucketApiService: BitbucketApiService,
         private readonly httpService: HttpService,
-        private readonly bitbucketEventsService: BitbucketEventsService
+        private readonly bitbucketEventsService: BitbucketEventsService,
+        private readonly analysisService: AnalysisService
     ) {}
 
     async getAllWorkspaces(user: any): Promise<Workspace[]> {
@@ -177,34 +179,9 @@ export class BitbucketService {
                 pullRequestFormattedData = false
         }
         if (pullRequestFormattedData) {
-            const savedPullRequestFormattedData =
-                await this.dataService.pullRequests.create({
-                    ...pullRequestFormattedData.pullRequest
-                })
-            const pullRequestAnalysis =
-                await this.dataService.pullRequestAnalysis.create({
-                    prId: savedPullRequestFormattedData.prId,
-                    provider: savedPullRequestFormattedData.provider,
-                    prUser: savedPullRequestFormattedData.prUser,
-                    workspaceSlug: savedPullRequestFormattedData.owner,
-                    repositorySlug: savedPullRequestFormattedData.repo,
-                    prNumber: savedPullRequestFormattedData.prNumber,
-                    installationId:
-                        savedPullRequestFormattedData.installationId,
-                    inProgress: true,
-                    startedAt: new Date()
-                })
-            await this.httpService.post(
-                this.configService.get('AI_AGENT_PR_POST_URL') as string,
-                {
-                    pullRequest: {
-                        ...pullRequestFormattedData.pullRequest,
-                        pullRequestAnalysisId: pullRequestAnalysis['_id']
-                    }
-                }
-            )
+            this.analysisService.makeAnalysis(pullRequestFormattedData)
         }
-        return pullRequestFormattedData
+        return {}
     }
 
     async makePRReview(user: any, prReviewDto: PRReviewDto) {

@@ -1,6 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Octokit } from '@octokit/rest'
+import { AnalysisService } from 'src/analysis/analysis.service'
 import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
 import {
@@ -24,7 +25,8 @@ export class GithubService {
         private readonly dataService: DatabaseService,
         private readonly configService: ConfigService,
         private readonly githubEventService: GithubEventService,
-        private readonly httpService: HttpService
+        private readonly httpService: HttpService,
+        private readonly analysisService: AnalysisService
     ) {}
 
     async getUserOrganizations(user: any) {
@@ -309,37 +311,11 @@ export class GithubService {
                 userData.currentWorkspace['installationId']
             )
 
-        // const response = await this.httpService.post(
-        //     this.configService.get('AI_AGENT_PR_REVIEW_URL') as string,
-        //     pullRequestFormattedData
-        // )
-        const savedPullRequestFormattedData =
-            await this.dataService.pullRequests.create({
-                ...pullRequestFormattedData.pullRequest
-            })
-        const pullRequestAnalysis =
-            await this.dataService.pullRequestAnalysis.create({
-                prId: savedPullRequestFormattedData.prId,
-                provider: savedPullRequestFormattedData.provider,
-                prUser: savedPullRequestFormattedData.prUser,
-                workspaceSlug: savedPullRequestFormattedData.owner,
-                repositorySlug: savedPullRequestFormattedData.repo,
-                prNumber: savedPullRequestFormattedData.prNumber,
-                installationId: savedPullRequestFormattedData.installationId,
-                inProgress: true,
-                startedAt: new Date()
-            })
-        const response = await this.httpService.post(
-            this.configService.get('AI_AGENT_PR_REVIEW_URL') as string,
-            {
-                pullRequest: {
-                    ...pullRequestFormattedData.pullRequest,
-                    pullRequestAnalysisId: pullRequestAnalysis['_id']
-                }
-            }
-        )
+        if (pullRequestFormattedData) {
+            this.analysisService.makeAnalysis(pullRequestFormattedData)
+        }
 
-        return { ...pullRequestFormattedData, ...response }
+        return { ...pullRequestFormattedData }
     }
 
     async processGithubEvent(event: any, payload: any) {
@@ -362,33 +338,8 @@ export class GithubService {
                 pullRequestFormattedData = false
         }
         if (pullRequestFormattedData) {
-            const savedPullRequestFormattedData =
-                await this.dataService.pullRequests.create({
-                    ...pullRequestFormattedData.pullRequest
-                })
-            const pullRequestAnalysis =
-                await this.dataService.pullRequestAnalysis.create({
-                    prId: savedPullRequestFormattedData.prId,
-                    provider: savedPullRequestFormattedData.provider,
-                    prUser: savedPullRequestFormattedData.prUser,
-                    workspaceSlug: savedPullRequestFormattedData.owner,
-                    repositorySlug: savedPullRequestFormattedData.repo,
-                    prNumber: savedPullRequestFormattedData.prNumber,
-                    installationId:
-                        savedPullRequestFormattedData.installationId,
-                    inProgress: true,
-                    startedAt: new Date()
-                })
-            await this.httpService.post(
-                this.configService.get('AI_AGENT_PR_POST_URL') as string,
-                {
-                    pullRequest: {
-                        ...pullRequestFormattedData.pullRequest,
-                        pullRequestAnalysisId: pullRequestAnalysis['_id']
-                    }
-                }
-            )
+            this.analysisService.makeAnalysis(pullRequestFormattedData)
         }
-        return pullRequestFormattedData
+        return {}
     }
 }

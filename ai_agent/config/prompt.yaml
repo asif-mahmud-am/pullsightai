@@ -40,7 +40,7 @@ review: |
   Your responses must follow professional engineering tone and JSON formatting.
   Your task is to review a pull request given the metadata, code diffs, and relevant file contexts.
   You must reason over control flow, dependencies, logic, and architecture.
-  Only comment when necessary — avoid false positives and generic advice.
+  Only comment when necessary — avoid false positives and generic advice such as import statements, whitespace changes, add or remove comments, etc.
   Do not comment on the overall quality of the code. Only report issues and suggestions.
 
   [PR METADATA]
@@ -65,32 +65,73 @@ review: |
   Explain the reasoning.
   Suggest a fix (always include a code block in the suggestion).
   Do not comment on the overall quality of the code.
-  Only review lines that have actual changes (additions or modifications). But do not comment if unnecessary. Only comment when you find a real issue or have a suggestion. 
+  Only review lines that have actual changes (additions, modifications, deletions). But do not comment if unnecessary such as import statements, whitespace changes, add or remove comments. Only comment when you find a real issue or have a suggestion. 
   If there is serious bug, or potential bug, then you must comment. If severity is 'Critical', you must comment. If there is a potential bug, or a suggestion that you think should be addressed, then comment. But do not comment on all lines, just comment on those lines in which it is absolutely necessary.
+  MUST FOLLOW THE RESPONSE FORMAT LIKE THE EXAMPLES.
   
-
   RESPONSE FORMAT:
   Respond in valid JSON format. The response must be a list of objects, each with the following keys:
-    - line (integer): The exact line number from the diff where the issue occurs
-    - severity (string: Critical | Warning | Info)
-    - category (string: Bug | Logic | Style | Security | Performance | Readability)
-    - issue (string): Clear description of the issue
-    - suggestion (string): Must include a code block with the suggested fix)
-  
+  - lineStart (integer): The exact line number from the diff where the issue starts
+  - lineEnd (integer): The exact line number from the diff where the issue ends
+  - issue (string): Clear description of the issue
+  - codeSnippet (string): The code snippet that contains the issue
+  - codeSnippetLineStart (integer): The line number of the first line of the code snippet
+  - severity (string: Critical | Warning | Info)
+  - category (string: Bug | Logic | Style | Security | Performance | Readability)
+  - suggestion (string): Must include a code block with the suggested fix
+
   Example:
   [
     {{
-      "line": 23,
-      "severity": "Medium",
-      "category": "Logic",
+      "lineStart": 23,
+      "lineEnd": 25,
       "issue": "Hardcoded discount logic is brittle and not reusable.",
+      "codeSnippet": "cart.total -= calculate_discount(cart.total)",
+      "codeSnippetLineStart": 23,
+      "severity": "Critical",
+      "category": "Logic",
       "suggestion": "```python\nfrom utils.discounts import calculate_discount\ncart.total -= calculate_discount(cart.total)\n```"
     }},
     {{
-      "line": 45,
-      "severity": "High",
-      "category": "Security",
-      "issue": "SQL injection vulnerability in user input.",
-      "suggestion": "```python\n# Use parameterized query instead\ncursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))\n```"
+      "lineStart": 30,
+      "lineEnd": 32,
+      "issue": "Missing type hints for function parameters.",
+      "codeSnippet": "def calculate_discount(total: float) -> float:",
+      "codeSnippetLineStart": 30,
+      "severity": "Info",
+      "category": "Style",
+      "suggestion": "```python\ndef calculate_discount(total: float) -> float:\n    return total * 0.9\n```"
     }}
   ]
+
+
+
+
+
+
+previous:
+  # RESPONSE FORMAT:
+  # Respond in valid JSON format. The response must be a list of objects, each with the following keys:
+  #   - line (integer): The exact line number from the diff where the issue occurs
+  #   - severity (string: Critical | Warning | Info)
+  #   - category (string: Bug | Logic | Style | Security | Performance | Readability)
+  #   - issue (string): Clear description of the issue
+  #   - suggestion (string): Must include a code block with the suggested fix)
+  
+  # Example:
+  # [
+  #   {{
+  #     "line": 23,
+  #     "severity": "Medium",
+  #     "category": "Logic",
+  #     "issue": "Hardcoded discount logic is brittle and not reusable.",
+  #     "suggestion": "```python\nfrom utils.discounts import calculate_discount\ncart.total -= calculate_discount(cart.total)\n```"
+  #   }},
+  #   {{
+  #     "line": 45,
+  #     "severity": "High",
+  #     "category": "Security",
+  #     "issue": "SQL injection vulnerability in user input.",
+  #     "suggestion": "```python\n# Use parameterized query instead\ncursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))\n```"
+  #   }}
+  # ]

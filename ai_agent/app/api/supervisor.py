@@ -7,7 +7,7 @@ import httpx
 import os
 import json
 import re
-from app.api.review_parser import parse_review_response, parse_review_response_ui
+from app.api.review_parser import parse_review_response
 from typing import Literal
 from dotenv import load_dotenv
 
@@ -32,6 +32,7 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
 
     provider = pr.get("provider", "unknown")
     installation_id = pr.get("installationId", "0")
+    pullRequestAnalysisId = pr.get("pullRequestAnalysisId", "0")
 
     try:
         installation_id_int = int(installation_id)
@@ -66,12 +67,10 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
 
     async with httpx.AsyncClient() as client:
         summary_payload = {
-            "owner": pr.get("owner", ""),
-            "repo": pr.get("repo", ""),
-            "prNumber": prNumber,
-            "provider": provider,
-            "body": summary.pr_summary,
-            "installationId": installation_id_int
+            "pullRequestAnalysisId": pullRequestAnalysisId,
+            "summary": summary.pr_summary,
+            "modelInfo": {},
+            "usageInfo": {}
         }
 
         summary_url = get_backend_url(provider, "summary")
@@ -95,19 +94,17 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
                 file_comments = parse_review_response(review.pr_review_and_suggestion, file_info["prFileName"])
                 all_comments.extend(file_comments)
 
+        # New PullRequestAnalysisComment payload format
         review_payload = {
-            "owner": pr.get("owner", ""),
-            "repo": pr.get("repo", ""),
-            "prNumber": prNumber,
-            "provider": provider,
-            "comments": all_comments,
-            "installationId": installation_id_int
+            "pullRequestAnalysisId": pullRequestAnalysisId,
+            "Comments": all_comments,
         }
 
         print(review_payload)
         review_url = get_backend_url(provider, "reviews")
         await client.post(review_url, json=review_payload)
 
+    # return {"status": "completed","summary":summary.pr_summary,"review_payload":review_payload}
     return {"status": "completed"}
 
 @supervisor.post("/agent")
@@ -170,7 +167,7 @@ async def agent_summary_and_review(payload: PRPayloadV2):
             }
             review = await generate_review_response(review_variables, llm_service)
             print(f"Agent endpoint - Generated review for {file_info['prFileName']}:", review.pr_review_and_suggestion[:200] + "..." if len(review.pr_review_and_suggestion) > 200 else review.pr_review_and_suggestion)
-            file_comments = parse_review_response_ui(review.pr_review_and_suggestion, file_info["prFileName"])
+            file_comments = parse_review_response(review.pr_review_and_suggestion, file_info["prFileName"])
             print(f"Agent endpoint - Parsed comments for {file_info['prFileName']}:", len(file_comments), "comments")
             all_comments.extend(file_comments)
 

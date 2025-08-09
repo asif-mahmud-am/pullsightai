@@ -11,10 +11,8 @@ import { AuthGuard } from '@nestjs/passport'
 import { AddWebhookDto } from 'src/common/dto/add-webhook.dto'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
 import { GetPRDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
-import { GitlabService } from './gitlab.service'
 import { GitlabEventsService } from './gitlab-events.service'
-import { PostReviewDto } from './dto/post-review.dto'
-import { PostSummeryDto } from './dto/post-summery.dto'
+import { GitlabService } from './gitlab.service'
 
 @Controller({
     path: 'gitlab',
@@ -101,24 +99,6 @@ export class GitlabController {
         return {
             message: 'Pull request reviewed successfully',
             result: reviewData
-        }
-    }
-
-    @Post('reviews')
-    async postReview(@Body() postReviewDto: PostReviewDto) {
-        return {
-            message: 'Review posted successfully',
-            result: await this.gitlabEventsService.addPRReviewComments(
-                postReviewDto
-            )
-        }
-    }
-
-    @Post('summary')
-    async postSummary(@Body() postSummery: PostSummeryDto) {
-        return {
-            message: 'Summary posted successfully',
-            result: await this.gitlabEventsService.addPRSummery(postSummery)
         }
     }
 }

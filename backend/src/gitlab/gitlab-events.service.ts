@@ -3,12 +3,9 @@ import { ConfigService } from '@nestjs/config'
 import { HttpService } from 'src/common/http/http.service'
 import { PRFile, StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { DatabaseService } from 'src/database/database.service'
-import { PostReviewDto } from './dto/post-review.dto'
-import { PostSummeryDto } from './dto/post-summery.dto'
-import * as fs from 'fs'
-import * as path from 'path'
+import { PullRequestAnalysisComment } from 'src/database/schemas/pull-request-analysis-comment.schema'
+import { PullRequestAnalysis } from 'src/database/schemas/pull-request-analysis.schema'
 import { GitlabApiService } from './gitlab-api.service'
-
 
 @Injectable()
 export class GitlabEventsService {
@@ -248,24 +245,27 @@ export class GitlabEventsService {
         return response
     }
 
-    async addPRReviewComments(postReviewDto: PostReviewDto): Promise<any> {
+    async addPRReviewComments(
+        analysis: PullRequestAnalysis,
+        comments: PullRequestAnalysisComment[]
+    ): Promise<any> {
         const accessToken = await this.getAccessTokenForProject(
-            postReviewDto.projectId
+            analysis.repositorySlug
         )
 
-        const actualProjectId = encodeURIComponent(postReviewDto.projectId)
+        const actualProjectId = encodeURIComponent(analysis.repositorySlug)
 
         // Get merge request details to obtain SHA values
         const mrDetails = await this.getMergeRequestDetails(
             actualProjectId,
-            postReviewDto.prNumber,
+            +analysis.prNumber,
             accessToken
         )
 
         // Get merge request diffs to find line codes
         const diffs = await this.getMergeRequestDiffs(
             actualProjectId,
-            postReviewDto.prNumber,
+            +analysis.prNumber,
             accessToken
         )
 
@@ -274,23 +274,19 @@ export class GitlabEventsService {
             'https://gitlab.com/api/v4'
 
         const results: any[] = []
-        for (const comment of postReviewDto.comments) {
+        for (const comment of comments) {
             // Find the line_code for the specific file and line
             const lineCode = this.findLineCode(
                 diffs,
-                comment.path,
-                comment.position
+                comment.filePath,
+                comment.lineEnd
             )
-            console.log('lineCode', lineCode)
             if (!lineCode) {
-                console.warn(
-                    `Could not find line_code for ${comment.path}:${comment.position}`
-                )
                 // Fallback to general note if line_code not found
                 const fallbackData = {
-                    body: `**📁 File:** \`${comment.path}\` **📍 Line:** ${comment.position}\n\n${comment.body}`
+                    body: `**📁 File:** \`${comment.filePath}\` **📍 Line:** ${comment.lineEnd}\n\n${comment.content}`
                 }
-                const fallbackUrl = `${gitlabApiUrl}/projects/${actualProjectId}/merge_requests/${postReviewDto.prNumber}/notes`
+                const fallbackUrl = `${gitlabApiUrl}/projects/${actualProjectId}/merge_requests/${analysis.prNumber}/notes`
                 const fallbackResponse = await this.httpService.post(
                     fallbackUrl,
                     fallbackData,
@@ -307,19 +303,19 @@ export class GitlabEventsService {
             }
 
             const commentData = {
-                body: comment.body,
+                body: comment.content,
                 position: {
                     position_type: 'text',
                     base_sha: mrDetails.diff_refs.base_sha,
                     start_sha: mrDetails.diff_refs.start_sha,
                     head_sha: mrDetails.diff_refs.head_sha,
-                    new_path: comment.path,
-                    old_path: comment.path,
-                    new_line: comment.position,
+                    new_path: comment.filePath,
+                    old_path: comment.filePath,
+                    new_line: comment.lineEnd,
                     old_line: null // For new lines, old_line can be null
                 }
             }
-            const apiUrl = `${gitlabApiUrl}/projects/${actualProjectId}/merge_requests/${postReviewDto.prNumber}/discussions`
+            const apiUrl = `${gitlabApiUrl}/projects/${actualProjectId}/merge_requests/${analysis.prNumber}/discussions`
             const response = await this.httpService.post(apiUrl, commentData, {
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
@@ -332,22 +328,18 @@ export class GitlabEventsService {
         return results
     }
 
-    async addPRSummery(postSummeryDto: PostSummeryDto): Promise<any> {
+    async addPRSummery(analysis: PullRequestAnalysis): Promise<any> {
         const accessToken = await this.getAccessTokenForProject(
-            postSummeryDto.projectId
+            analysis.repositorySlug
         )
 
-        const actualProjectId = encodeURIComponent(postSummeryDto.projectId)
-
-        const gitlabApiUrl =
-            this.configService.get('GITLAB_API_URL') ||
-            'https://gitlab.com/api/v4'
+        const actualProjectId = encodeURIComponent(analysis.repositorySlug)
 
         const commentData = {
-            body: postSummeryDto.body
+            body: analysis.summary
         }
 
-        const apiUrl = `${gitlabApiUrl}/projects/${actualProjectId}/merge_requests/${postSummeryDto.prNumber}/notes`
+        const apiUrl = `${this.baseUrl}/projects/${actualProjectId}/merge_requests/${analysis.prNumber}/notes`
 
         const response = await this.httpService.post(apiUrl, commentData, {
             headers: {
@@ -446,15 +438,15 @@ export class GitlabEventsService {
 
     private parseDiffHunks(diffContent: string): string[] {
         if (!diffContent) return []
-        
+
         const hunks: string[] = []
         const hunkRegex = /@@[^@]*@@.*?(?=@@|$)/gs
-        
+
         let match
         while ((match = hunkRegex.exec(diffContent)) !== null) {
             hunks.push(match[0])
         }
-        
+
         return hunks
     }
 }

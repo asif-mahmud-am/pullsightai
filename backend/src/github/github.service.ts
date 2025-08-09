@@ -311,11 +311,12 @@ export class GithubService {
                 userData.currentWorkspace['installationId']
             )
 
-        if (pullRequestFormattedData) {
-            this.analysisService.makeAnalysis(pullRequestFormattedData)
+        if (!pullRequestFormattedData) {
+            throw new InternalServerErrorException(
+                'Failed to fetch pull request data'
+            )
         }
-
-        return { ...pullRequestFormattedData }
+        return await this.analysisService.makeAnalysis(pullRequestFormattedData)
     }
 
     async processGithubEvent(event: any, payload: any) {

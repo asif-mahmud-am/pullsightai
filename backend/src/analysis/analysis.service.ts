@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { Types } from 'mongoose'
 import { PullRequestAnalysisCommentsDto } from 'src/analysis/dto/post-analysis-comments.dto'
 import { PullRequestAnalysisDto } from 'src/analysis/dto/post-analysis.dto'
 import { BitbucketEventsService } from 'src/bitbucket/bitbucket-events.service'
@@ -48,6 +49,10 @@ export class AnalysisService {
                 }
             }
         )
+
+        return {
+            pullRequestAnalysisId: pullRequestAnalysis['_id']
+        }
     }
 
     async addPRReviewComments(postReviewDto: PullRequestAnalysisCommentsDto) {
@@ -66,7 +71,9 @@ export class AnalysisService {
                     {
                         ...comment,
                         pullRequestAnalysisId:
-                            postReviewDto.pullRequestAnalysisId
+                            Types.ObjectId.createFromHexString(
+                                postReviewDto.pullRequestAnalysisId
+                            )
                     }
                 )
             })
@@ -86,17 +93,15 @@ export class AnalysisService {
                 )
                 break
             case 'gitlab':
-                // Handle GitLab specific logic if needed
+                await this.gitlabEventsService.addPRReviewComments(
+                    analysis,
+                    createdComments
+                )
                 break
             default:
                 throw new Error('Unsupported provider')
         }
-
-        return {
-            message: 'Comments added successfully',
-            count: createdComments.length,
-            comments: createdComments
-        }
+        return {}
     }
 
     async addPRSummery(postSummery: PullRequestAnalysisDto) {
@@ -125,8 +130,11 @@ export class AnalysisService {
             case 'github':
                 await this.githubEventService.addPRSummery(analysis)
                 break
+            case 'bitbucket':
+                await this.bitbucketEventsService.addPRSummery(analysis)
+                break
             case 'gitlab':
-                // Handle GitLab specific logic if needed
+                await this.gitlabEventsService.addPRSummery(analysis)
                 break
             default:
                 throw new Error('Unsupported provider')
@@ -134,6 +142,23 @@ export class AnalysisService {
         return {
             summary: postSummery.summary,
             status: 'added'
+        }
+    }
+
+    async getPRAnalysisData(pullRequestAnalysisId: string) {
+        const analysis = await this.dataService.pullRequestAnalysis.findOne({
+            _id: pullRequestAnalysisId
+        })
+        if (!analysis) {
+            throw new Error('Pull request analysis not found')
+        }
+        return {
+            ...analysis.toObject(),
+            comments: await this.dataService.pullRequestAnalysisComments.find({
+                pullRequestAnalysisId: Types.ObjectId.createFromHexString(
+                    pullRequestAnalysisId
+                )
+            })
         }
     }
 }

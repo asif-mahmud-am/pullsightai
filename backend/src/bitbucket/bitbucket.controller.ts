@@ -13,7 +13,6 @@ import { GetPRDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
 import { AddWebhookDto } from '../common/dto/add-webhook.dto'
 import { BitbucketEventsService } from './bitbucket-events.service'
 import { BitbucketService } from './bitbucket.service'
-import { PostSummeryDto } from './dto/post-summery.dto'
 
 @Controller({
     path: 'bitbucket',
@@ -106,14 +105,6 @@ export class BitbucketController {
                 event,
                 body
             )
-        }
-    }
-
-    @Post('summary')
-    async postSummary(@Body() postSummery: PostSummeryDto) {
-        return {
-            message: 'Summary posted successfully',
-            result: await this.bitbucketEventsService.addPRSummery(postSummery)
         }
     }
 }

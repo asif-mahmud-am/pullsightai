@@ -16,4 +16,4 @@ async def generate_summary_response(variables: dict, llm_service):
     prompt = fill_prompt(prompt_yaml['summary'], variables)
     print("Generated Summary Prompt:", prompt)
     summary = await llm_service.generate_pr_summary(prompt)
-    return PRSummaryResponse(prNumber=variables.get('prNumber', 0), pr_line=1, pr_summary=summary) 
+    return PRSummaryResponse(prNumber=variables.get('prNumber', "0"), pr_line=1, pr_summary=summary) 

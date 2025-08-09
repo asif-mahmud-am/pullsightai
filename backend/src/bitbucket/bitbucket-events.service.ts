@@ -7,6 +7,8 @@ import { PullRequestAnalysisComment } from 'src/database/schemas/pull-request-an
 import { PullRequestAnalysis } from 'src/database/schemas/pull-request-analysis.schema'
 import { BitbucketApiService } from './bitbucket-api.service'
 import { PostSummeryDto } from './dto/post-summery.dto'
+import * as fs from 'fs'
+import * as path from 'path'
 
 @Injectable()
 export class BitbucketEventsService {
@@ -76,9 +78,9 @@ export class BitbucketEventsService {
                     contentBefore || 'File not found in destination branch',
                 prFileContentAfter:
                     contentAfter || 'File not found in source branch',
-                prFileDiff: this.bitbucketApiService.extractFileDiff(
-                    fullDiff,
-                    file.new?.path || file.old?.path
+                prFileDiff: fullDiff || '',
+                prFileDiffHunks: this.parseDiffHunks(
+                    fullDiff || ''
                 ),
                 prFileBlobUrl:
                     file.new?.links?.self?.href ||
@@ -309,5 +311,19 @@ export class BitbucketEventsService {
             }
         })
         return response
+    }
+
+    private parseDiffHunks(diffContent: string): string[] {
+        if (!diffContent) return []
+        
+        const hunks: string[] = []
+        const hunkRegex = /@@[^@]*@@.*?(?=@@|$)/gs
+        
+        let match
+        while ((match = hunkRegex.exec(diffContent)) !== null) {
+            hunks.push(match[0])
+        }
+        
+        return hunks
     }
 }

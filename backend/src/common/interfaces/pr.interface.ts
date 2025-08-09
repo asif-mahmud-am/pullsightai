@@ -7,6 +7,7 @@ export interface PRFile {
     prFileContentBefore: string
     prFileContentAfter: string
     prFileDiff: string
+    prFileDiffHunks: string[]
     prFileBlobUrl: string
 }
 

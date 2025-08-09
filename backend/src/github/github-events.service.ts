@@ -163,6 +163,7 @@ export class GithubEventService {
                 prFileContentAfter:
                     contentAfter || 'File not found in head branch',
                 prFileDiff: file.patch || 'No diff available',
+                prFileDiffHunks: this.parseDiffHunks(file.patch || ''),
                 prFileBlobUrl: file.blob_url
             })
         }
@@ -233,5 +234,20 @@ export class GithubEventService {
             return Buffer.from(data['content'], 'base64').toString('utf8')
         }
         return null
+    }
+
+    // Parse diff into structured hunks
+    private parseDiffHunks(diff: string): string[] {
+        if (!diff) return []
+        
+        const hunks: string[] = []
+        const hunkRegex = /@@[^@]*@@.*?(?=@@|$)/gs
+        
+        let match
+        while ((match = hunkRegex.exec(diff)) !== null) {
+            hunks.push(match[0])
+        }
+        
+        return hunks
     }
 }

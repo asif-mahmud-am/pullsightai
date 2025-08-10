@@ -15,8 +15,6 @@ interface ActionFooterProps {
     onClick?: () => void;
     backButtonText?: string;
     onBackClick?: () => void;
-    onSkipText?: string;
-    onSkipClick?: () => void;
 }
 
 const ActionFooter: FC<ActionFooterProps> = ({
@@ -26,20 +24,8 @@ const ActionFooter: FC<ActionFooterProps> = ({
     isLoading = false,
     backButtonText = "Back",
     onBackClick,
-    onSkipText = "Go to Dashboard",
-    onSkipClick,
 }) => {
     const { mutateAsync: updateUser } = useUpdateUserMutation();
-
-    const handleSKip = () => {
-        if (onSkipClick) {
-            onSkipClick();
-        } else {
-            // updateUser({
-            //     onboardingStep: 0,
-            // });
-        }
-    };
 
     return (
         <div className="flex py-8 mt-auto w-full">
@@ -53,7 +39,7 @@ const ActionFooter: FC<ActionFooterProps> = ({
                 </button>
             )}
             <div className="flex ml-auto gap-3">
-                {onSkipText && (
+                {/* {shouldShowSkip && (
                     <button
                         className="text-base pr-3 py-2.5 rounded-2xl flex items-center  text-[var(--subtitle-300)] hover:text-[var(--subtitle-100)] cursor-pointer"
                         onClick={handleSKip}
@@ -61,7 +47,7 @@ const ActionFooter: FC<ActionFooterProps> = ({
                         <span>{onSkipText}</span>
                         <RightBarArrowIcon className="w-5 h-5 ml-2" />
                     </button>
-                )}
+                )} */}
 
                 {buttonText && onClick && (
                     <Button

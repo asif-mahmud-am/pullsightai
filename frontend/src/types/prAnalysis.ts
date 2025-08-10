@@ -1,33 +1,33 @@
 export interface AIComment {
-    path: string;
-    line_start: number;
-    line_end: number;
-    issue: string;
+    _id: string;
+    metadata: unknown | null; // Metadata can be any additional information, currently not used
+    filePath: string;
+    lineStart: number;
+    lineEnd: number;
+    content: string; // Full content of the comment
     suggestion: string;
-    code_snippet: string;
-    code_snippet_line_start: number;
-    severity: "critical" | "warning" | "info";
+    codeSnippet: string;
+    codeSnippetLineStart: number;
+    severity: string; // Severity can be "Critical", "Warning", "Info" or similar
+    category: string;
+    pullRequestAnalysisId: string; // Reference to the PR analysis this comment belongs to
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface PRAnalysisData {
-    pullRequest: {
-        prTitle: string;
-        prNumber: number;
-        prState: string;
-        merged: boolean;
-        prUser: string;
-        // user: {
-        //     login: string;
-        //     avatar_url: string;
-        // };
-        html_url: string;
-        prCreatedAt: string;
-        prAdditions: number;
-        prDeletions: number;
-        prFilesChanged: number;
-    };
-    analysis: {
-        summary: string;
-        comments: AIComment[];
-    };
+    _id: string;
+    prId: string;
+    provider: "github" | "gitlab" | "bitbucket";
+    workspaceSlug: string;
+    repositorySlug: string;
+    prNumber: string;
+    installationId: string;
+    status: "pending" | "completed" | "failed";
+    startedAt: string;
+    completedAt?: string;
+    createdAt: string;
+    updatedAt: string;
+    summary: string;
+    comments: AIComment[];
 }

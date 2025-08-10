@@ -47,8 +47,8 @@ const stepsData = [
     },
     {
         index: 5,
-        id: "invite",
-        label: "Invite Team Members",
+        id: "final",
+        label: "Final set up",
     },
 ];
 

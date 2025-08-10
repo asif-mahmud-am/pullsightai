@@ -233,8 +233,8 @@ const Step4Page = () => {
             {/* Footer with action button */}
             <ActionFooter
                 buttonText="Invite team members"
-                isEnabled={true}
-                // isLoading={isPending}
+                isEnabled={!isLoading}
+                isLoading={isLoading}
                 onClick={onStepComplete}
                 onBackClick={() =>
                     redirect(

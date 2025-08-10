@@ -90,6 +90,12 @@ export class GithubController {
         }
     }
 
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('org-members')
+    async getMembers(@Req() req: any) {
+        return this.githubService.getOrgMembers(req.user)
+    }
+
     @Post('events')
     async githubEvents(@Body() body: any, @Req() req) {
         const event = req.headers['x-github-event']

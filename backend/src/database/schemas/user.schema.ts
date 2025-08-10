@@ -50,6 +50,7 @@ export class User {
                 : Types.ObjectId.createFromHexString(value)
     })
     currentWorkspace?: Types.ObjectId
+
     @Prop({
         type: [Types.ObjectId],
         ref: 'Workspace',

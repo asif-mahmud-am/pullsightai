@@ -8,6 +8,7 @@ import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { DatabaseService } from 'src/database/database.service'
 import { Status } from 'src/database/schemas/pull-request-analysis.schema'
+import { PRReviewDto } from 'src/github/dto/install-repo.dto'
 import { GithubEventService } from 'src/github/github-events.service'
 import { GitlabEventsService } from 'src/gitlab/gitlab-events.service'
 
@@ -38,9 +39,10 @@ export class AnalysisService {
                 prNumber: savedPullRequestFormattedData.prNumber,
                 installationId: savedPullRequestFormattedData.installationId,
                 status: Status.INPROGRESS,
-                startedAt: new Date()
+                startedAt: new Date(),
+                pullRequest: savedPullRequestFormattedData._id
             })
-        await this.httpService.post(
+        this.httpService.post(
             this.configService.get('AI_AGENT_PR_POST_URL') as string,
             {
                 pullRequest: {
@@ -49,9 +51,9 @@ export class AnalysisService {
                 }
             }
         )
-
         return {
-            pullRequestAnalysisId: pullRequestAnalysis['_id']
+            pullRequestAnalysisId: pullRequestAnalysis['_id'],
+            pullRequest: savedPullRequestFormattedData
         }
     }
 
@@ -150,6 +152,34 @@ export class AnalysisService {
         return {
             summary: postSummery.summary,
             status: 'added'
+        }
+    }
+
+    async getExistingPullRequestAndAnalysis(
+        prReviewDto: PRReviewDto,
+        provider: string
+    ) {
+        const pullRequestAnalysis =
+            await this.dataService.pullRequestAnalysis.findOne({
+                repositorySlug: prReviewDto.repo,
+                prNumber: prReviewDto.prNumber,
+                provider: provider
+            })
+        if (!pullRequestAnalysis) {
+            return false
+        }
+        return {
+            pullRequestAnalysisId: pullRequestAnalysis['_id'],
+            pullRequest: await this.dataService.pullRequests.findOne({
+                _id: pullRequestAnalysis.pullRequest
+            }),
+            pullRequestAnalysis: {
+                ...pullRequestAnalysis.toObject(),
+                comments:
+                    await this.dataService.pullRequestAnalysisComments.find({
+                        pullRequestAnalysisId: pullRequestAnalysis['_id']
+                    })
+            }
         }
     }
 

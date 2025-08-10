@@ -62,6 +62,8 @@ services:
     environment:
       - CLAUDE_API_KEY=${CLAUDE_API_KEY}
       - BACKEND_BASE_URL=${BACKEND_BASE_URL}
+      - BACKEND_SUMMARY_ENDPOINT=${BACKEND_SUMMARY_ENDPOINT}
+      - BACKEND_REVIEW_ENDPOINT=${BACKEND_REVIEW_ENDPOINT}
     depends_on:
       - pullsightai-backend
     networks:

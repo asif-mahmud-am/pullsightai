@@ -500,4 +500,40 @@ export class GitlabApiService {
             project
         }
     }
+
+    /**
+     * Get group/project members for GitLab
+     */
+    async getOrgMembers(
+        accessToken: string,
+        groupId: string,
+        isProject: boolean = false
+    ): Promise<any[] | { error: string; message: string; members: any[] }> {
+        let allMembers: any[] = []
+
+        // GitLab API endpoint differs for groups vs projects
+        let url: string
+        if (isProject) {
+            url = `${this.baseUrl}/projects/${encodeURIComponent(groupId)}/members/all?per_page=100`
+        } else {
+            url = `${this.baseUrl}/groups/${encodeURIComponent(groupId)}/members/all?per_page=100`
+        }
+
+        const response = await this.httpService.get(url, {
+            headers: this.getAuthHeaders(accessToken)
+        })
+
+        if (Array.isArray(response)) {
+            response.forEach((member) => {
+                allMembers.push({
+                    provider: 'gitlab',
+                    providerId: member.id,
+                    username: member.username,
+                    displayName: member.name,
+                    avatarUrl: member.avatar_url
+                })
+            })
+        }
+        return allMembers
+    }
 }

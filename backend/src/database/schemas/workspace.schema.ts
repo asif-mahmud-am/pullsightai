@@ -13,7 +13,7 @@ export class Workspace {
     @Prop({ required: true, trim: true })
     name: string
 
-    @Prop({ required: false, trim: true })
+    @Prop({ required: true, trim: true })
     slug: string
 
     @Prop({ required: true, trim: true })

@@ -217,6 +217,37 @@ export class BitbucketApiService {
         return allPullRequests
     }
 
+    /**
+     * Get workspace members for Bitbucket
+     */
+    async getOrgMembers(
+        accessToken: string,
+        workspace: string
+    ): Promise<any[] | { error: string; message: string; members: any[] }> {
+        let allMembers: any[] = []
+        let url = `${this.baseUrl}/workspaces/${workspace}/members?pagelen=100`
+
+        const response = await this.httpService.get(url, {
+            headers: this.getAuthHeaders(accessToken)
+        })
+
+        if (response.values && Array.isArray(response.values)) {
+            response.values.forEach((member) => {
+                allMembers.push({
+                    provider: 'bitbucket',
+                    providerId: member.user?.uuid || member.uuid,
+                    username: member.user?.nickname,
+                    displayName:
+                        member.user?.display_name || member.display_name,
+                    avatarUrl:
+                        member.user?.links?.avatar?.href ||
+                        member.links?.avatar?.href
+                })
+            })
+        }
+        return allMembers
+    }
+
     async refreshAccessToken(refreshToken: string): Promise<{
         access_token: string
         refresh_token?: string

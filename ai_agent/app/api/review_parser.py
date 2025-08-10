@@ -85,7 +85,7 @@ def parse_review_response(review_text: str, file_name: str):
         issue_text = item.get("issue", "")
         suggestion_text = item.get("suggestion", "")
         if issue_text or suggestion_text:
-            content = f"Issue: {issue_text}\n\nSuggestion: {suggestion_text}".strip()
+            content = f"**Issue**: {issue_text}\n\n**Suggestion**: {suggestion_text}".strip()
         else:
             # Fallback: stringify the whole item
             content = json.dumps(item, ensure_ascii=False)

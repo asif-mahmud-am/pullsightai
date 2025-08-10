@@ -39,10 +39,6 @@ export class AnalysisService {
             await this.dataService.pullRequests.create({
                 ...pullRequestFormattedData.pullRequest
             })
-
-        console.log(
-            `Creating analysis for PR: ${savedPullRequestFormattedData}`
-        )
         const pullRequestAnalysis =
             await this.dataService.pullRequestAnalysis.create({
                 prId: savedPullRequestFormattedData.prId,

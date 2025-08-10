@@ -101,4 +101,13 @@ export class GitlabController {
             result: reviewData
         }
     }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('org-members')
+    async getMembers(@Req() req: any) {
+        return {
+            message: 'Organization members fetched successfully',
+            result: await this.gitlabService.getOrgMembers(req.user)
+        }
+    }
 }

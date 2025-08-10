@@ -205,7 +205,7 @@ export class AnalysisService {
             _id: pullRequestAnalysisId
         })
         if (!analysis) {
-            throw new Error('Pull request analysis not found')
+            return false
         }
         return {
             ...analysis.toObject(),

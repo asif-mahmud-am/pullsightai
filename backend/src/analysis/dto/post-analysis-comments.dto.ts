@@ -50,4 +50,8 @@ export class PullRequestAnalysisCommentsDto {
     @ValidateNested({ each: true })
     @Type(() => CommentDto)
     comments: CommentDto[]
+
+    @IsOptional()
+    @IsNumber()
+    completed: number
 }

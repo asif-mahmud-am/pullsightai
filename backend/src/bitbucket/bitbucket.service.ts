@@ -185,6 +185,14 @@ export class BitbucketService {
     }
 
     async makePRReview(user: any, prReviewDto: PRReviewDto) {
+        const existingAnalysis =
+            await this.analysisService.getExistingPullRequestAndAnalysis(
+                prReviewDto,
+                'bitbucket'
+            )
+        if (existingAnalysis) {
+            return existingAnalysis
+        }
         const userData = await this.dataService.users
             .findOne({ _id: user.sub })
             .populate('currentWorkspace')
@@ -211,5 +219,15 @@ export class BitbucketService {
             )
         }
         return await this.analysisService.makeAnalysis(pullRequestFormattedData)
+    }
+
+    async getOrgMembers(user: any) {
+        const userData =
+            await this.analysisService.getUserDataWithWorkspace(user)
+
+        return await this.bitbucketApiService.getOrgMembers(
+            userData.accessToken as string,
+            userData?.currentWorkspace!['name'] as string
+        )
     }
 }

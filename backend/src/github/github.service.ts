@@ -338,7 +338,13 @@ export class GithubService {
             org: org,
             per_page: 100
         })
-        return members
+        return members.map((member) => ({
+            provider: 'github',
+            providerId: member.id,
+            username: member.login,
+            avatarUrl: member.avatar_url,
+            displayName: member.login
+        }))
     }
 
     async processGithubEvent(event: any, payload: any) {

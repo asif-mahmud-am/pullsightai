@@ -83,8 +83,10 @@ export const useReviewPullRequestQuery = ({
 
 export const usePullRequestAnalysisQuery = ({
     analysisId,
+    enabled = true,
 }: {
     analysisId: string;
+    enabled?: boolean;
 }) => {
     return useQuery<PRAnalysisData, Error>({
         queryKey: ["prAnalysis", analysisId],
@@ -95,7 +97,7 @@ export const usePullRequestAnalysisQuery = ({
             }
             return response.data;
         },
-        enabled: !!analysisId,
+        enabled: !!analysisId && enabled,
         refetchInterval: (query) => {
             const data = query.state.data as PRAnalysisData | undefined;
             if (!data) return 5000;

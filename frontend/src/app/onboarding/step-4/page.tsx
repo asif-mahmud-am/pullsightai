@@ -3,11 +3,14 @@
 import { Organization } from "@/types/organization";
 import ActionFooter from "../ActionFooter";
 import SelectableList from "../SelectableList";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { redirect, useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
-import { useReviewPullRequestQuery } from "@/api/queries/pullRequest";
+import {
+    usePullRequestAnalysisQuery,
+    useReviewPullRequestQuery,
+} from "@/api/queries/pullRequest";
 import PrCodeAnalysis from "./PrCodeAnalysis";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -163,6 +166,8 @@ const Step4Page = () => {
     const searchParams = useSearchParams();
     const user = useAuthStore((s) => s.user);
 
+    const [analysisId, setAnalysisId] = useState<string | null>(null);
+
     const repoId = searchParams.get("repoId") as string;
     const prId = searchParams.get("prId") as string;
 
@@ -175,12 +180,26 @@ const Step4Page = () => {
         repoId,
         prId,
     });
+    const {
+        data: analysisData,
+        isLoading: isLoadingAnalysis,
+        error: analysisError,
+    } = usePullRequestAnalysisQuery({
+        analysisId: analysisId || "",
+        enabled: !!analysisId,
+    });
 
     const onStepComplete = () => {
         // You can add your API call or navigation logic here
 
         redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_5);
     };
+
+    useEffect(() => {
+        if (data) {
+            setAnalysisId(data.pullRequestAnalysisId);
+        }
+    }, [data]);
 
     return (
         <>
@@ -215,7 +234,7 @@ const Step4Page = () => {
                                     Error loading PR summary. Please try again.
                                 </p>
                             )}
-                            {!isLoading &&
+                            {/* {!isLoading &&
                                 !error &&
                                 (!data ||
                                     !data?.pullRequest ||
@@ -223,8 +242,8 @@ const Step4Page = () => {
                                     <div className="flex items-center justify-center h-full p-7 text-gray-500">
                                         No analysis data available.
                                     </div>
-                                )}
-                            {data && <PrCodeAnalysis data={data} />}
+                                )} */}
+                            {/* {false && <PrCodeAnalysis data={data} />} */}
                         </div>
                     </div>
                 </div>

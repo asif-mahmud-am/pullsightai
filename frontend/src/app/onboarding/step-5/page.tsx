@@ -11,8 +11,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table } from "@/components/ui/table";
 import RepositoryList from "./RepositoryList";
 import MemberList from "./MemberList";
+import { useOrganizationMembersQuery } from "@/api/queries/member";
+import { useAuthStore } from "@/store/authStore";
 
 const Step5Page = () => {
+    const user = useAuthStore((s) => s.user);
+    const provider = user?.provider || "github";
+    const {} = useOrganizationMembersQuery({
+        provider, // Change this to the desired provider
+    });
+
     const onStepComplete = () => {
         // You can add your API call or navigation logic here
 

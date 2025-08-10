@@ -2,6 +2,7 @@ import apiClient from "@/lib/axios";
 import { Organization } from "@/types/organization";
 import { Repository } from "@/types/repository";
 import { ApiResponse } from "@/types/response";
+import { User } from "@/types/user";
 
 export const githubEndpoints = {
     getOrgs: async (): Promise<ApiResponse<Organization[]>> => {
@@ -37,5 +38,9 @@ export const githubEndpoints = {
                 params: { prNumber: prId, repo: repoId },
             })
             .then((res) => res.data);
+    },
+
+    getTeamMembers: async (): Promise<ApiResponse<User[]>> => {
+        return apiClient.get(`/github/org-members`).then((res) => res.data);
     },
 };

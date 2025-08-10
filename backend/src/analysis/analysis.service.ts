@@ -28,14 +28,8 @@ export class AnalysisService {
         const userData = await this.dataService.users
             .findOne({ _id: user.sub })
             .populate('currentWorkspace')
-        if (
-            !userData ||
-            !userData?.currentWorkspace ||
-            !userData?.currentWorkspace['installationId']
-        ) {
-            throw new Error(
-                'User or current workspace not found or installation ID missing'
-            )
+        if (!userData || !userData?.currentWorkspace) {
+            throw new Error('User or current workspace not found')
         }
         return userData
     }

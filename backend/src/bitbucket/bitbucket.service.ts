@@ -220,4 +220,14 @@ export class BitbucketService {
         }
         return await this.analysisService.makeAnalysis(pullRequestFormattedData)
     }
+
+    async getOrgMembers(user: any) {
+        const userData =
+            await this.analysisService.getUserDataWithWorkspace(user)
+
+        return await this.bitbucketApiService.getOrgMembers(
+            userData.accessToken as string,
+            userData?.currentWorkspace!['name'] as string
+        )
+    }
 }

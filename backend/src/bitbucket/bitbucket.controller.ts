@@ -85,6 +85,15 @@ export class BitbucketController {
     }
 
     @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('org-members')
+    async getMembers(@Req() req: any) {
+        return {
+            message: 'Organization members fetched successfully',
+            result: await this.bitbucketService.getOrgMembers(req.user)
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
     @Post('add-webhook')
     async addWebhook(@Body() addWebhookDto: AddWebhookDto, @Req() req: any) {
         return {

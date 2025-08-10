@@ -185,6 +185,14 @@ export class BitbucketService {
     }
 
     async makePRReview(user: any, prReviewDto: PRReviewDto) {
+        const existingAnalysis =
+            await this.analysisService.getExistingPullRequestAndAnalysis(
+                prReviewDto,
+                'bitbucket'
+            )
+        if (existingAnalysis) {
+            return existingAnalysis
+        }
         const userData = await this.dataService.users
             .findOne({ _id: user.sub })
             .populate('currentWorkspace')

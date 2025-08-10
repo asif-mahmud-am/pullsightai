@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import { Document } from 'mongoose'
+import { Document, Types } from 'mongoose'
 import * as mongoosePaginate from 'mongoose-paginate-v2'
 import * as uniqueValidator from 'mongoose-unique-validator'
 
@@ -51,6 +51,17 @@ export class PullRequestAnalysis {
 
     @Prop({ type: Date, default: null })
     completedAt: Date
+
+    @Prop({
+        required: true,
+        type: Types.ObjectId,
+        ref: 'PullRequest',
+        set: (value) =>
+            Types.ObjectId.isValid(value)
+                ? value
+                : Types.ObjectId.createFromHexString(value)
+    })
+    pullRequest: Types.ObjectId
 }
 
 const schema = SchemaFactory.createForClass(PullRequestAnalysis)

@@ -216,6 +216,22 @@ export class GithubService {
         return prList
     }
 
+    async getUserDataWithWorkspace(user: any) {
+        const userData = await this.dataService.users
+            .findOne({ _id: user.sub })
+            .populate('currentWorkspace')
+        if (
+            !userData ||
+            !userData?.currentWorkspace ||
+            !userData?.currentWorkspace['installationId']
+        ) {
+            throw new Error(
+                'User or current workspace not found or installation ID missing'
+            )
+        }
+        return userData
+    }
+
     async listOrgRepositories(user: any) {
         const userData = await this.dataService.users
             .findOne({ _id: user.sub })
@@ -286,6 +302,14 @@ export class GithubService {
     }
 
     async makePRReview(user: any, prReviewDto: PRReviewDto) {
+        const existingAnalysis =
+            await this.analysisService.getExistingPullRequestAndAnalysis(
+                prReviewDto,
+                'github'
+            )
+        if (existingAnalysis) {
+            return existingAnalysis
+        }
         const userData = await this.dataService.users
             .findOne({ _id: user.sub })
             .populate('currentWorkspace')
@@ -317,6 +341,20 @@ export class GithubService {
             )
         }
         return await this.analysisService.makeAnalysis(pullRequestFormattedData)
+    }
+
+    async getOrgMembers(user: any) {
+        const userData = await this.getUserDataWithWorkspace(user)
+        const org = userData.currentWorkspace!['slug']
+        await this.initOctokit(user)
+        const members = await this.octokit.paginate(
+            this.octokit.orgs.listMembers,
+            {
+                org: org,
+                per_page: 100
+            }
+        )
+        return members
     }
 
     async processGithubEvent(event: any, payload: any) {

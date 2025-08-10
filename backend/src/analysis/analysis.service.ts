@@ -24,6 +24,22 @@ export class AnalysisService {
         private readonly configService: ConfigService
     ) {}
 
+    async getUserDataWithWorkspace(user: any) {
+        const userData = await this.dataService.users
+            .findOne({ _id: user.sub })
+            .populate('currentWorkspace')
+        if (
+            !userData ||
+            !userData?.currentWorkspace ||
+            !userData?.currentWorkspace['installationId']
+        ) {
+            throw new Error(
+                'User or current workspace not found or installation ID missing'
+            )
+        }
+        return userData
+    }
+
     async makeAnalysis(pullRequestFormattedData: StructuredPRData) {
         const savedPullRequestFormattedData =
             await this.dataService.pullRequests.create({
@@ -58,19 +74,26 @@ export class AnalysisService {
     }
 
     async addPRReviewComments(postReviewDto: PullRequestAnalysisCommentsDto) {
-        const analysis =
-            await this.dataService.pullRequestAnalysis.findOneAndUpdate(
-                {
-                    _id: postReviewDto.pullRequestAnalysisId
-                },
-                {
-                    $set: {
-                        status: Status.COMPLETED,
-                        completedAt: new Date()
-                    }
-                },
-                { new: true }
-            )
+        let analysis
+        if (postReviewDto.completed) {
+            analysis =
+                await this.dataService.pullRequestAnalysis.findOneAndUpdate(
+                    {
+                        _id: postReviewDto.pullRequestAnalysisId
+                    },
+                    {
+                        $set: {
+                            status: Status.COMPLETED,
+                            completedAt: new Date()
+                        }
+                    },
+                    { new: true }
+                )
+        } else {
+            analysis = await this.dataService.pullRequestAnalysis.findOne({
+                _id: postReviewDto.pullRequestAnalysisId
+            })
+        }
 
         if (!analysis) {
             throw new Error('Pull request analysis not found')

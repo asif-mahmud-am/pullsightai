@@ -39,6 +39,10 @@ export class AnalysisService {
             await this.dataService.pullRequests.create({
                 ...pullRequestFormattedData.pullRequest
             })
+
+        console.log(
+            `Creating analysis for PR: ${savedPullRequestFormattedData}`
+        )
         const pullRequestAnalysis =
             await this.dataService.pullRequestAnalysis.create({
                 prId: savedPullRequestFormattedData.prId,
@@ -205,7 +209,7 @@ export class AnalysisService {
             _id: pullRequestAnalysisId
         })
         if (!analysis) {
-            return false
+            throw new Error('Pull request analysis not found')
         }
         return {
             ...analysis.toObject(),

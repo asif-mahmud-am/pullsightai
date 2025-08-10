@@ -93,7 +93,10 @@ export class GithubController {
     @UseGuards(AuthGuard('jwt-cookie'))
     @Get('org-members')
     async getMembers(@Req() req: any) {
-        return this.githubService.getOrgMembers(req.user)
+        return {
+            message: 'Organization members fetched successfully',
+            result: await this.githubService.getOrgMembers(req.user)
+        }
     }
 
     @Post('events')

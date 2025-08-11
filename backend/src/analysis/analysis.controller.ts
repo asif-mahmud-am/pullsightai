@@ -12,6 +12,7 @@ export class AnalysisController {
 
     @Post('reviews')
     async postReview(@Body() postReviewDto: PullRequestAnalysisCommentsDto) {
+        console.log('======Posting review======')
         return {
             message: 'Review posted successfully',
             result: await this.analysisService.addPRReviewComments(
@@ -22,6 +23,7 @@ export class AnalysisController {
 
     @Post('summary')
     async postSummary(@Body() postSummery: PullRequestAnalysisDto) {
+        console.log('======Posting summary======')
         return {
             message: 'Summary posted successfully',
             result: await this.analysisService.addPRSummery(postSummery)

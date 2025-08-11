@@ -504,19 +504,23 @@ export class GitlabApiService {
     /**
      * Get group/project members for GitLab
      */
-    async getOrgMembers(
-        accessToken: string,
-        groupId: string,
-        isProject: boolean = false
-    ): Promise<any[] | { error: string; message: string; members: any[] }> {
+    async getOrgMembers(userData: any) {
+        const { accessToken, currentWorkspace } = userData
         let allMembers: any[] = []
 
         // GitLab API endpoint differs for groups vs projects
         let url: string
-        if (isProject) {
-            url = `${this.baseUrl}/projects/${encodeURIComponent(groupId)}/members/all?per_page=100`
+        if (currentWorkspace.type == OrgType.USER) {
+            return {
+                provider: 'gitlab',
+                providerId: userData.id,
+                username: userData.username,
+                displayName: userData.displayName,
+                avatarUrl: userData.avatarUrl
+            }
+            // url = `${this.baseUrl}/projects/${encodeURIComponent(workspace.slug)}/members/all?per_page=100`
         } else {
-            url = `${this.baseUrl}/groups/${encodeURIComponent(groupId)}/members/all?per_page=100`
+            url = `${this.baseUrl}/groups/${encodeURIComponent(currentWorkspace.slug)}/members/all?per_page=100`
         }
 
         const response = await this.httpService.get(url, {

@@ -55,9 +55,15 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
             <div className="border-b border-gray-700 p-4">
                 <div className="flex items-start gap-3">
                     <div className="w-10 h-10">
-                        {pr?.author?.username && (
+                        {(pr?.author?.username || pr?.user?.username) && (
                             <div className="w-10 h-10 rounded-full bg-gray-700 text-gray-200 flex items-center justify-center font-bold">
-                                {pr?.author.username.slice(0, 2).toUpperCase()}
+                                {(
+                                    pr?.author?.username ||
+                                    pr?.user?.username ||
+                                    ""
+                                )
+                                    .slice(0, 2)
+                                    .toUpperCase()}
                             </div>
                             // ) : (
                             //     <img
@@ -96,7 +102,7 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                         </div>
 
                         <h3 className="text-lg font-semibold text-gray-200 mb-2">
-                            {pr.prTitle}
+                            {pr.prTitle || pr.title || "Untitled PR"}
                         </h3>
 
                         <div className="flex items-center gap-4 text-sm text-gray-400">

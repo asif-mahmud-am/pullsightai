@@ -6,6 +6,7 @@ export interface PullRequest {
     number: number;
     status: string;
     merged: boolean;
+    title: string;
     prTitle: string;
     html_url: string;
     prAdditions: number;

@@ -4,9 +4,9 @@ import { Organization } from "@/types/organization";
 import ActionFooter from "../ActionFooter";
 import SelectableList from "../SelectableList";
 import { useState } from "react";
-import { redirect } from "next/navigation";
+import { redirect, useSearchParams } from "next/navigation";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
-import { StarBullet } from "@/components/common/icons";
+import { StarBullet } from "@/components/reusable/icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table } from "@/components/ui/table";
 import RepositoryList from "./RepositoryList";
@@ -15,11 +15,10 @@ import { useOrganizationMembersQuery } from "@/api/queries/member";
 import { useAuthStore } from "@/store/authStore";
 
 const Step5Page = () => {
-    const user = useAuthStore((s) => s.user);
-    const provider = user?.provider || "github";
-    const {} = useOrganizationMembersQuery({
-        provider, // Change this to the desired provider
-    });
+    const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+    const [selectedRepositories, setSelectedRepositories] = useState<string[]>(
+        []
+    );
 
     const onStepComplete = () => {
         // You can add your API call or navigation logic here
@@ -31,7 +30,7 @@ const Step5Page = () => {
         <>
             <div className="grid grid-cols-12 gap-4 lg:gap-8">
                 {/* Left column */}
-                <div className="col-span-12 flex items-center flex-col lg:flex-row lg:gap-x-10 divide-y lg:divide-y-0 lg:divide-x">
+                <div className="col-span-12 flex items-center flex-col lg:flex-row lg:gap-x-10 divide-y lg:divide-y-0 lg:divide-x mb-4">
                     <div className="max-w-[690px] lg:pr-16">
                         <h2 className="text-4xl font-medium text-[var(--title-50)] mb-4 leading-[45px]">
                             Set Up Your Repositories & Team
@@ -74,21 +73,33 @@ const Step5Page = () => {
 
                 {/* left column */}
                 <div className="col-span-6">
-                    <RepositoryList />
+                    <RepositoryList
+                        onSelectionChange={(selectedRepos) =>
+                            setSelectedRepositories(selectedRepos)
+                        }
+                    />
                 </div>
                 {/* Right column */}
                 <div className="col-span-6">
-                    <MemberList />
+                    <MemberList
+                        onSelectionChange={(selectedMembers) =>
+                            setSelectedMembers(selectedMembers)
+                        }
+                    />
                 </div>
             </div>
 
             {/* Footer with action button */}
             <ActionFooter
+                confirmButtonClassname="!bg-primary hover:!bg-gray-200"
                 buttonText="Start 14-Days Free Trial"
-                isEnabled={true}
-                // isLoading={isPending}
+                isEnabled={
+                    selectedMembers.length > 0 &&
+                    selectedRepositories.length > 0
+                }
                 onClick={onStepComplete}
-                onBackClick={() => redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_5)}
+                onBackClick={() => redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_4)}
+                confirmButtonSubtitle="Invitations will be sent automatically."
             />
         </>
     );

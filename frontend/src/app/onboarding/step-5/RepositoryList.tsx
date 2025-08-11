@@ -1,59 +1,19 @@
+import { useRepositoryQuery } from "@/api/queries/repository";
+import { DataTable } from "@/components/reusable/DataTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import {
-    ColumnDef,
-    flexRender,
-    getCoreRowModel,
-    getFilteredRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
-    useReactTable,
-    VisibilityState,
-} from "@tanstack/react-table";
-import { useState } from "react";
+import { formatDate } from "@/lib/dayjs";
+import { useAuthStore } from "@/store/authStore";
+import { Repository } from "@/types/repository";
+import { ColumnDef } from "@tanstack/react-table";
+import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 
-const data: unknown[] = [
-    {
-        id: "m5gr84i9",
-        amount: 316,
-        status: "success",
-        email: "ken99@example.com",
-    },
-    {
-        id: "3u1reuv4",
-        amount: 242,
-        status: "success",
-        email: "Abe45@example.com",
-    },
-    {
-        id: "derv1ws0",
-        amount: 837,
-        status: "processing",
-        email: "Monserrat44@example.com",
-    },
-    {
-        id: "5kma53ae",
-        amount: 874,
-        status: "success",
-        email: "Silas22@example.com",
-    },
-    {
-        id: "bhqecj4p",
-        amount: 721,
-        status: "failed",
-        email: "carmella@example.com",
-    },
-];
+interface Props {
+    onSelectionChange?: (selectedRepos: string[]) => void;
+}
 
-export const columns: ColumnDef<unknown>[] = [
+export const columns: ColumnDef<Repository>[] = [
     {
         id: "select",
         header: ({ table }) => (
@@ -79,111 +39,102 @@ export const columns: ColumnDef<unknown>[] = [
         enableHiding: false,
     },
     {
-        accessorKey: "status",
-        header: "Status",
+        accessorKey: "name",
+        header: "Name",
+        cell: ({ row }) => {
+            return <div className=" font-medium">{row.getValue("name")}</div>;
+        },
+    },
+    {
+        accessorKey: "author",
+        header: "Author",
+        cell: ({ row }) => {
+            const author =
+                (row.getValue("author") as {
+                    avatarUrl?: string;
+                    username?: string;
+                }) || {};
+            return (
+                <div className="flex items-center">
+                    <div className="w-8 h-8 rounded-full overflow-hidden bg-[var(--subtitle-500)] flex items-center justify-center mr-2 flex-shrink-0">
+                        {author?.avatarUrl ? (
+                            <Image
+                                src={author?.avatarUrl}
+                                alt={author.username || ""}
+                                className="w-full h-full object-cover"
+                                width={32}
+                                height={32}
+                            />
+                        ) : (
+                            <span className="text-[var(--title-50)] text-sm">
+                                {author.username?.charAt(0) || "?"}
+                            </span>
+                        )}
+                    </div>{" "}
+                    <p className="text-[var(--subtitle-500)] text-sm">
+                        {author.username || "Unknown"}
+                    </p>
+                </div>
+            );
+        },
+    },
+    {
+        accessorKey: "createdOn",
+        header: "Created at",
+        cell: ({ row }) => {
+            return (
+                <div className=" font-medium">
+                    {formatDate(row.getValue("createdOn"))}
+                </div>
+            );
+        },
+    },
+    {
+        accessorKey: "updatedOn",
+        header: "Updated at",
         cell: ({ row }) => (
-            <div className="capitalize">{row.getValue("status")}</div>
+            <div className="">{formatDate(row.getValue("updatedOn"))}</div>
         ),
-    },
-    {
-        accessorKey: "amount",
-        header: () => <div className="text-right">Amount</div>,
-        cell: ({ row }) => {
-            const amount = parseFloat(row.getValue("amount"));
-            // Format the amount as a dollar amount
-            const formatted = new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: "USD",
-            }).format(amount);
-            return <div className="text-right font-medium">{formatted}</div>;
-        },
-    },
-    {
-        id: "actions",
-        enableHiding: false,
-        cell: ({ row }) => {
-            const payment = row.original;
-            return <></>;
-        },
     },
 ];
 
-const RepositoryList = () => {
-    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
-        {}
-    );
-    const [rowSelection, setRowSelection] = useState({});
-    const table = useReactTable({
-        data,
-        columns,
-        getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-        getFilteredRowModel: getFilteredRowModel(),
-        onColumnVisibilityChange: setColumnVisibility,
-        onRowSelectionChange: setRowSelection,
-        state: {
-            columnVisibility,
-            rowSelection,
-        },
+const RepositoryList = ({ onSelectionChange }: Props) => {
+    const searchParams = useSearchParams();
+    const user = useAuthStore((s) => s.user);
+    const provider = user?.provider || "github";
+    const repoId = searchParams.get("repoId") as string;
+
+    const { data: repositories = [], isFetching } = useRepositoryQuery({
+        provider,
     });
+
+    // Function to determine if a member should be initially selected
+    const shouldSelectMember = (repo: Repository) => {
+        return repo.slug === repoId;
+    };
+
     return (
-        <Card className="mb-4">
+        <Card className="mb-4 gap-2">
             <CardHeader>
-                <CardTitle>Repositories list (13)</CardTitle>
+                <CardTitle className="font-medium text-lg">
+                    Repositories list{" "}
+                    <span className="text-muted">({repositories?.length})</span>
+                </CardTitle>
             </CardHeader>
             <CardContent>
-                <Table>
-                    <TableHeader>
-                        {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map((header) => {
-                                    return (
-                                        <TableHead key={header.id}>
-                                            {header.isPlaceholder
-                                                ? null
-                                                : flexRender(
-                                                      header.column.columnDef
-                                                          .header,
-                                                      header.getContext()
-                                                  )}
-                                        </TableHead>
-                                    );
-                                })}
-                            </TableRow>
-                        ))}
-                    </TableHeader>
-                    <TableBody>
-                        {table.getRowModel().rows?.length ? (
-                            table.getRowModel().rows.map((row) => (
-                                <TableRow
-                                    key={row.id}
-                                    data-state={
-                                        row.getIsSelected() && "selected"
-                                    }
-                                >
-                                    {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
-                                            {flexRender(
-                                                cell.column.columnDef.cell,
-                                                cell.getContext()
-                                            )}
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell
-                                    colSpan={columns.length}
-                                    className="h-24 text-center"
-                                >
-                                    No results.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                <DataTable<Repository>
+                    className="min-w-full"
+                    isLoading={isFetching}
+                    columns={columns}
+                    data={repositories}
+                    initialSelection={shouldSelectMember}
+                    onSelectionChange={(selectedRows) =>
+                        onSelectionChange?.(selectedRows.map((row) => row.id))
+                    }
+                />
+                <div className="text-muted text-sm mt-3">
+                    You can add or remove repositories at any time
+                </div>
             </CardContent>
         </Card>
     );

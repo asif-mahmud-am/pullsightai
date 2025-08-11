@@ -192,7 +192,9 @@ const Step4Page = () => {
     const onStepComplete = () => {
         // You can add your API call or navigation logic here
 
-        redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_5);
+        redirect(
+            ROUTE_CONSTANTS.ONBOARDING_STEP_5 + `?prId=${prId}&repoId=${repoId}`
+        );
     };
 
     useEffect(() => {

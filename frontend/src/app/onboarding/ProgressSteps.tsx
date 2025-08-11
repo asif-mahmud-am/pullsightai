@@ -4,7 +4,7 @@ import {
     CheckedIcon,
     CircleIcon,
     StepOnProgressIcon,
-} from "@/components/common/icons";
+} from "@/components/reusable/icons";
 import { useAuthStore } from "@/store/authStore";
 import { usePathname } from "next/navigation";
 import React, { FC } from "react";

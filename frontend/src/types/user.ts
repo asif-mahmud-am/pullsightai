@@ -13,3 +13,11 @@ export interface User {
     currentWorkspace?: Organization | string; // Can be Organization object or ID
     onboardingStep: number | null;
 }
+
+export interface TeamMember {
+    username: string;
+    provider: Provider;
+    providerId: string;
+    displayName: string;
+    avatarUrl: string;
+}

@@ -1,4 +1,4 @@
-import { Bitbucket, Github, GitLab } from "@/components/common/icons";
+import { Bitbucket, Github, GitLab } from "@/components/reusable/icons";
 import { Button } from "@/components/ui/button";
 import { getAuthUrl } from "@/lib/utils";
 import Link from "next/link";

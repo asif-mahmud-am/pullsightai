@@ -4,8 +4,9 @@ import { Provider } from "@/types/user";
 import { githubEndpoints } from "../endpoints/github";
 import { bitbucketEndpoints } from "../endpoints/bitbucket";
 import { useQuery } from "@tanstack/react-query";
-import { PRAnalysisData } from "@/types/prAnalysis";
+import { PRAnalysis, PRAnalysisData } from "@/types/prAnalysis";
 import { gitlabEndpoints } from "../endpoints/gitlab";
+import { analysisEndpoints } from "../endpoints/analysis";
 
 export const usePullRequestQuery = ({
     provider = "github",
@@ -66,7 +67,7 @@ export const useReviewPullRequestQuery = ({
         throw new Error(`Unsupported provider: ${provider}`);
     }
 
-    return useQuery<PRAnalysisData, Error>({
+    return useQuery<PRAnalysis, Error>({
         queryKey: [provider, "reviewPr", prId, repoId],
         queryFn: async () => {
             const response = await queryFn({ prId, repoId });
@@ -76,5 +77,31 @@ export const useReviewPullRequestQuery = ({
             return response.data;
         },
         enabled: !!prId && !!repoId,
+        retry: false,
+    });
+};
+
+export const usePullRequestAnalysisQuery = ({
+    analysisId,
+    enabled = true,
+}: {
+    analysisId: string;
+    enabled?: boolean;
+}) => {
+    return useQuery<PRAnalysisData, Error>({
+        queryKey: ["prAnalysis", analysisId],
+        queryFn: async () => {
+            const response = await analysisEndpoints.getPRAnalysis(analysisId);
+            if (!response?.data) {
+                throw new Error("No data received from response");
+            }
+            return response.data;
+        },
+        enabled: !!analysisId && enabled,
+        refetchInterval: (query) => {
+            const data = query.state.data as PRAnalysisData | undefined;
+            if (!data) return 5000;
+            return data.status === "completed" ? false : 5000;
+        },
     });
 };

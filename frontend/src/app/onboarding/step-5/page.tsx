@@ -4,95 +4,114 @@ import { Organization } from "@/types/organization";
 import ActionFooter from "../ActionFooter";
 import SelectableList from "../SelectableList";
 import { useState } from "react";
-import { redirect } from "next/navigation";
+import { redirect, useSearchParams } from "next/navigation";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
-
-const organizations = [
-    {
-        name: "sroy-dev",
-        id: "44993145",
-        nodeId: "MDQ6VXNlcjQ0OTkzMTQ1",
-        url: "https://api.github.com/users/sroy-dev",
-        reposUrl: "https://api.github.com/users/sroy-dev/repos",
-        avatarUrl: "https://avatars.githubusercontent.com/u/44993145?v=4",
-        type: "User",
-    },
-    {
-        id: "165650485",
-        name: "TeamChickenHQ",
-        nodeId: "O_kgDOCd-gNQ",
-        url: "https://api.github.com/orgs/TeamChickenHQ",
-        reposUrl: "https://api.github.com/orgs/TeamChickenHQ/repos",
-        avatarUrl: "https://avatars.githubusercontent.com/u/165650485?v=4",
-        type: "Organization",
-    },
-];
+import { StarBullet } from "@/components/reusable/icons";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table } from "@/components/ui/table";
+import RepositoryList from "./RepositoryList";
+import MemberList from "./MemberList";
+import { useOrganizationMembersQuery } from "@/api/queries/member";
+import { useAuthStore } from "@/store/authStore";
 
 const Step5Page = () => {
-    const [selectedOrg, setSelectedOrg] = useState<string>("");
+    const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+    const [selectedRepositories, setSelectedRepositories] = useState<string[]>(
+        []
+    );
+
+    const searchParams = useSearchParams();
+
+    const repoId = searchParams.get("repoId") as string;
+    const prId = searchParams.get("prId") as string;
 
     const onStepComplete = () => {
         // You can add your API call or navigation logic here
-
-        redirect(`/dashboard`);
+        // redirect(`/dashboard`);
     };
 
     return (
         <>
             <div className="grid grid-cols-12 gap-4 lg:gap-8">
                 {/* Left column */}
-                <div className="col-span-4 col-start-2 xl:pr-16">
-                    <h2 className="text-4xl font-medium text-[var(--title-50)] mb-4 leading-[45px]">
-                        Collaborate & Scale Your Code Quality
-                    </h2>
-                    <p className="text-base font-medium text-[var(--subtitle-400)] mb-6">
-                        You&apos;ve seen the power of AI-driven feedback! Now,
-                        invite your team members to experience faster reviews
-                        and higher code quality together. The more, the merrier
-                        (and smarter!).
-                    </p>
+                <div className="col-span-12 flex items-center flex-col lg:flex-row lg:gap-x-10 divide-y lg:divide-y-0 lg:divide-x mb-4">
+                    <div className="max-w-[690px] lg:pr-16">
+                        <h2 className="text-4xl font-medium text-[var(--title-50)] mb-4 leading-[45px]">
+                            Set Up Your Repositories & Team
+                        </h2>
+                        <p className="text-base font-medium text-[var(--subtitle-400)] mb-6">
+                            You can view pull requests based on your selected
+                            team members and repositories. Adjust your
+                            selections to see the most relevant PRs for your
+                            workflow.
+                        </p>
+                    </div>
+                    <div className="">
+                        <ul className="space-y-4">
+                            <li className="flex items-center gap-3 text-sm text-[var(--title-50)]">
+                                <div className="shrink-0">
+                                    <StarBullet />
+                                </div>
+                                <span>
+                                    Create unlimited code reviews on your PRs
+                                </span>
+                            </li>
+                            <li className="flex items-center gap-3 text-sm text-[var(--title-50)]">
+                                <div className="shrink-0">
+                                    <StarBullet />
+                                </div>
+                                <span>
+                                    You can add or remove repositories and team
+                                    members at any time
+                                </span>
+                            </li>
+                            <li className="flex items-center gap-3 text-sm text-[var(--title-50)]">
+                                <div className="shrink-0">
+                                    <StarBullet />
+                                </div>
+                                <span>Explore all dashboards and insights</span>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
 
+                {/* left column */}
+                <div className="col-span-6">
+                    <RepositoryList
+                        onSelectionChange={(selectedRepos) =>
+                            setSelectedRepositories(selectedRepos)
+                        }
+                    />
+                </div>
                 {/* Right column */}
                 <div className="col-span-6">
-                    <div className="mb-4">
-                        <h3 className="text-[var(--title-50)] font-medium mb-4 text-lg">
-                            Team members lists
-                        </h3>
-
-                        {false && (
-                            <p className="text-[var(--subtitle-400)]">
-                                Loading organizations...
-                            </p>
-                        )}
-                        {false && (
-                            <p className="text-[var(--subtitle-400)]">
-                                Error loading organizations. Please try again.
-                            </p>
-                        )}
-
-                        {organizations.length > 0 && (
-                            <SelectableList
-                                items={organizations.map((org) => ({
-                                    id: String(org.id),
-                                    title: org.name,
-                                    subtitle: org.name,
-                                }))}
-                                selectedId={selectedOrg}
-                                onSelect={(id) => setSelectedOrg(id)}
-                            />
-                        )}
-                    </div>
+                    <MemberList
+                        onSelectionChange={(selectedMembers) =>
+                            setSelectedMembers(selectedMembers)
+                        }
+                    />
                 </div>
             </div>
 
             {/* Footer with action button */}
             <ActionFooter
-                buttonText="Send invites & go to Dashboard"
-                isEnabled={true}
-                // isLoading={isPending}
+                confirmButtonClassname="!bg-primary hover:!bg-gray-200"
+                buttonText="Start 14-Days Free Trial"
+                isEnabled={
+                    selectedMembers.length > 0 &&
+                    selectedRepositories.length > 0
+                }
                 onClick={onStepComplete}
-                onBackClick={() => redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_5)}
+                onBackClick={() =>
+                    redirect(
+                        ROUTE_CONSTANTS.ONBOARDING_STEP_4 +
+                            "?repoId=" +
+                            repoId +
+                            "&prId=" +
+                            prId
+                    )
+                }
+                confirmButtonSubtitle="Invitations will be sent automatically."
             />
         </>
     );

@@ -1,3 +1,5 @@
+import { PullRequest } from "./pullRequest";
+
 export interface AIComment {
     _id: string;
     metadata: unknown | null; // Metadata can be any additional information, currently not used
@@ -23,11 +25,18 @@ export interface PRAnalysisData {
     repositorySlug: string;
     prNumber: string;
     installationId: string;
-    status: "pending" | "completed" | "failed";
+    status: string;
     startedAt: string;
     completedAt?: string;
     createdAt: string;
     updatedAt: string;
     summary: string;
     comments: AIComment[];
+}
+
+export interface PRAnalysis {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    pullRequest?: any;
+    pullRequestAnalysisId: string;
+    pullRequestAnalysis?: PRAnalysisData;
 }

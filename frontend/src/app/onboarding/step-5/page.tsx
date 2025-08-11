@@ -20,10 +20,14 @@ const Step5Page = () => {
         []
     );
 
+    const searchParams = useSearchParams();
+
+    const repoId = searchParams.get("repoId") as string;
+    const prId = searchParams.get("prId") as string;
+
     const onStepComplete = () => {
         // You can add your API call or navigation logic here
-
-        redirect(`/dashboard`);
+        // redirect(`/dashboard`);
     };
 
     return (
@@ -98,7 +102,15 @@ const Step5Page = () => {
                     selectedRepositories.length > 0
                 }
                 onClick={onStepComplete}
-                onBackClick={() => redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_4)}
+                onBackClick={() =>
+                    redirect(
+                        ROUTE_CONSTANTS.ONBOARDING_STEP_4 +
+                            "?repoId=" +
+                            repoId +
+                            "&prId=" +
+                            prId
+                    )
+                }
                 confirmButtonSubtitle="Invitations will be sent automatically."
             />
         </>

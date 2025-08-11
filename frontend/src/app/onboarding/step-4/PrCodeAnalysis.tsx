@@ -1,5 +1,5 @@
 import type React from "react";
-import { useState } from "react";
+import { FC, useState } from "react";
 import Markdown from "react-markdown";
 
 import { Badge } from "@/components/ui/badge";
@@ -14,11 +14,18 @@ import {
 import { PRAnalysisData } from "@/types/prAnalysis";
 import { humanizeDate } from "@/lib/dayjs";
 import { Button } from "@/components/ui/button";
+import { PullRequest } from "@/types/pullRequest";
 
-const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
+interface Props {
+    analysisData: PRAnalysisData;
+    pullRequest: PullRequest;
+}
+
+const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
     const [showAllComments, setShowAllComments] = useState(true);
 
-    const { pullRequest: pr, analysis } = data;
+    const analysis = analysisData;
+    const pr = pullRequest;
 
     // Filter out any null comments to prevent crashes
     const validComments = analysis.comments
@@ -48,9 +55,9 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
             <div className="border-b border-gray-700 p-4">
                 <div className="flex items-start gap-3">
                     <div className="w-10 h-10">
-                        {pr.prUser && (
+                        {pr?.author?.username && (
                             <div className="w-10 h-10 rounded-full bg-gray-700 text-gray-200 flex items-center justify-center font-bold">
-                                {pr.prUser.slice(0, 2).toUpperCase()}
+                                {pr?.author.username.slice(0, 2).toUpperCase()}
                             </div>
                             // ) : (
                             //     <img
@@ -65,7 +72,7 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
                     <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                             <span className="font-semibold text-gray-200">
-                                {pr.prUser}
+                                {pr?.author?.username}
                             </span>
                             <Badge className="bg-purple-900/30 text-purple-300 border-purple-700">
                                 {pr.merged ? (
@@ -73,10 +80,10 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
                                 ) : (
                                     <GitPullRequest className="w-3 h-3 mr-1" />
                                 )}
-                                PR #{pr.prNumber} • {pr.prState}
+                                PR #{pr?.prNumber} • {pr?.prState}
                             </Badge>
                             <span className="text-gray-400 text-sm">
-                                {humanizeDate(pr.prCreatedAt)}
+                                {humanizeDate(pr?.createdOn || "")}
                             </span>
                             <a
                                 href={pr.html_url}
@@ -94,14 +101,14 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
 
                         <div className="flex items-center gap-4 text-sm text-gray-400">
                             <span className="text-green-400">
-                                +{pr.prAdditions}
+                                +{pr?.prAdditions}
                             </span>
                             <span className="text-red-400">
-                                -{pr.prDeletions}
+                                -{pr?.prDeletions}
                             </span>
                             <span>
-                                {pr.prFilesChanged} file
-                                {pr.prFilesChanged !== 1 ? "s" : ""} changed
+                                {pr?.prFilesChanged} file
+                                {pr?.prFilesChanged !== 1 ? "s" : ""} changed
                             </span>
                         </div>
                     </div>
@@ -171,6 +178,7 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
             </div>
 
             {/* AI Comments */}
+
             {displayedComments.map((comment, index) => (
                 <div key={index} className="border-b border-gray-700 p-4">
                     <div className="flex items-start gap-3">
@@ -189,32 +197,32 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
                                         comment.severity.slice(1)}{" "}
                                 </Badge>
                                 <span className="text-gray-500 text-xs">
-                                    {comment.path}:{comment.line_start}
-                                    {comment.line_end !== comment.line_start &&
-                                        `-${comment.line_end}`}
+                                    {comment.filePath}:{comment.lineStart}
+                                    {comment.lineEnd !== comment.lineStart &&
+                                        `-${comment.lineEnd}`}
                                 </span>
                             </div>
 
                             <div className="text-gray-300 text-sm mb-3">
-                                <Markdown>{comment.issue}</Markdown>
+                                <Markdown>{comment.content}</Markdown>
                             </div>
 
-                            {comment.code_snippet && (
+                            {comment.codeSnippet && (
                                 <div className="bg-gray-950 rounded border border-gray-700 p-3 mb-3">
                                     <pre className="text-xs overflow-x-auto">
-                                        {comment.code_snippet
+                                        {comment.codeSnippet
                                             .trim()
                                             .split("\n")
                                             .map((line, index) => {
                                                 const lineNumber =
-                                                    (comment.code_snippet_line_start ??
-                                                        comment.line_start) +
+                                                    (comment.codeSnippetLineStart ??
+                                                        comment.lineStart) +
                                                     index;
                                                 const isHighlighted =
                                                     lineNumber >=
-                                                        comment.line_start &&
+                                                        comment.lineStart &&
                                                     lineNumber <=
-                                                        comment.line_end;
+                                                        comment.lineEnd;
 
                                                 return (
                                                     <div
@@ -251,6 +259,11 @@ const PrCodeAnalysis: React.FC<{ data: PRAnalysisData }> = ({ data }) => {
                     </div>
                 </div>
             ))}
+            {analysis.status == "inprogress" && (
+                <div className="p-5">
+                    <p className="text-gray-400">Analysis in progress...</p>
+                </div>
+            )}
 
             {/* Show More Button */}
             {analysis.comments.length > 3 && (

@@ -4,7 +4,7 @@ import { Provider } from "@/types/user";
 import { githubEndpoints } from "../endpoints/github";
 import { bitbucketEndpoints } from "../endpoints/bitbucket";
 import { useQuery } from "@tanstack/react-query";
-import { PRAnalysisData } from "@/types/prAnalysis";
+import { PRAnalysis, PRAnalysisData } from "@/types/prAnalysis";
 import { gitlabEndpoints } from "../endpoints/gitlab";
 import { analysisEndpoints } from "../endpoints/analysis";
 
@@ -67,7 +67,7 @@ export const useReviewPullRequestQuery = ({
         throw new Error(`Unsupported provider: ${provider}`);
     }
 
-    return useQuery<{ pullRequestAnalysisId: string }, Error>({
+    return useQuery<PRAnalysis, Error>({
         queryKey: [provider, "reviewPr", prId, repoId],
         queryFn: async () => {
             const response = await queryFn({ prId, repoId });

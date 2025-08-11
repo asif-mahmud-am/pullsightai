@@ -2,14 +2,15 @@ export interface PullRequest {
     id?: string; // Unique identifier for the pull request
     prNumber: string; // PR number
     external_id: number;
+    prState: string;
     number: number;
     status: string;
     merged: boolean;
-    title: string;
+    prTitle: string;
     html_url: string;
-    additions: number;
-    deletions: number;
-    changed_files: number;
+    prAdditions: number;
+    prDeletions: number;
+    prFilesChanged: number;
     avatar_url?: string | null;
     time?: string;
     createdOn?: string;

@@ -45,6 +45,16 @@ const Step1Page = () => {
     const onStepComplete = async () => {
         if (!selectedOrg) return;
 
+        if (
+            user?.currentWorkspace &&
+            typeof user.currentWorkspace !== "string" &&
+            user.currentWorkspace.id === selectedOrg.id
+        ) {
+            // If the selected organization is already the current workspace, just redirect
+            router.push(ROUTE_CONSTANTS.ONBOARDING_STEP_2);
+            return;
+        }
+
         if (provider === "github") {
             updateUser({
                 currentWorkspace: selectedOrg._id,

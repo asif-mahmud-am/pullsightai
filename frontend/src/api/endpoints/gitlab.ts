@@ -2,6 +2,7 @@ import apiClient from "@/lib/axios";
 import { Organization } from "@/types/organization";
 import { Repository } from "@/types/repository";
 import { ApiResponse } from "@/types/response";
+import { User } from "@/types/user";
 
 export const gitlabEndpoints = {
     getOrgs: async (): Promise<ApiResponse<Organization[]>> => {
@@ -42,5 +43,9 @@ export const gitlabEndpoints = {
                 params: { prNumber: prId, repo: repoId },
             })
             .then((res) => res.data);
+    },
+
+    getTeamMembers: async (): Promise<ApiResponse<User[]>> => {
+        return apiClient.get(`/gitlab/org-members`).then((res) => res.data);
     },
 };

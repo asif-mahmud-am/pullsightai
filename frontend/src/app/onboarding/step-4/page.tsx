@@ -3,12 +3,18 @@
 import { Organization } from "@/types/organization";
 import ActionFooter from "../ActionFooter";
 import SelectableList from "../SelectableList";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { redirect, useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
-import { useReviewPullRequestQuery } from "@/api/queries/pullRequest";
+import {
+    usePullRequestAnalysisQuery,
+    useReviewPullRequestQuery,
+} from "@/api/queries/pullRequest";
 import PrCodeAnalysis from "./PrCodeAnalysis";
+import Image from "next/image";
+import { formatDate } from "@/lib/dayjs";
+import { PRAnalysisData } from "@/types/prAnalysis";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const data: any = {
@@ -163,6 +169,8 @@ const Step4Page = () => {
     const searchParams = useSearchParams();
     const user = useAuthStore((s) => s.user);
 
+    const [analysisId, setAnalysisId] = useState<string | null>(null);
+
     const repoId = searchParams.get("repoId") as string;
     const prId = searchParams.get("prId") as string;
 
@@ -175,12 +183,26 @@ const Step4Page = () => {
         repoId,
         prId,
     });
+    const {
+        data: analysisData,
+        isLoading: isLoadingAnalysis,
+        error: analysisError,
+    } = usePullRequestAnalysisQuery({
+        analysisId: analysisId || "",
+        enabled: !!analysisId,
+    });
 
     const onStepComplete = () => {
-        // You can add your API call or navigation logic here
-
-        redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_5);
+        redirect(
+            ROUTE_CONSTANTS.ONBOARDING_STEP_5 + `?prId=${prId}&repoId=${repoId}`
+        );
     };
+
+    useEffect(() => {
+        if (data) {
+            setAnalysisId(data.pullRequestAnalysisId);
+        }
+    }, [data]);
 
     return (
         <>
@@ -204,27 +226,99 @@ const Step4Page = () => {
                         <h3 className="text-[var(--title-50)] font-medium mb-4 text-lg">
                             PR Summary
                         </h3>
-                        <div className="bg-dark-900 border border-dashed rounded-xl">
-                            {isLoading && (
+                        {data && data?.pullRequest && (
+                            <>
+                                <div className="grid grid-cols-6 py-3 text-[var(--subtitle-400)] text-sm font-medium">
+                                    <div className="col-span-2 pl-3">Title</div>
+                                    <div className="col-span-1 pl-1">
+                                        Author
+                                    </div>
+                                    <div className="col-span-1 text-center">
+                                        Status
+                                    </div>
+                                    <div className="col-span-1 text-right pr-3">
+                                        Created at
+                                    </div>
+                                    <div className="col-span-1 text-right pr-4">
+                                        Updated at
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-6 py-3 bg-[var(--box-800)] rounded-lg">
+                                    <div className="flex items-center col-span-2">
+                                        <span className="text-[var(--title-50)] text-base font-medium ml-3">
+                                            {data?.pullRequest?.prTitle}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center col-span-1">
+                                        <div className="flex items-center">
+                                            <div className="w-8 h-8 rounded-full overflow-hidden bg-[var(--subtitle-500)] flex items-center justify-center mr-2 flex-shrink-0">
+                                                {data?.pullRequest
+                                                    ?.avatarUrl ? (
+                                                    <Image
+                                                        src={
+                                                            data.pullRequest
+                                                                .avatarUrl
+                                                        }
+                                                        alt={
+                                                            data.pullRequest
+                                                                .prUser || ""
+                                                        }
+                                                        className="w-full h-full object-cover"
+                                                        width={32}
+                                                        height={32}
+                                                    />
+                                                ) : (
+                                                    <span className="text-[var(--title-50)] text-sm">
+                                                        {data.pullRequest.prUser?.charAt(
+                                                            0
+                                                        ) || "?"}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-[var(--subtitle-500)] text-sm">
+                                                {data.pullRequest.prUser ||
+                                                    "Unknown"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="col-span-1 text-center">
+                                        {data?.pullRequest?.prState}
+                                    </div>
+                                    <div className="col-span-1 text-right">
+                                        {formatDate(
+                                            data?.pullRequest?.createdAt
+                                        )}
+                                    </div>
+                                    <div className="col-span-1 text-right pr-4">
+                                        {formatDate(
+                                            data?.pullRequest?.updatedAt
+                                        )}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                        <div className="bg-dark-900 border border-dashed rounded-xl mt-3">
+                            {(isLoading || isLoadingAnalysis) && (
                                 <p className="text-[var(--subtitle-400)] p-5">
                                     Loading PR summary...
                                 </p>
                             )}
-                            {error && (
+                            {(error || analysisError) && (
                                 <p className="text-[var(--subtitle-400)] p-7">
                                     Error loading PR summary. Please try again.
                                 </p>
                             )}
-                            {!isLoading &&
-                                !error &&
-                                (!data ||
-                                    !data?.pullRequest ||
-                                    !data?.analysis) && (
-                                    <div className="flex items-center justify-center h-full p-7 text-gray-500">
-                                        No analysis data available.
-                                    </div>
-                                )}
-                            {data && <PrCodeAnalysis data={data} />}
+
+                            {(data?.pullRequestAnalysis || analysisData) && (
+                                <PrCodeAnalysis
+                                    analysisData={
+                                        (analysisData as PRAnalysisData) ||
+                                        data?.pullRequestAnalysis
+                                    }
+                                    pullRequest={data?.pullRequest}
+                                />
+                            )}
                         </div>
                     </div>
                 </div>
@@ -233,8 +327,8 @@ const Step4Page = () => {
             {/* Footer with action button */}
             <ActionFooter
                 buttonText="Invite team members"
-                isEnabled={true}
-                // isLoading={isPending}
+                isEnabled={!isLoading}
+                isLoading={isLoading}
                 onClick={onStepComplete}
                 onBackClick={() =>
                     redirect(

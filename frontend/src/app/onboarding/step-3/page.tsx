@@ -96,7 +96,7 @@ const Step3Page = () => {
                                     items={
                                         pullRequests?.map((pr) => ({
                                             id: String(pr.prNumber),
-                                            title: pr.title,
+                                            title: pr.prTitle,
                                             avatar:
                                                 pr.user?.avatarUrl ||
                                                 pr.author?.avatarUrl,

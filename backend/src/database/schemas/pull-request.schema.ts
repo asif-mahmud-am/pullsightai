@@ -46,6 +46,9 @@ export class PullRequest {
     @Prop({ required: true })
     prUser: string
 
+    @Prop({ nullable: true })
+    prUserAvatar?: string
+
     @Prop({ required: true })
     owner: string
 
@@ -54,6 +57,9 @@ export class PullRequest {
 
     @Prop({ required: true })
     prNumber: string
+
+    @Prop({ required: true })
+    prUrl: string
 
     @Prop({ nullable: true })
     installationId: string
@@ -75,6 +81,12 @@ export class PullRequest {
 
     @Prop({ nullable: true })
     prUpdatedAt: string
+
+    @Prop({ nullable: true })
+    prClosedAt?: string
+
+    @Prop({ nullable: true })
+    prMergedAt?: string
 
     @Prop({ nullable: true })
     prHeadBranch: string

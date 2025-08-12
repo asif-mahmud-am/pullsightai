@@ -14,18 +14,16 @@ export interface Repository {
 }
 
 export interface PullRequestResponse {
-    id: number
-    nodeId: string
+    provider: string
+    prId: number
     prNumber: number
-    title: string
-    status: string
-    author: {
-        username: string
-        avatarUrl: string
-    }
-    createdOn: string // ISO date string
-    updatedOn: string
-    closedOn: string | null
-    mergedOn: string | null
-    url: string
+    prTitle: string
+    prState: string
+    prUser: string
+    prUserAvatar: string
+    prCreatedAt: string // ISO date string
+    prUpdatedAt: string
+    prClosedAt: string | null
+    prMergedAt: string | null
+    prUrl: string
 }

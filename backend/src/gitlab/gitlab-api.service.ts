@@ -511,7 +511,7 @@ export class GitlabApiService {
         if (currentWorkspace.type == OrgType.USER) {
             return {
                 provider: 'gitlab',
-                providerId: userData.id,
+                providerId: userData.id.toString(),
                 username: userData.username,
                 displayName: userData.displayName,
                 avatarUrl: userData.avatarUrl
@@ -529,7 +529,7 @@ export class GitlabApiService {
             response.forEach((member) => {
                 allMembers.push({
                     provider: 'gitlab',
-                    providerId: member.id,
+                    providerId: member.id.toString(),
                     username: member.username,
                     displayName: member.name,
                     avatarUrl: member.avatar_url

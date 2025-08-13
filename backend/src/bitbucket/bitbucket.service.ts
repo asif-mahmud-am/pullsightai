@@ -13,6 +13,7 @@ import { Repository } from 'src/common/interfaces/repository.interface'
 import { DatabaseService } from 'src/database/database.service'
 import { Workspace } from 'src/database/schemas/workspace.schema'
 import { GetPRDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
+import { RepositoryDto } from 'src/workspace/dto/make-subscription.dto'
 import { BitbucketApiService } from './bitbucket-api.service'
 
 @Injectable()
@@ -106,19 +107,10 @@ export class BitbucketService {
         )
     }
 
-    async addWebhook(user: any, repo: string): Promise<any> {
-        const userData = await this.dataService.users
-            .findOne({ _id: user.sub })
-            .populate('currentWorkspace')
-        if (
-            !userData ||
-            !userData?.accessToken ||
-            !userData?.currentWorkspace
-        ) {
-            throw new Error(
-                'User or current workspace not found or installation ID missing'
-            )
-        }
+    async addWebhook(
+        userData: any,
+        repositories: RepositoryDto[]
+    ): Promise<any> {
         const webhookUrl = `${this.configService.get('BASE_URL')}/v1/bitbucket/events`
         const events = [
             'repo:push',
@@ -132,13 +124,20 @@ export class BitbucketService {
             'issue:updated',
             'issue:comment_created'
         ]
-        return await this.bitbucketApiService.addWebhook(
-            userData?.accessToken as string,
-            userData?.currentWorkspace['slug'] as string,
-            repo,
-            webhookUrl,
-            events
-        )
+        const webhookPromises = repositories.map(async (repository) => {
+            const webhook = await this.bitbucketApiService.addWebhook(
+                userData?.accessToken as string,
+                userData?.currentWorkspace['slug'] as string,
+                repository.slug,
+                webhookUrl,
+                events
+            )
+            return {
+                ...repository,
+                webhookToken: webhook.id
+            }
+        })
+        return await Promise.all(webhookPromises)
     }
 
     async getPullRequests(user: any, getPRDto: GetPRDto) {

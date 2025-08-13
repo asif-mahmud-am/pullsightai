@@ -233,7 +233,7 @@ export class BitbucketApiService {
             response.values.forEach((member) => {
                 allMembers.push({
                     provider: 'bitbucket',
-                    providerId: member.user?.uuid || member.uuid,
+                    providerId: member.user?.uuid.toString(),
                     username: member.user?.nickname,
                     displayName:
                         member.user?.display_name || member.display_name,

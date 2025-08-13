@@ -10,7 +10,6 @@ import {
 import { AuthGuard } from '@nestjs/passport'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
 import { GetPRDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
-import { AddWebhookDto } from '../common/dto/add-webhook.dto'
 import { BitbucketEventsService } from './bitbucket-events.service'
 import { BitbucketService } from './bitbucket.service'
 
@@ -90,18 +89,6 @@ export class BitbucketController {
         return {
             message: 'Organization members fetched successfully',
             result: await this.bitbucketService.getOrgMembers(req.user)
-        }
-    }
-
-    @UseGuards(AuthGuard('jwt-cookie'))
-    @Post('add-webhook')
-    async addWebhook(@Body() addWebhookDto: AddWebhookDto, @Req() req: any) {
-        return {
-            message: 'Webhook added successfully',
-            result: await this.bitbucketService.addWebhook(
-                req.user,
-                addWebhookDto.repo
-            )
         }
     }
 

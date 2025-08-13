@@ -338,7 +338,7 @@ export class GithubService {
         })
         return members.map((member) => ({
             provider: 'github',
-            providerId: member.id,
+            providerId: member.id.toString(),
             username: member.login,
             avatarUrl: member.avatar_url,
             displayName: member.login

@@ -83,6 +83,8 @@ export class GitlabEventsService {
                     mergeRequest.author?.username ||
                     payload.user?.username ||
                     'unknown',
+                prUserAvatar: mergeRequest.author?.avatar_url || '',
+                prUrl: mergeRequest.web_url,
                 owner: project.namespace.path,
                 repo: project.path_with_namespace,
                 prNumber: mergeRequest.iid.toString(),
@@ -93,6 +95,8 @@ export class GitlabEventsService {
                 prState: mergeRequest.state,
                 prCreatedAt: mergeRequest.created_at,
                 prUpdatedAt: mergeRequest.updated_at,
+                prClosedAt: mergeRequest.closed_at || '',
+                prMergedAt: mergeRequest.merged_at || '',
                 prHeadBranch: mergeRequest.source_branch,
                 prBaseBranch: mergeRequest.target_branch,
                 prHeadSha: mergeRequest.last_commit?.id || 'unknown',

@@ -3,51 +3,40 @@ import { Document, Types } from 'mongoose'
 import * as mongoosePaginate from 'mongoose-paginate-v2'
 import * as uniqueValidator from 'mongoose-unique-validator'
 
-export type WorkspaceDocument = Workspace & Document
+export type WorkspaceMemberDocument = WorkspaceMember & Document
+
+export enum MemberRole {
+    OWNER = 'owner',
+    MEMBER = 'member'
+    // VIEWER = 'viewer',
+    // ADMIN = 'admin'
+}
 
 @Schema({ timestamps: true, versionKey: false })
-export class Workspace {
-    @Prop({ required: true, trim: true })
-    id: string
-
-    @Prop({ required: true, trim: true })
-    name: string
-
-    @Prop({ required: true, trim: true })
-    slug: string
-
+export class WorkspaceMember {
     @Prop({ required: true, trim: true })
     provider: string
 
     @Prop({ required: true, trim: true })
-    url: string
-
-    @Prop({ required: true, trim: true })
-    reposUrl: string
-
-    @Prop({ required: false })
-    avatarUrl: string
-
-    @Prop({ required: true, trim: true })
-    type?: string
-
-    @Prop({ required: true, trim: true })
-    nodeId: string
-
-    @Prop({ required: false })
-    description?: string
+    providerId: string
 
     @Prop({ required: false, trim: true })
-    installationId?: string
-
-    @Prop({ required: false })
-    isPrivate?: boolean
-
-    @Prop({ required: false })
-    createdOn?: string
+    username: string
 
     @Prop({
         required: true,
+        type: Types.ObjectId,
+        ref: 'Workspace',
+        set: (value) =>
+            Types.ObjectId.isValid(value)
+                ? value
+                : Types.ObjectId.createFromHexString(value)
+    })
+    workspace: Types.ObjectId
+
+    @Prop({
+        required: false,
+        nullable: true,
         type: Types.ObjectId,
         ref: 'User',
         set: (value) =>
@@ -55,24 +44,29 @@ export class Workspace {
                 ? value
                 : Types.ObjectId.createFromHexString(value)
     })
-    ownerId?: Types.ObjectId
+    user: Types.ObjectId
 
     @Prop({
-        required: false,
-        type: Types.ObjectId,
-        ref: 'Team',
-        set: (value) =>
-            Types.ObjectId.isValid(value)
-                ? value
-                : Types.ObjectId.createFromHexString(value)
+        required: true,
+        enum: Object.values(MemberRole),
+        default: MemberRole.MEMBER
     })
-    team?: Types.ObjectId
+    role: MemberRole
+
+    @Prop({ required: false, default: null })
+    invitedAt?: Date
+
+    @Prop({ required: false, default: null })
+    joinedAt?: Date
+
+    @Prop({ required: true, default: true })
+    isActive: boolean
 }
 
-const schema = SchemaFactory.createForClass(Workspace)
+const schema = SchemaFactory.createForClass(WorkspaceMember)
 
 schema.plugin(uniqueValidator, {
     message: '{PATH} already exists!'
 })
 schema.plugin(mongoosePaginate)
-export const WorkspaceSchema = schema
+export const WorkspaceMemberSchema = schema

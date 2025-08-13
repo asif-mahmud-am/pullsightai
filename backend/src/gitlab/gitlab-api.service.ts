@@ -419,20 +419,18 @@ export class GitlabApiService {
         return mergeRequests.map(
             (mr: any) =>
                 ({
-                    id: mr.id,
-                    nodeId: `GL_${mr.id}`,
+                    provider: 'github',
+                    prId: mr.id,
                     prNumber: mr.iid,
-                    title: mr.title,
-                    status: mr.state,
-                    author: {
-                        username: mr.author?.username || 'unknown',
-                        avatarUrl: mr.author?.avatar_url || null
-                    },
-                    createdOn: mr.created_at,
-                    updatedOn: mr.updated_at,
-                    closedOn: mr.closed_at,
-                    mergedOn: mr.merged_at,
-                    url: mr.web_url
+                    prTitle: mr.title,
+                    prState: mr.state,
+                    prUser: mr.author?.username || 'unknown',
+                    prUserAvatar: mr.author?.avatar_url || '',
+                    prCreatedAt: mr.created_at,
+                    prUpdatedAt: mr.updated_at,
+                    prClosedAt: mr.closed_at,
+                    prMergedAt: mr.merged_at,
+                    prUrl: mr.web_url
                 }) as PullRequestResponse
         )
     }
@@ -513,7 +511,7 @@ export class GitlabApiService {
         if (currentWorkspace.type == OrgType.USER) {
             return {
                 provider: 'gitlab',
-                providerId: userData.id,
+                providerId: userData.id.toString(),
                 username: userData.username,
                 displayName: userData.displayName,
                 avatarUrl: userData.avatarUrl
@@ -531,7 +529,7 @@ export class GitlabApiService {
             response.forEach((member) => {
                 allMembers.push({
                     provider: 'gitlab',
-                    providerId: member.id,
+                    providerId: member.id.toString(),
                     username: member.username,
                     displayName: member.name,
                     avatarUrl: member.avatar_url

@@ -16,6 +16,7 @@ import { DatabaseService } from 'src/database/database.service'
 import { Workspace } from 'src/database/schemas/workspace.schema'
 import { GetPRDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
 import { GitlabEventsService } from 'src/gitlab/gitlab-events.service'
+import { RepositoryDto } from 'src/workspace/dto/make-subscription.dto'
 import { GitlabApiService } from './gitlab-api.service'
 
 @Injectable()
@@ -129,20 +130,10 @@ export class GitlabService {
         )
     }
 
-    async addWebhook(user: any, repo: string): Promise<any> {
-        const userData = await this.dataService.users
-            .findOne({ _id: user.sub })
-            .populate('currentWorkspace')
-        if (
-            !userData ||
-            !userData?.accessToken ||
-            !userData?.currentWorkspace
-        ) {
-            throw new Error(
-                'User or current workspace not found or installation ID missing'
-            )
-        }
-
+    async addWebhook(
+        userData: any,
+        repositories: RepositoryDto[]
+    ): Promise<any> {
         const webhookUrl = `${this.configService.get('BASE_URL')}/v1/gitlab/events`
         const events = [
             'push',
@@ -157,12 +148,19 @@ export class GitlabService {
             'release'
         ]
 
-        return await this.gitlabApiService.addWebhook(
-            userData?.accessToken,
-            repo,
-            webhookUrl,
-            events
-        )
+        const webhookPromises = repositories.map(async (repository) => {
+            const webhook = await this.gitlabApiService.addWebhook(
+                userData?.accessToken,
+                repository.slug,
+                webhookUrl,
+                events
+            )
+            return {
+                ...repository,
+                webhookToken: webhook.id
+            }
+        })
+        return await Promise.all(webhookPromises)
     }
 
     async handleOAuthCallback(code: string): Promise<any> {

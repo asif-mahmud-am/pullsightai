@@ -8,7 +8,6 @@ import {
     UseGuards
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
-import { AddWebhookDto } from 'src/common/dto/add-webhook.dto'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
 import { GetPRDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
 import { GitlabEventsService } from './gitlab-events.service'
@@ -63,18 +62,6 @@ export class GitlabController {
         return {
             message: 'Merge requests fetched successfully',
             result: await this.gitlabService.getPullRequests(req.user, getPRDto)
-        }
-    }
-
-    @UseGuards(AuthGuard('jwt-cookie'))
-    @Post('add-webhook')
-    async addWebhook(@Body() addWebhookDto: AddWebhookDto, @Req() req: any) {
-        return {
-            message: 'Webhook added successfully',
-            result: await this.gitlabService.addWebhook(
-                req.user,
-                addWebhookDto.repo
-            )
         }
     }
 

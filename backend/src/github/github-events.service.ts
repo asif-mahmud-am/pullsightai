@@ -174,6 +174,8 @@ export class GithubEventService {
                 provider: 'github',
                 prId: prData.id.toString(),
                 prUser: prData.user.login,
+                prUserAvatar: prData.user.avatar_url || '',
+                prUrl: prData.html_url || '',
                 owner: owner,
                 repo: repo,
                 prNumber: prNumber.toString(),
@@ -184,6 +186,8 @@ export class GithubEventService {
                 prState: prData.state,
                 prCreatedAt: prData.created_at,
                 prUpdatedAt: prData.updated_at,
+                prClosedAt: prData.closed_at || '',
+                prMergedAt: prData.merged_at || '',
                 prHeadBranch: prData.head.ref,
                 prBaseBranch: prData.base.ref,
                 prHeadSha: prData.head.sha,
@@ -239,15 +243,15 @@ export class GithubEventService {
     // Parse diff into structured hunks
     private parseDiffHunks(diff: string): string[] {
         if (!diff) return []
-        
+
         const hunks: string[] = []
         const hunkRegex = /@@[^@]*@@.*?(?=@@|$)/gs
-        
+
         let match
         while ((match = hunkRegex.exec(diff)) !== null) {
             hunks.push(match[0])
         }
-        
+
         return hunks
     }
 }

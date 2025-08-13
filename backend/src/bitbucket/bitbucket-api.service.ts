@@ -195,23 +195,21 @@ export class BitbucketApiService {
 
         response.values.map((pr) => {
             allPullRequests.push({
-                id: pr.id,
-                nodeId: `BB_${pr.id}`,
+                provider: 'bitbucket',
+                prId: pr.id,
                 prNumber: pr.id,
-                title: pr.title,
-                status: pr.state.toLowerCase(),
-                author: {
-                    username: pr.author.nickname,
-                    avatarUrl: pr.author.links?.avatar?.href
-                },
-                createdOn: pr.created_on,
-                updatedOn: pr.updated_on,
-                closedOn:
+                prTitle: pr.title,
+                prState: pr.state.toLowerCase(),
+                prUser: pr.author.nickname,
+                prUserAvatar: pr.author.links?.avatar?.href,
+                prCreatedAt: pr.created_on,
+                prUpdatedAt: pr.updated_on,
+                prClosedAt:
                     pr.state === 'DECLINED' || pr.state === 'SUPERSEDED'
                         ? pr.updated_on
                         : null,
-                mergedOn: pr.state === 'MERGED' ? pr.updated_on : null,
-                url: pr.links.html.href
+                prMergedAt: pr.state === 'MERGED' ? pr.updated_on : null,
+                prUrl: pr.links.html.href
             })
         })
         return allPullRequests
@@ -235,7 +233,7 @@ export class BitbucketApiService {
             response.values.forEach((member) => {
                 allMembers.push({
                     provider: 'bitbucket',
-                    providerId: member.user?.uuid || member.uuid,
+                    providerId: member.user?.uuid.toString(),
                     username: member.user?.nickname,
                     displayName:
                         member.user?.display_name || member.display_name,

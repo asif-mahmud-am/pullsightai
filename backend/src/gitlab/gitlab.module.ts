@@ -10,6 +10,6 @@ import { GitlabService } from './gitlab.service'
     imports: [HttpModule, DatabaseModule],
     controllers: [GitlabController],
     providers: [GitlabService, GitlabApiService, GitlabEventsService],
-    exports: [GitlabEventsService]
+    exports: [GitlabEventsService, GitlabService]
 })
 export class GitlabModule {}

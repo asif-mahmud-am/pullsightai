@@ -12,14 +12,14 @@ async function bootstrap() {
         origin: [
             'http://localhost:3000',
             'https://dev-web.pullsight.ai',
-            'https://pullsight.ai'
+            'https://pullsight.ai',
+            'https://stage-web.pullsight.ai'
         ],
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
         preflightContinue: false,
         optionsSuccessStatus: 204,
         credentials: true
     }
-
 
     // Increase request body size limit (default: 100kb)
     app.use(bodyParser.json({ limit: '10mb' })) // Set the limit as per needs

@@ -37,7 +37,7 @@ export default function AuthGuardClient({ children }: { children: ReactNode }) {
                 redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_5);
             }else if (onboardingStep === 6) {
                 redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_6);
-            } else {
+            } else if(pathname.includes('onboarding') || pathname.includes('auth')) {
                 redirect(ROUTE_CONSTANTS.DASHBOARD);
             }
         }

@@ -7,24 +7,23 @@ import DashboardNavbar from "./dashboardNavbar";
 
 const DashboardLayout = ({ children }: { children: ReactNode }) => {
     return (
-        // <AuthGuardServer>
-        //     <AuthGuardClient>
-        <div>
-            <DashboardNavbar />
-            <div className="flex h-screen">
-                <header className="bg-dark-900 shadow">
-                    <div className="container mx-auto py-4">
-                        <DashboardSidebar />
+        <AuthGuardServer>
+            <AuthGuardClient>
+                <div>
+                    <DashboardNavbar />
+                    <div className="flex h-screen">
+                        <header className="bg-dark-900 shadow">
+                            <div className="container mx-auto py-4">
+                                <DashboardSidebar />
+                            </div>
+                        </header>
+                        <main className="flex-1 container mx-auto py-4">
+                            {children}
+                        </main>
                     </div>
-                </header>
-                <main className="flex-1 container mx-auto py-4">
-                    {children}
-                </main>
-            </div>
-        </div>
-
-        //     </AuthGuardClient>
-        // </AuthGuardServer>
+                </div>
+            </AuthGuardClient>
+        </AuthGuardServer>
     );
 };
 

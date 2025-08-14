@@ -34,7 +34,7 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
 
     const getSeverityColor = (severity: string) => {
         switch (severity) {
-            case "Critical":
+            case "critical":
                 return "bg-red-900/30 text-red-300 border-red-700";
             case "warning":
                 return "bg-yellow-900/30 text-yellow-300 border-yellow-700";
@@ -55,33 +55,27 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
             <div className="border-b border-gray-700 p-4">
                 <div className="flex items-start gap-3">
                     <div className="w-10 h-10">
-                        {(pr?.author?.username || pr?.user?.username) && (
+                        {pr?.prUserAvatar  ? (
+                            <img
+                                src={pr.prUserAvatar}
+                                alt={pr.prUser}
+                                className="w-10 h-10 rounded-full"
+                                // onError={() => setAvatarError(true)}
+                            />
+                        ) : (
                             <div className="w-10 h-10 rounded-full bg-gray-700 text-gray-200 flex items-center justify-center font-bold">
-                                {(
-                                    pr?.author?.username ||
-                                    pr?.user?.username ||
-                                    ""
-                                )
-                                    .slice(0, 2)
-                                    .toUpperCase()}
+                                {pr?.prUser?.slice(0, 2).toUpperCase()}
                             </div>
-                            // ) : (
-                            //     <img
-                            //         src={pr.user.avatar_url}
-                            //         alt={pr.user.login}
-                            //         className="w-10 h-10 rounded-full"
-                            //         onError={() => setAvatarError(true)}
-                            //     />
                         )}
                     </div>
 
                     <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                             <span className="font-semibold text-gray-200">
-                                {pr?.author?.username}
+                                {pr?.prUser}
                             </span>
                             <Badge className="bg-purple-900/30 text-purple-300 border-purple-700">
-                                {pr.merged ? (
+                                {pr?.prState == 'merged' ? (
                                     <GitMerge className="w-3 h-3 mr-1" />
                                 ) : (
                                     <GitPullRequest className="w-3 h-3 mr-1" />
@@ -89,10 +83,10 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                                 PR #{pr?.prNumber} • {pr?.prState}
                             </Badge>
                             <span className="text-gray-400 text-sm">
-                                {humanizeDate(pr?.createdOn || "")}
+                                {humanizeDate(pr?.prCreatedAt || "")}
                             </span>
                             <a
-                                href={pr.html_url}
+                                href={pr?.prUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="cursor-pointer text-gray-400 hover:text-gray-200"
@@ -102,10 +96,10 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                         </div>
 
                         <h3 className="text-lg font-semibold text-gray-200 mb-2">
-                            {pr.prTitle || pr.title || "Untitled PR"}
+                            {pr.prTitle  || "Untitled PR"}
                         </h3>
 
-                        <div className="flex items-center gap-4 text-sm text-gray-400">
+                        {/* <div className="flex items-center gap-4 text-sm text-gray-400">
                             <span className="text-green-400">
                                 +{pr?.prAdditions}
                             </span>
@@ -116,7 +110,7 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                                 {pr?.prFilesChanged} file
                                 {pr?.prFilesChanged !== 1 ? "s" : ""} changed
                             </span>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             </div>

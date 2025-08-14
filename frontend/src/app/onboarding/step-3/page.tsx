@@ -96,23 +96,21 @@ const Step3Page = () => {
                                     items={
                                         pullRequests?.map((pr) => ({
                                             id: String(pr.prNumber),
-                                            title: pr.title || pr.prTitle,
+                                            title: pr.prTitle,
                                             avatar:
-                                                pr.user?.avatarUrl ||
-                                                pr.author?.avatarUrl,
+                                                pr.prUserAvatar || '',
                                             subtitle:
-                                                pr.user?.username ||
-                                                pr?.author?.username,
+                                                pr.prUser || '',
                                             status: {
-                                                label: pr.status,
+                                                label: pr.prState,
                                                 colorClass:
-                                                    pr.status === "closed" ||
-                                                    pr.status === "merged"
+                                                    pr.prState === "closed" ||
+                                                    pr.prState === "merged"
                                                         ? "bg-red-500 text-white"
                                                         : "bg-green-500 text-white",
                                             },
-                                            timestamp: pr.createdOn,
-                                            updatedAt: pr.updatedOn,
+                                            timestamp: pr.prCreatedAt,
+                                            updatedAt: pr.prUpdatedAt,
                                         })) || []
                                     }
                                     selectedId={selectedPR}

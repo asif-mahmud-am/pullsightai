@@ -346,6 +346,16 @@ export class GithubService {
     }
 
     async processGithubEvent(event: any, payload: any) {
+        const isApplicable =
+            await this.analysisService.checkApplicableForAnalysis(
+                payload.repository.name,
+                payload.repository.owner.login,
+                'github',
+                payload.sender.id.toString()
+            )
+        if (!isApplicable) {
+            return {}
+        }
         await this.dataService.eventLogs.create({
             eventName: event,
             provider: 'github',

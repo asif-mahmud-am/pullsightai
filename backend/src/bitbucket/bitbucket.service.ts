@@ -160,6 +160,16 @@ export class BitbucketService {
     }
 
     async processBitbucketEvent(event: any, payload: any) {
+        const isApplicable =
+            await this.analysisService.checkApplicableForAnalysis(
+                payload.repository.name,
+                payload.repository.owner.username,
+                'bitbucket',
+                payload.actor.uuid
+            )
+        if (!isApplicable) {
+            return {}
+        }
         await this.dataService.eventLogs.create({
             eventName: event,
             provider: 'bitbucket',

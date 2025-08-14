@@ -200,6 +200,17 @@ export class GitlabService {
     }
 
     async processGitlabEvent(event: any, payload: any) {
+        const isApplicable =
+            await this.analysisService.checkApplicableForAnalysis(
+                payload.project.path_with_namespace,
+                payload.project.namespace.path,
+                'gitlab',
+                payload.object_attributes.author_id.toString()
+            )
+        if (!isApplicable) {
+            return {}
+        }
+
         await this.dataService.eventLogs.create({
             eventName: event,
             provider: 'gitlab',

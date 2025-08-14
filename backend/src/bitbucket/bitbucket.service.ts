@@ -178,6 +178,11 @@ export class BitbucketService {
         let pullRequestFormattedData: StructuredPRData | boolean
         switch (event) {
             case 'pullrequest:created':
+                pullRequestFormattedData =
+                    await this.bitbucketEventsService.handleBitbucketPullRequest(
+                        payload
+                    )
+                break
             case 'pullrequest:updated':
                 pullRequestFormattedData =
                     await this.bitbucketEventsService.handleBitbucketPullRequest(

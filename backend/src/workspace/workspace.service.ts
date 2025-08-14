@@ -24,53 +24,11 @@ export class WorkspaceService {
     ) {
         const userData =
             await this.analysisService.getUserDataWithWorkspace(user)
-        makeSubscriptionDto.members.map(async (member) => {
-            const user = await this.dataService.workspaceMembers.findOne({
-                providerId: member.providerId,
-                provider: userData.provider,
-                workspace: userData?.currentWorkspace!._id
-            })
-            if (!user) {
-                await this.dataService.workspaceMembers.create({
-                    providerId: member.providerId,
-                    provider: userData.provider,
-                    username: member.username,
-                    role:
-                        userData.providerId == member.providerId
-                            ? MemberRole.OWNER
-                            : MemberRole.OWNER,
-                    user:
-                        userData.providerId == member.providerId
-                            ? userData._id
-                            : null,
-                    workspace: userData?.currentWorkspace!._id,
-                    isActive: true,
-                    invitedAt: new Date()
-                })
-            } else {
-                await this.dataService.workspaceMembers.updateOne(
-                    { _id: user._id },
-                    {
-                        $set: {
-                            role:
-                                userData.providerId == member.providerId
-                                    ? MemberRole.OWNER
-                                    : MemberRole.OWNER,
-                            isActive: true
-                        }
-                    }
-                )
-            }
-        })
-
         let repositories = makeSubscriptionDto.repositories
         switch (userData?.provider) {
-            // case 'github':
-            //     await this.createGithubRepositories(
-            //         makeSubscriptionDto,
-            //         userData
-            //     )
-            //     break
+            case 'github':
+                repositories = makeSubscriptionDto.repositories
+                break
             case 'gitlab':
                 repositories = await this.gitlabService.addWebhook(
                     userData,
@@ -118,6 +76,44 @@ export class WorkspaceService {
                 }
             })
         )
+        makeSubscriptionDto.members.map(async (member) => {
+            const user = await this.dataService.workspaceMembers.findOne({
+                providerId: member.providerId,
+                provider: userData.provider,
+                workspace: userData?.currentWorkspace!._id
+            })
+            if (!user) {
+                await this.dataService.workspaceMembers.create({
+                    providerId: member.providerId,
+                    provider: userData.provider,
+                    username: member.username,
+                    role:
+                        userData.providerId == member.providerId
+                            ? MemberRole.OWNER
+                            : MemberRole.OWNER,
+                    user:
+                        userData.providerId == member.providerId
+                            ? userData._id
+                            : null,
+                    workspace: userData?.currentWorkspace!._id,
+                    isActive: true,
+                    invitedAt: new Date()
+                })
+            } else {
+                await this.dataService.workspaceMembers.updateOne(
+                    { _id: user._id },
+                    {
+                        $set: {
+                            role:
+                                userData.providerId == member.providerId
+                                    ? MemberRole.OWNER
+                                    : MemberRole.OWNER,
+                            isActive: true
+                        }
+                    }
+                )
+            }
+        })
         return {}
     }
 

@@ -152,7 +152,7 @@ export class BitbucketService {
 
         return await this.bitbucketApiService.getPullRequests(
             userData.accessToken as string,
-            userData?.currentWorkspace['name'] as string,
+            userData?.currentWorkspace['slug'] as string,
             getPRDto.repo,
             getPRDto.status,
             +getPRDto.limit

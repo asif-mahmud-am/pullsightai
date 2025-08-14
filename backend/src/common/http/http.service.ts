@@ -8,6 +8,7 @@ export class HttpService {
     constructor(private readonly http: NestHttpService) {}
 
     private convertAxiosError(error: AxiosError): never {
+        console.error('Third party api error:==========', error?.response?.data)
         const status =
             error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR
         const responseData = error.response?.data as any

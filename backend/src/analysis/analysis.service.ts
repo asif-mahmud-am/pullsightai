@@ -41,9 +41,7 @@ export class AnalysisService {
     ) {
         const repository = await this.dataService.repositories.findOne({
             slug: repositorySlug,
-            author: {
-                username: workspaceSlug
-            },
+            'author.username': workspaceSlug,
             provider: provider
         })
         if (!repository) {

@@ -2,8 +2,11 @@
 
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ColumnDef } from "@tanstack/react-table";
+import { Repository } from "@/types/repository";
+import { PullRequest } from "@/types/pullRequest";
 
-export const columns = [
+export const columns: ColumnDef<PullRequest>[] = [
     {
         accessorKey: "PR Title",
         header: "PR Title",

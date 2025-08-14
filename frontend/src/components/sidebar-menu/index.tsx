@@ -127,31 +127,31 @@ const SubMenu = ({ label, icon: Icon, children, id }: SubMenuProps) => {
 
     // Auto-open submenu when route matches
     useLayoutEffect(() => {
-        const hasActiveChild = (nodes: ReactNode): boolean => {
-            let found = false;
-            Children.forEach(nodes, (child) => {
-                if (isValidElement(child)) {
-                    const props = child.props as any;
-                    if (props?.to) {
-                        const childPath = props.to;
-                        if (
-                            pathname === childPath ||
-                            pathname.startsWith(childPath + "/")
-                        ) {
-                            found = true;
-                        }
-                    }
-                    if (props?.children && hasActiveChild(props.children)) {
-                        found = true;
-                    }
-                }
-            });
-            return found;
-        };
+        // const hasActiveChild = (nodes: ReactNode): boolean => {
+        //     let found = false;
+        //     Children.forEach(nodes, (child) => {
+        //         if (isValidElement(child)) {
+        //             const props = child.props;
+        //             if (props?.to) {
+        //                 const childPath = props.to;
+        //                 if (
+        //                     pathname === childPath ||
+        //                     pathname.startsWith(childPath + "/")
+        //                 ) {
+        //                     found = true;
+        //                 }
+        //             }
+        //             if (props?.children && hasActiveChild(props.children)) {
+        //                 found = true;
+        //             }
+        //         }
+        //     });
+        //     return found;
+        // };
 
-        if (hasActiveChild(children) && openSubMenu !== id) {
-            setOpenSubMenu(id);
-        }
+        // if (hasActiveChild(children) && openSubMenu !== id) {
+        //     setOpenSubMenu(id);
+        // }
     }, [pathname, children, id, openSubMenu, setOpenSubMenu]);
 
     return (

@@ -37,7 +37,7 @@ export const useUpdateUserMutation = () => {
     return useMutation({
         mutationFn: authEndpoints.updateUser,
         onSuccess: (data) => {
-            // setUser({ ...user, ...data });
+            setUser({ ...user, ...data.data });
             queryClient.invalidateQueries({ queryKey: ["user", "repos"] });
         },
     });

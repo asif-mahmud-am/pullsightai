@@ -204,7 +204,6 @@ export class GitlabApiService {
                 headers: this.getAuthHeaders(accessToken)
             }
         )
-
         const repositories: Repository[] = projects.map(
             (project: any) =>
                 ({
@@ -215,11 +214,8 @@ export class GitlabApiService {
                     createdOn: project.created_at,
                     updatedOn: project.last_activity_at || project.updated_at,
                     author: {
-                        username:
-                            project.owner?.username ||
-                            project.namespace?.name ||
-                            'unknown',
-                        avatarUrl: project.owner?.avatar_url || null
+                        username: project.namespace?.path,
+                        avatarUrl: project.namespace?.avatar_url
                     },
                     private: project.visibility === 'private',
                     openIssues: project.open_issues_count
@@ -241,6 +237,7 @@ export class GitlabApiService {
                 headers: this.getAuthHeaders(accessToken)
             }
         )
+        console.log('Projects:', projects)
         const repositories: Repository[] = projects.map(
             (project: any) =>
                 ({
@@ -251,11 +248,8 @@ export class GitlabApiService {
                     createdOn: project.created_at,
                     updatedOn: project.last_activity_at || project.updated_at,
                     author: {
-                        username:
-                            project.owner?.username ||
-                            project.namespace?.name ||
-                            'unknown',
-                        avatarUrl: project.owner?.avatar_url || null
+                        username: project.namespace?.path,
+                        avatarUrl: project.namespace?.avatar_url || null
                     },
                     private: project.visibility === 'private',
                     openIssues: project.open_issues_count

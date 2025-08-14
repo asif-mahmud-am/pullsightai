@@ -202,7 +202,7 @@ export class GitlabService {
     async processGitlabEvent(event: any, payload: any) {
         await this.dataService.eventLogs.create({
             eventName: event,
-            provider: 'github',
+            provider: 'gitlab',
             eventPayload: payload
         })
         let pullRequestFormattedData: StructuredPRData | boolean

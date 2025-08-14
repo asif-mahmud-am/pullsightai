@@ -4,8 +4,11 @@ import { useState } from "react";
 import { columns } from "@/components/dataTable/repositoriesDataTable";
 import { DataTable } from "@/components/reusable/DataTable";
 import { List, Grid, Info } from "lucide-react";
+import { PullRequest } from "@/types/pullRequest";
+import { Repository } from "@/types/repository";
 
-const data = [
+/* eslint-disable  @typescript-eslint/no-explicit-any */
+const data: any[] = [
     {
         active: true,
         title: "shared-libs",

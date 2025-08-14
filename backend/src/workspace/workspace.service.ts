@@ -36,8 +36,8 @@ export class WorkspaceService {
                 )
                 break
             case 'bitbucket':
-                await this.bitbucketService.addWebhook(
-                    makeSubscriptionDto,
+                repositories = await this.bitbucketService.addWebhook(
+                    userData,
                     makeSubscriptionDto.repositories
                 )
                 break

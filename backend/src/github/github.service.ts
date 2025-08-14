@@ -328,10 +328,28 @@ export class GithubService {
     async getOrgMembers(user: any) {
         const userData =
             await this.analysisService.getUserDataWithWorkspace(user)
+
+        const workspace = userData.currentWorkspace as any
         const octokit = await this.githubEventService.initOctokitApp(
-            Number(userData.currentWorkspace!['installationId'])
+            Number(workspace.installationId)
         )
-        const org = userData.currentWorkspace!['slug']
+        if (workspace.type === 'User') {
+            const { data: user } = await octokit.rest.users.getByUsername({
+                username: workspace.slug
+            })
+
+            return [
+                {
+                    provider: 'github',
+                    providerId: user.id.toString(),
+                    username: user.login,
+                    avatarUrl: user.avatar_url,
+                    displayName: user.name || user.login
+                }
+            ]
+        }
+
+        const org = workspace.slug
         const members = await octokit.paginate(octokit.orgs.listMembers, {
             org: org,
             per_page: 100

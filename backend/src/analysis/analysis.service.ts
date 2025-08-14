@@ -16,7 +16,6 @@ import { GitlabEventsService } from 'src/gitlab/gitlab-events.service'
 export class AnalysisService {
     constructor(
         private readonly dataService: DatabaseService,
-        // @Inject(forwardRef(() => GithubEventService))
         private readonly githubEventService: GithubEventService,
         private readonly bitbucketEventsService: BitbucketEventsService,
         private readonly gitlabEventsService: GitlabEventsService,
@@ -32,6 +31,29 @@ export class AnalysisService {
             throw new Error('User or current workspace not found')
         }
         return userData
+    }
+
+    async checkApplicableForAnalysis(
+        repositorySlug: string,
+        workspaceSlug: string,
+        provider: string,
+        providerId: string
+    ) {
+        const repository = await this.dataService.repositories.findOne({
+            slug: repositorySlug,
+            author: {
+                username: workspaceSlug
+            },
+            provider: provider
+        })
+        if (!repository) {
+            return false
+        }
+        return await this.dataService.workspaceMembers.countDocuments({
+            provider: provider,
+            providerId: providerId,
+            workspace: repository.workspace
+        })
     }
 
     async makeAnalysis(pullRequestFormattedData: StructuredPRData) {

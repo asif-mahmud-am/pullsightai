@@ -80,7 +80,7 @@ export class AuthService {
                 _id: user.sub
             },
             { ...updateProfileDto },
-            { new: true, fields: 'onboardingStep currentWorkspace' }
+            { new: true }
         )
     }
 }

@@ -503,13 +503,15 @@ export class GitlabApiService {
         // GitLab API endpoint differs for groups vs projects
         let url: string
         if (currentWorkspace.type == OrgType.USER) {
-            return {
-                provider: 'gitlab',
-                providerId: userData.id.toString(),
-                username: userData.username,
-                displayName: userData.displayName,
-                avatarUrl: userData.avatarUrl
-            }
+            return [
+                {
+                    provider: 'gitlab',
+                    providerId: userData.id.toString(),
+                    username: userData.username,
+                    displayName: userData.displayName,
+                    avatarUrl: userData.avatarUrl
+                }
+            ]
             // url = `${this.baseUrl}/projects/${encodeURIComponent(workspace.slug)}/members/all?per_page=100`
         } else {
             url = `${this.baseUrl}/groups/${encodeURIComponent(currentWorkspace.slug)}/members/all?per_page=100`

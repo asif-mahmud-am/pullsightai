@@ -22,6 +22,10 @@ import {
     RepositoryDocument
 } from 'src/database/schemas/repository.schema'
 import {
+    WorkspaceMember,
+    WorkspaceMemberDocument
+} from 'src/database/schemas/workspace-members.schema'
+import {
     Workspace,
     WorkspaceDocument
 } from 'src/database/schemas/workspace.schema'
@@ -36,6 +40,7 @@ export class DatabaseService {
     pullRequestAnalysis: PaginateModel<PullRequestAnalysisDocument>
     eventLogs: PaginateModel<EventLogDocument>
     pullRequests: PaginateModel<PullRequestDocument>
+    workspaceMembers: PaginateModel<WorkspaceMemberDocument>
     constructor(
         @InjectModel(User.name)
         private UserRepository: PaginateModel<UserDocument>,
@@ -50,7 +55,9 @@ export class DatabaseService {
         @InjectModel(EventLog.name)
         private EventLogRepository: PaginateModel<EventLogDocument>,
         @InjectModel(PullRequest.name)
-        private PullRequestRepository: PaginateModel<PullRequestDocument>
+        private PullRequestRepository: PaginateModel<PullRequestDocument>,
+        @InjectModel(WorkspaceMember.name)
+        private TeamMemberRepository: PaginateModel<WorkspaceMemberDocument>
     ) {}
     onApplicationBootstrap() {
         this.users = this.UserRepository
@@ -61,5 +68,6 @@ export class DatabaseService {
         this.pullRequestAnalysis = this.PullRequestAnalysisRepository
         this.eventLogs = this.EventLogRepository
         this.pullRequests = this.PullRequestRepository
+        this.workspaceMembers = this.TeamMemberRepository
     }
 }

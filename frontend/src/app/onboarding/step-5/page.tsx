@@ -3,7 +3,7 @@
 import { Organization } from "@/types/organization";
 import ActionFooter from "../ActionFooter";
 import SelectableList from "../SelectableList";
-import { useState } from "react";
+import { use, useState } from "react";
 import { redirect, useSearchParams } from "next/navigation";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
 import { StarBullet } from "@/components/reusable/icons";
@@ -13,10 +13,15 @@ import RepositoryList from "./RepositoryList";
 import MemberList from "./MemberList";
 import { useOrganizationMembersQuery } from "@/api/queries/member";
 import { useAuthStore } from "@/store/authStore";
+import { useMakeSubscriptionMutation } from "@/api/queries/workspace";
+import { TeamMember } from "@/types/user";
+import { Repository } from "@/types/repository";
+import { useUpdateUserMutation } from "@/api/queries/auth";
 
 const Step5Page = () => {
-    const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
-    const [selectedRepositories, setSelectedRepositories] = useState<string[]>(
+    const user = useAuthStore((state) => state.user);
+    const [selectedMembers, setSelectedMembers] = useState<TeamMember[]>([]);
+    const [selectedRepositories, setSelectedRepositories] = useState<Repository[]>(
         []
     );
 
@@ -25,9 +30,39 @@ const Step5Page = () => {
     const repoId = searchParams.get("repoId") as string;
     const prId = searchParams.get("prId") as string;
 
+
+    const {mutateAsync:createSubscription, isPending: isCreatingSubscription} = useMakeSubscriptionMutation()
+        const { mutateAsync: updateUser, isPending: isUpdatingUser } = useUpdateUserMutation();
+
     const onStepComplete = () => {
-        // You can add your API call or navigation logic here
-        // redirect(`/dashboard`);
+        if(!selectedMembers.length || !selectedRepositories.length) {
+            return;
+        }
+        const repositories = selectedRepositories.map((repo) => {
+            return {
+                ...repo,
+                id: repo.id.toString(),
+            }
+        })
+
+        createSubscription({
+            members: selectedMembers,
+            repositories,
+        }).then(() => {
+            updateUser({
+                onboardingStep: 0,
+                currentWorkspace:
+                    typeof user?.currentWorkspace === "object" && user?.currentWorkspace !== null
+                        ? user.currentWorkspace._id
+                        : typeof user?.currentWorkspace === "string"
+                        ? user.currentWorkspace
+                        : "",
+            }).then(() => {
+                redirect(ROUTE_CONSTANTS.DASHBOARD);
+            });
+        }).catch((error) => {
+            console.error("Error creating subscription:", error);
+        });
     };
 
     return (
@@ -101,6 +136,7 @@ const Step5Page = () => {
                     selectedMembers.length > 0 &&
                     selectedRepositories.length > 0
                 }
+                isLoading={isCreatingSubscription || isUpdatingUser}
                 onClick={onStepComplete}
                 onBackClick={() =>
                     redirect(

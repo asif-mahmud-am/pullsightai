@@ -36,13 +36,16 @@ export class AuthService {
                 username: profile.username,
                 displayName: profile.displayName,
                 email: profile.emails?.[0]?.value,
-                avatarUrl: profile.photos?.[0]?.value,
+                avatarUrl: profile.photos?.[0]?.value || profile.avatarUrl,
                 accessToken,
                 refreshToken,
                 tokenExpiresAt,
                 raw: profile._raw
             })
         } else {
+            user.displayName = profile.displayName
+            user.email = profile.emails?.[0]?.value
+            user.avatarUrl = profile.photos?.[0]?.value || profile.avatarUrl
             user.accessToken = accessToken
             user.refreshToken = refreshToken
             user.tokenExpiresAt = tokenExpiresAt

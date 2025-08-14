@@ -419,20 +419,18 @@ export class GitlabApiService {
         return mergeRequests.map(
             (mr: any) =>
                 ({
-                    id: mr.id,
-                    nodeId: `GL_${mr.id}`,
+                    provider: 'github',
+                    prId: mr.id,
                     prNumber: mr.iid,
-                    title: mr.title,
-                    status: mr.state,
-                    author: {
-                        username: mr.author?.username || 'unknown',
-                        avatarUrl: mr.author?.avatar_url || null
-                    },
-                    createdOn: mr.created_at,
-                    updatedOn: mr.updated_at,
-                    closedOn: mr.closed_at,
-                    mergedOn: mr.merged_at,
-                    url: mr.web_url
+                    prTitle: mr.title,
+                    prState: mr.state,
+                    prUser: mr.author?.username || 'unknown',
+                    prUserAvatar: mr.author?.avatar_url || '',
+                    prCreatedAt: mr.created_at,
+                    prUpdatedAt: mr.updated_at,
+                    prClosedAt: mr.closed_at,
+                    prMergedAt: mr.merged_at,
+                    prUrl: mr.web_url
                 }) as PullRequestResponse
         )
     }
@@ -504,19 +502,23 @@ export class GitlabApiService {
     /**
      * Get group/project members for GitLab
      */
-    async getOrgMembers(
-        accessToken: string,
-        groupId: string,
-        isProject: boolean = false
-    ): Promise<any[] | { error: string; message: string; members: any[] }> {
+    async getOrgMembers(userData: any) {
+        const { accessToken, currentWorkspace } = userData
         let allMembers: any[] = []
 
         // GitLab API endpoint differs for groups vs projects
         let url: string
-        if (isProject) {
-            url = `${this.baseUrl}/projects/${encodeURIComponent(groupId)}/members/all?per_page=100`
+        if (currentWorkspace.type == OrgType.USER) {
+            return {
+                provider: 'gitlab',
+                providerId: userData.id.toString(),
+                username: userData.username,
+                displayName: userData.displayName,
+                avatarUrl: userData.avatarUrl
+            }
+            // url = `${this.baseUrl}/projects/${encodeURIComponent(workspace.slug)}/members/all?per_page=100`
         } else {
-            url = `${this.baseUrl}/groups/${encodeURIComponent(groupId)}/members/all?per_page=100`
+            url = `${this.baseUrl}/groups/${encodeURIComponent(currentWorkspace.slug)}/members/all?per_page=100`
         }
 
         const response = await this.httpService.get(url, {
@@ -527,7 +529,7 @@ export class GitlabApiService {
             response.forEach((member) => {
                 allMembers.push({
                     provider: 'gitlab',
-                    providerId: member.id,
+                    providerId: member.id.toString(),
                     username: member.username,
                     displayName: member.name,
                     avatarUrl: member.avatar_url

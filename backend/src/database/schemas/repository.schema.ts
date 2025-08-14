@@ -24,6 +24,9 @@ export class Repository {
     @Prop({ required: false, trim: true })
     slug: string
 
+    @Prop({ required: false, nullable: true })
+    webhookToken: string
+
     @Prop({ required: true, trim: true })
     provider: string
 
@@ -45,8 +48,8 @@ export class Repository {
     @Prop({ required: false, type: Object })
     author: Author
 
-    @Prop({ required: false })
-    isActives?: boolean
+    @Prop({ required: true, default: true })
+    isActive: boolean
 
     @Prop({
         required: true,

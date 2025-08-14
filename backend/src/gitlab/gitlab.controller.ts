@@ -8,7 +8,6 @@ import {
     UseGuards
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
-import { AddWebhookDto } from 'src/common/dto/add-webhook.dto'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
 import { GetPRDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
 import { GitlabEventsService } from './gitlab-events.service'
@@ -66,23 +65,9 @@ export class GitlabController {
         }
     }
 
-    @UseGuards(AuthGuard('jwt-cookie'))
-    @Post('add-webhook')
-    async addWebhook(@Body() addWebhookDto: AddWebhookDto, @Req() req: any) {
-        return {
-            message: 'Webhook added successfully',
-            result: await this.gitlabService.addWebhook(
-                req.user,
-                addWebhookDto.repo
-            )
-        }
-    }
-
     @Post('events')
     async gitlabEvents(@Body() body: any, @Req() req) {
         const event = req.headers['x-gitlab-event']
-        console.log('Received GitLab event type:', event)
-        console.log('Received GitLab event:', body)
         return {
             message: 'GitLab events processed successfully',
             result: await this.gitlabService.processGitlabEvent(event, body)

@@ -197,20 +197,18 @@ export class GithubService {
         const prList: PullRequestResponse[] = []
         pullRequests.map((pr) => {
             prList.push({
-                id: pr.id,
-                nodeId: pr.node_id,
+                provider: 'github',
+                prId: pr.id,
                 prNumber: pr.number,
-                title: pr.title,
-                status: pr.state,
-                author: {
-                    username: pr.user?.login || 'Unknown',
-                    avatarUrl: pr.user?.avatar_url || ''
-                },
-                createdOn: pr.created_at,
-                updatedOn: pr.updated_at,
-                closedOn: pr.closed_at,
-                mergedOn: pr.merged_at,
-                url: pr.html_url
+                prTitle: pr.title,
+                prState: pr.state,
+                prUser: pr.user?.login || 'Unknown',
+                prUserAvatar: pr.user?.avatar_url || '',
+                prCreatedAt: pr.created_at,
+                prUpdatedAt: pr.updated_at,
+                prClosedAt: pr.closed_at,
+                prMergedAt: pr.merged_at,
+                prUrl: pr.html_url
             } as PullRequestResponse)
         })
         return prList
@@ -340,7 +338,7 @@ export class GithubService {
         })
         return members.map((member) => ({
             provider: 'github',
-            providerId: member.id,
+            providerId: member.id.toString(),
             username: member.login,
             avatarUrl: member.avatar_url,
             displayName: member.login

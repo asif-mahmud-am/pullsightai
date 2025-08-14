@@ -15,6 +15,8 @@ export interface PullRequestData {
     provider: string
     prId: string
     prUser: string
+    prUserAvatar: string
+    prUrl: string
     owner: string
     repo: string
     prNumber: string
@@ -25,6 +27,8 @@ export interface PullRequestData {
     prState: string
     prCreatedAt: string
     prUpdatedAt: string
+    prClosedAt: string
+    prMergedAt: string
     prHeadBranch: string
     prBaseBranch: string
     prHeadSha: string

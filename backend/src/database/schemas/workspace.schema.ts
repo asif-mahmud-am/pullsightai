@@ -56,6 +56,17 @@ export class Workspace {
                 : Types.ObjectId.createFromHexString(value)
     })
     ownerId?: Types.ObjectId
+
+    @Prop({
+        required: false,
+        type: Types.ObjectId,
+        ref: 'Team',
+        set: (value) =>
+            Types.ObjectId.isValid(value)
+                ? value
+                : Types.ObjectId.createFromHexString(value)
+    })
+    team?: Types.ObjectId
 }
 
 const schema = SchemaFactory.createForClass(Workspace)

@@ -26,7 +26,7 @@ export class GitlabEventsService {
         }
 
         // console.log('Handling GitLab Merge Request:', payload)
-        const workspace = project.namespace.id
+        const workspace = project.namespace.path
         const accessToken = await this.getAccessTokenForNamespace(workspace)
         const files = await this.fetchMRFiles(
             project.id,
@@ -83,8 +83,10 @@ export class GitlabEventsService {
                     mergeRequest.author?.username ||
                     payload.user?.username ||
                     'unknown',
+                prUserAvatar: mergeRequest.author?.avatar_url || '',
+                prUrl: mergeRequest.web_url,
                 owner: project.namespace.path,
-                repo: project.name,
+                repo: project.path_with_namespace,
                 prNumber: mergeRequest.iid.toString(),
                 installationId: 'gitlab_integration', // GitLab doesn't have installation concept
                 prRepoName: project.path_with_namespace,
@@ -93,6 +95,8 @@ export class GitlabEventsService {
                 prState: mergeRequest.state,
                 prCreatedAt: mergeRequest.created_at,
                 prUpdatedAt: mergeRequest.updated_at,
+                prClosedAt: mergeRequest.closed_at || '',
+                prMergedAt: mergeRequest.merged_at || '',
                 prHeadBranch: mergeRequest.source_branch,
                 prBaseBranch: mergeRequest.target_branch,
                 prHeadSha: mergeRequest.last_commit?.id || 'unknown',
@@ -109,7 +113,7 @@ export class GitlabEventsService {
         workspace: string
     ): Promise<string> {
         const workspaceRecord = await this.dataService.workspaces.findOne({
-            id: workspace,
+            slug: workspace,
             provider: 'gitlab'
         })
 
@@ -126,7 +130,7 @@ export class GitlabEventsService {
         )
 
         const now = new Date()
-        const expiryBuffer = 5 * 60 * 1000 // 5 minutes in milliseconds
+        const expiryBuffer = 5 * 60 * 1000
         const isTokenExpired =
             userData?.tokenExpiresAt &&
             new Date(userData.tokenExpiresAt).getTime() <
@@ -249,8 +253,8 @@ export class GitlabEventsService {
         analysis: PullRequestAnalysis,
         comments: PullRequestAnalysisComment[]
     ): Promise<any> {
-        const accessToken = await this.getAccessTokenForProject(
-            analysis.repositorySlug
+        const accessToken = await this.getAccessTokenForNamespace(
+            analysis.workspaceSlug
         )
 
         const actualProjectId = encodeURIComponent(analysis.repositorySlug)
@@ -329,8 +333,8 @@ export class GitlabEventsService {
     }
 
     async addPRSummery(analysis: PullRequestAnalysis): Promise<any> {
-        const accessToken = await this.getAccessTokenForProject(
-            analysis.repositorySlug
+        const accessToken = await this.getAccessTokenForNamespace(
+            analysis.workspaceSlug
         )
 
         const actualProjectId = encodeURIComponent(analysis.repositorySlug)
@@ -409,31 +413,6 @@ export class GitlabEventsService {
             }
         })
         return response
-    }
-
-    private async getAccessTokenForProject(projectId: string): Promise<string> {
-        const workspaceRecord = await this.dataService.workspaces.findOne({
-            slug: projectId,
-            provider: 'gitlab'
-        })
-
-        if (workspaceRecord?._id) {
-            const userData = await this.dataService.users.findOne(
-                { workspaces: workspaceRecord._id },
-                'accessToken'
-            )
-
-            if (!userData?.accessToken) {
-                throw new BadRequestException(
-                    'No user found with access token for the provided GitLab project'
-                )
-            }
-            return userData.accessToken
-        } else {
-            throw new BadRequestException(
-                'No workspace found for the provided GitLab project'
-            )
-        }
     }
 
     private parseDiffHunks(diffContent: string): string[] {

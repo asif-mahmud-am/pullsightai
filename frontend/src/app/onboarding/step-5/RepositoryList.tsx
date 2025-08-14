@@ -10,7 +10,7 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 
 interface Props {
-    onSelectionChange?: (selectedRepos: string[]) => void;
+    onSelectionChange?: (selectedRepos: Repository[]) => void;
 }
 
 export const columns: ColumnDef<Repository>[] = [
@@ -129,7 +129,7 @@ const RepositoryList = ({ onSelectionChange }: Props) => {
                     data={repositories}
                     initialSelection={shouldSelectMember}
                     onSelectionChange={(selectedRows) =>
-                        onSelectionChange?.(selectedRows.map((row) => row.id))
+                        onSelectionChange?.(selectedRows)
                     }
                 />
                 <div className="text-muted text-sm mt-3">

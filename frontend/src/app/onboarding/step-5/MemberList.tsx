@@ -8,7 +8,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import Image from "next/image";
 
 interface Props {
-    onSelectionChange?: (selectedRepos: string[]) => void;
+    onSelectionChange?: (selectedRepos: TeamMember[]) => void;
 }
 
 export const columns: ColumnDef<TeamMember>[] = [
@@ -99,9 +99,7 @@ const MemberList = ({ onSelectionChange }: Props) => {
                     data={members}
                     initialSelection={shouldSelectMember}
                     onSelectionChange={(selectedRows) =>
-                        onSelectionChange?.(
-                            selectedRows.map((row) => row.username)
-                        )
+                        onSelectionChange?.(selectedRows)
                     }
                 />
                 <div className="text-muted text-sm mt-3">

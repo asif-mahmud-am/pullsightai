@@ -21,13 +21,11 @@ export default function AuthGuardClient({ children }: { children: ReactNode }) {
         if (
             hydrated &&
             user &&
-            user.onboardingStep !== null &&
+            (user.onboardingStep ?? 0) > 0 &&
             !pathname.includes(ROUTE_CONSTANTS.ONBOARDING) // need to check current step and pathname to redirect to proper step
         ) {
             const onboardingStep = user.onboardingStep;
-            if (onboardingStep === 1) {
-                redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_1);
-            } else if (onboardingStep === 2) {
+            if (onboardingStep === 2) {
                 redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_2);
             } else if (onboardingStep === 3) {
                 redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_3);
@@ -35,12 +33,13 @@ export default function AuthGuardClient({ children }: { children: ReactNode }) {
                 redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_4);
             } else if (onboardingStep === 5) {
                 redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_5);
-            }else if (onboardingStep === 6) {
-                redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_6);
-            } else if(pathname.includes('onboarding') || pathname.includes('auth')) {
-                redirect(ROUTE_CONSTANTS.DASHBOARD);
+            }else{
+                redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_1);
             }
+        } else if(hydrated && user && (user.onboardingStep ?? 0) == 0 && (pathname.includes(ROUTE_CONSTANTS.ONBOARDING) || pathname.includes('auth'))) {
+            redirect(ROUTE_CONSTANTS.DASHBOARD);
         }
+
     }, [user, hydrated]);
 
     if (!hydrated)

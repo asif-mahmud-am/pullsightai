@@ -283,14 +283,21 @@ const Step4Page = () => {
                                         </div>
                                     </div>
                                     <div className="col-span-1 text-center">
-                                        {data?.pullRequest?.prState}
+                                        
+                                        <span
+                                            className={`px-2 py-1 rounded-full text-xs font-medium ${data?.pullRequest?.prState === "merged" || data?.pullRequest?.prState === "closed"
+                                                ? "bg-red-500 text-white"
+                                                : "bg-green-500 text-white"}`}
+                                        >
+                                            {data?.pullRequest?.prState}
+                                        </span>
                                     </div>
-                                    <div className="col-span-1 text-right">
+                                    <div className="col-span-1 text-right text-sm">
                                         {formatDate(
                                             data?.pullRequest?.createdAt
                                         )}
                                     </div>
-                                    <div className="col-span-1 text-right pr-4">
+                                    <div className="col-span-1 text-right text-sm pr-4">
                                         {formatDate(
                                             data?.pullRequest?.updatedAt
                                         )}

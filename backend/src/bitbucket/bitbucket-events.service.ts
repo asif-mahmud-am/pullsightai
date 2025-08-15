@@ -235,9 +235,6 @@ export class BitbucketEventsService {
     ): Promise<string | null> {
         try {
             if (!accessToken || !filePath) {
-                console.warn(
-                    'No access token or file path provided for Bitbucket file content API call'
-                )
                 return null
             }
             const bitbucketApiUrl =
@@ -245,12 +242,15 @@ export class BitbucketEventsService {
                 'https://api.bitbucket.org/2.0'
 
             const branchInfoUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/refs/branches/${encodeURIComponent(branch)}`
-            const branchInfo = await this.httpService.get(branchInfoUrl, {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    Accept: 'application/json'
+            const branchInfo = await this.httpService.getWithHandleCatch(
+                branchInfoUrl,
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                        Accept: 'application/json'
+                    }
                 }
-            })
+            )
 
             const commitSha = branchInfo.target?.hash
             if (!commitSha) {
@@ -259,7 +259,7 @@ export class BitbucketEventsService {
 
             const apiUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/src/${commitSha}/${filePath}`
             console.log('Fetching file content from:', apiUrl)
-            return this.httpService.get(apiUrl, {
+            return this.httpService.getWithHandleCatch(apiUrl, {
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
                     Accept: 'text/plain'

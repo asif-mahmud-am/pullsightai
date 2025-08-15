@@ -79,15 +79,20 @@ export class AnalysisService {
                 startedAt: new Date(),
                 pullRequest: savedPullRequestFormattedData._id
             })
-        this.httpService.post(
-            this.configService.get('AI_AGENT_PR_POST_URL') as string,
-            {
-                pullRequest: {
-                    ...pullRequestFormattedData.pullRequest,
-                    pullRequestAnalysisId: pullRequestAnalysis['_id']
+
+        try {
+            await this.httpService.post(
+                this.configService.get('AI_AGENT_PR_POST_URL') as string,
+                {
+                    pullRequest: {
+                        ...pullRequestFormattedData.pullRequest,
+                        pullRequestAnalysisId: pullRequestAnalysis['_id']
+                    }
                 }
-            }
-        )
+            )
+        } catch (error) {
+            console.error('Error sending data to AI agent:', error.message)
+        }
         return {
             pullRequestAnalysisId: pullRequestAnalysis['_id'],
             pullRequest: savedPullRequestFormattedData

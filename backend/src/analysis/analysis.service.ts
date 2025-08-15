@@ -95,6 +95,10 @@ export class AnalysisService {
     }
 
     async addPRReviewComments(postReviewDto: PullRequestAnalysisCommentsDto) {
+        console.log(
+            '=========Adding PR review comments:===========',
+            postReviewDto
+        )
         let analysis
         if (postReviewDto.completed) {
             analysis =

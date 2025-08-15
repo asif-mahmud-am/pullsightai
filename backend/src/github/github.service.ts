@@ -266,7 +266,7 @@ export class GithubService {
         const repositories: Repository[] = data.map(
             (repo) =>
                 ({
-                    id: repo.id,
+                    id: repo.id.toString(),
                     name: repo.name,
                     fullName: repo.full_name,
                     slug: repo.name,

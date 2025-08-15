@@ -238,23 +238,31 @@ export class BitbucketEventsService {
             )
             return null
         }
-
         const bitbucketApiUrl =
             this.configService.get('BITBUCKET_API_URL') ||
             'https://api.bitbucket.org/2.0'
 
-        // URL encode the branch name and file path to handle special characters like '/'
-        const encodedBranch = encodeURIComponent(branch)
-        const encodedFilePath = encodeURIComponent(filePath)
-
-        const apiUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/src/${encodedBranch}/${encodedFilePath}`
-
-        const response = await this.httpService.get(apiUrl, {
+        const branchInfoUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/refs/branches/${encodeURIComponent(branch)}`
+        const branchInfo = await this.httpService.get(branchInfoUrl, {
             headers: {
-                Authorization: `Bearer ${accessToken}`
+                Authorization: `Bearer ${accessToken}`,
+                Accept: 'application/json'
             }
         })
-        return response
+
+        const commitSha = branchInfo.target?.hash
+        if (!commitSha) {
+            throw new Error('No commit SHA found in branch info')
+        }
+
+        const apiUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/src/${commitSha}/${filePath}`
+
+        return this.httpService.get(apiUrl, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                Accept: 'text/plain'
+            }
+        })
     }
 
     async addPRReviewComments(
@@ -278,7 +286,7 @@ export class BitbucketEventsService {
                 }
             }
 
-            const apiUrl = `${bitbucketApiUrl}/repositories/${analysis.repositorySlug}/${analysis.repositorySlug}/pullrequests/${analysis.prNumber}/comments`
+            const apiUrl = `${bitbucketApiUrl}/repositories/${analysis.workspaceSlug}/${analysis.repositorySlug}/pullrequests/${analysis.prNumber}/comments`
 
             const response = await this.httpService.post(apiUrl, commentData, {
                 headers: {

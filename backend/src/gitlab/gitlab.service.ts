@@ -200,16 +200,27 @@ export class GitlabService {
     }
 
     async processGitlabEvent(event: any, payload: any) {
+        console.log('Processing GitLab event:====1', event, payload)
+        console.log('Processing GitLab event:====2', event, payload.user_id)
+        console.log('Processing GitLab event:====3', payload.object_attributes)
+        console.log('payload.project:====4', payload.project)
+        const providerId =
+            payload.user_id || payload.object_attributes.author_id
+
+        console.log('Processing GitLab event:====4', providerId)
+
         const isApplicable =
             await this.analysisService.checkApplicableForAnalysis(
                 payload.project.path_with_namespace,
-                payload.project.namespace.path,
+                payload.project.namespace.path ||
+                    payload.project.path_with_namespace.split('/')[0],
                 'gitlab',
-                payload.object_attributes.author_id.toString()
+                providerId.toString()
             )
         if (!isApplicable) {
             return {}
         }
+        console.log('isApplicable', isApplicable)
 
         await this.dataService.eventLogs.create({
             eventName: event,

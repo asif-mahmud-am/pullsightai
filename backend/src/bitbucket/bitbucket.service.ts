@@ -152,7 +152,7 @@ export class BitbucketService {
 
         return await this.bitbucketApiService.getPullRequests(
             userData.accessToken as string,
-            userData?.currentWorkspace['name'] as string,
+            userData?.currentWorkspace['slug'] as string,
             getPRDto.repo,
             getPRDto.status,
             +getPRDto.limit
@@ -160,6 +160,7 @@ export class BitbucketService {
     }
 
     async processBitbucketEvent(event: any, payload: any) {
+        // console.log('event====', payload.repository, payload.actor)
         const isApplicable =
             await this.analysisService.checkApplicableForAnalysis(
                 payload.repository.name,
@@ -170,6 +171,8 @@ export class BitbucketService {
         if (!isApplicable) {
             return {}
         }
+
+        // console.log('isApplicable===', isApplicable)
         await this.dataService.eventLogs.create({
             eventName: event,
             provider: 'bitbucket',

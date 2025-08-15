@@ -37,7 +37,6 @@ export class BitbucketEventsService {
             pullRequest.id,
             accessToken
         )
-
         const prFiles: PRFile[] = []
 
         const fullDiff = await this.bitbucketApiService.fetchPRDiff(
@@ -46,6 +45,7 @@ export class BitbucketEventsService {
             pullRequest.id,
             accessToken
         )
+
         // Process each file to get before/after content
         for (let i = 0; i < files.length; i++) {
             const file = files[i]
@@ -63,6 +63,7 @@ export class BitbucketEventsService {
                 pullRequest.source?.branch?.name,
                 accessToken
             )
+            console.log('Content After:========')
 
             prFiles.push({
                 prFileName: file.new?.path || file.old?.path,
@@ -232,37 +233,41 @@ export class BitbucketEventsService {
         branch: string,
         accessToken?: string | null
     ): Promise<string | null> {
-        if (!accessToken || !filePath) {
-            console.warn(
-                'No access token or file path provided for Bitbucket file content API call'
+        try {
+            if (!accessToken || !filePath) {
+                return null
+            }
+            const bitbucketApiUrl =
+                this.configService.get('BITBUCKET_API_URL') ||
+                'https://api.bitbucket.org/2.0'
+
+            const branchInfoUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/refs/branches/${encodeURIComponent(branch)}`
+            const branchInfo = await this.httpService.getWithHandleCatch(
+                branchInfoUrl,
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                        Accept: 'application/json'
+                    }
+                }
             )
+
+            const commitSha = branchInfo.target?.hash
+            if (!commitSha) {
+                throw new Error('No commit SHA found in branch info')
+            }
+
+            const apiUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/src/${commitSha}/${filePath}`
+            console.log('Fetching file content from:', apiUrl)
+            return this.httpService.getWithHandleCatch(apiUrl, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    Accept: 'text/plain'
+                }
+            })
+        } catch (error) {
             return null
         }
-        const bitbucketApiUrl =
-            this.configService.get('BITBUCKET_API_URL') ||
-            'https://api.bitbucket.org/2.0'
-
-        const branchInfoUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/refs/branches/${encodeURIComponent(branch)}`
-        const branchInfo = await this.httpService.get(branchInfoUrl, {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-                Accept: 'application/json'
-            }
-        })
-
-        const commitSha = branchInfo.target?.hash
-        if (!commitSha) {
-            throw new Error('No commit SHA found in branch info')
-        }
-
-        const apiUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/src/${commitSha}/${filePath}`
-
-        return this.httpService.get(apiUrl, {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-                Accept: 'text/plain'
-            }
-        })
     }
 
     async addPRReviewComments(

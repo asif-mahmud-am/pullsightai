@@ -225,19 +225,23 @@ export class GithubEventService {
 
     // Fetch full file content from GitHub repository
     async fetchFileContent(owner, repo, filePath, sha, installationId) {
-        const octokit = await this.initOctokitApp(installationId)
-        const { data } = await octokit.repos.getContent({
-            owner,
-            repo,
-            path: filePath,
-            ref: sha
-        })
+        try {
+            const octokit = await this.initOctokitApp(installationId)
+            const { data } = await octokit.repos.getContent({
+                owner,
+                repo,
+                path: filePath,
+                ref: sha
+            })
 
-        // Decode base64 content
-        if (data['content']) {
-            return Buffer.from(data['content'], 'base64').toString('utf8')
+            // Decode base64 content
+            if (data['content']) {
+                return Buffer.from(data['content'], 'base64').toString('utf8')
+            }
+            return null
+        } catch (error) {
+            return null
         }
-        return null
     }
 
     // Parse diff into structured hunks

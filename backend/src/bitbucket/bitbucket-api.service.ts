@@ -180,38 +180,47 @@ export class BitbucketApiService {
         limit?: number
     ): Promise<PullRequestResponse[]> {
         let allPullRequests: PullRequestResponse[] = []
-        const pageLimit = limit ? Math.min(limit, 100) : 50
-        let nextUrl = `/repositories/${workspace}/${repository}/pullrequests?pagelen=${pageLimit}`
+        const pageLimit = 50
+        let nextUrl = `${this.baseUrl}/repositories/${workspace}/${repository}/pullrequests?pagelen=${pageLimit}`
 
         // Add state filter if provided
         if (state) {
             nextUrl += `&state=${state.toUpperCase()}`
         }
 
-        const url = `${this.baseUrl}${nextUrl}`
-        const response = await this.httpService.get(url, {
-            headers: this.getAuthHeaders(accessToken)
-        })
-
-        response.values.map((pr) => {
-            allPullRequests.push({
-                provider: 'bitbucket',
-                prId: pr.id,
-                prNumber: pr.id,
-                prTitle: pr.title,
-                prState: pr.state.toLowerCase(),
-                prUser: pr.author.nickname,
-                prUserAvatar: pr.author.links?.avatar?.href,
-                prCreatedAt: pr.created_on,
-                prUpdatedAt: pr.updated_on,
-                prClosedAt:
-                    pr.state === 'DECLINED' || pr.state === 'SUPERSEDED'
-                        ? pr.updated_on
-                        : null,
-                prMergedAt: pr.state === 'MERGED' ? pr.updated_on : null,
-                prUrl: pr.links.html.href
+        // Paginate through all results
+        while (nextUrl) {
+            const response = await this.httpService.get(nextUrl, {
+                headers: this.getAuthHeaders(accessToken)
             })
-        })
+
+            // Process current page
+            if (response.values && Array.isArray(response.values)) {
+                response.values.forEach((pr) => {
+                    allPullRequests.push({
+                        provider: 'bitbucket',
+                        prId: pr.id,
+                        prNumber: pr.id,
+                        prTitle: pr.title,
+                        prState: pr.state.toLowerCase(),
+                        prUser: pr.author?.nickname || 'unknown',
+                        prUserAvatar: pr.author?.links?.avatar?.href || '',
+                        prCreatedAt: pr.created_on,
+                        prUpdatedAt: pr.updated_on,
+                        prClosedAt:
+                            pr.state === 'DECLINED' || pr.state === 'SUPERSEDED'
+                                ? pr.updated_on
+                                : null,
+                        prMergedAt:
+                            pr.state === 'MERGED' ? pr.updated_on : null,
+                        prUrl: pr.links?.html?.href || ''
+                    })
+                })
+            }
+
+            // Check if there's a next page
+            nextUrl = response.next || null
+        }
         return allPullRequests
     }
 

@@ -228,26 +228,30 @@ export class GitlabEventsService {
         branch: string,
         accessToken?: string | null
     ): Promise<string | null> {
-        if (!accessToken) {
-            console.warn(
-                'No access token provided for GitLab file content API call'
+        try {
+            if (!accessToken) {
+                console.warn(
+                    'No access token provided for GitLab file content API call'
+                )
+                return null
+            }
+            const gitlabApiUrl =
+                this.configService.get('GITLAB_API_URL') ||
+                'https://gitlab.com/api/v4'
+
+            const response = await this.httpService.getWithHandleCatch(
+                `${gitlabApiUrl}/projects/${projectId}/repository/files/${encodeURIComponent(filePath)}/raw`,
+                {
+                    params: { ref: branch },
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`
+                    }
+                }
             )
+            return response
+        } catch (error) {
             return null
         }
-        const gitlabApiUrl =
-            this.configService.get('GITLAB_API_URL') ||
-            'https://gitlab.com/api/v4'
-
-        const response = await this.httpService.get(
-            `${gitlabApiUrl}/projects/${projectId}/repository/files/${encodeURIComponent(filePath)}/raw`,
-            {
-                params: { ref: branch },
-                headers: {
-                    Authorization: `Bearer ${accessToken}`
-                }
-            }
-        )
-        return response
     }
 
     async addPRReviewComments(

@@ -160,7 +160,6 @@ export class BitbucketService {
     }
 
     async processBitbucketEvent(event: any, payload: any) {
-        // console.log('event====', payload.repository, payload.actor)
         const isApplicable =
             await this.analysisService.checkApplicableForAnalysis(
                 payload.repository.name,
@@ -171,7 +170,6 @@ export class BitbucketService {
         if (!isApplicable) {
             return {}
         }
-
         // console.log('isApplicable===', isApplicable)
         await this.dataService.eventLogs.create({
             eventName: event,

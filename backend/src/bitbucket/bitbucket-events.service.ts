@@ -259,12 +259,13 @@ export class BitbucketEventsService {
 
             const apiUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/src/${commitSha}/${filePath}`
             console.log('Fetching file content from:', apiUrl)
-            return this.httpService.getWithHandleCatch(apiUrl, {
+            const response = await this.httpService.getWithHandleCatch(apiUrl, {
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
                     Accept: 'text/plain'
                 }
             })
+            return String(response)
         } catch (error) {
             return null
         }

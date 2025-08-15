@@ -248,7 +248,7 @@ export class GitlabEventsService {
                     }
                 }
             )
-            return response
+            return String(response)
         } catch (error) {
             return null
         }

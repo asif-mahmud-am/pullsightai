@@ -160,6 +160,7 @@ export class BitbucketService {
     }
 
     async processBitbucketEvent(event: any, payload: any) {
+        // console.log('event====', payload.repository, payload.actor)
         const isApplicable =
             await this.analysisService.checkApplicableForAnalysis(
                 payload.repository.name,
@@ -170,6 +171,8 @@ export class BitbucketService {
         if (!isApplicable) {
             return {}
         }
+
+        // console.log('isApplicable===', isApplicable)
         await this.dataService.eventLogs.create({
             eventName: event,
             provider: 'bitbucket',
@@ -222,16 +225,11 @@ export class BitbucketService {
             prReviewDto.repo,
             +prReviewDto.prNumber
         )
-        console.log('PrAndRepo:==========', PrAndRepo) // Debugging line
         const pullRequestFormattedData =
             await this.bitbucketEventsService.handleBitbucketPullRequest(
                 PrAndRepo
             )
 
-        console.log(
-            'Pull Request Formatted Data:==========',
-            pullRequestFormattedData
-        ) // Debugging line
         if (!pullRequestFormattedData) {
             throw new InternalServerErrorException(
                 'Failed to fetch pull request data'

@@ -239,7 +239,7 @@ export class GitlabEventsService {
                 this.configService.get('GITLAB_API_URL') ||
                 'https://gitlab.com/api/v4'
 
-            const response = await this.httpService.get(
+            const response = await this.httpService.getWithHandleCatch(
                 `${gitlabApiUrl}/projects/${projectId}/repository/files/${encodeURIComponent(filePath)}/raw`,
                 {
                     params: { ref: branch },

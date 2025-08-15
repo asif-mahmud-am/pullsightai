@@ -63,7 +63,6 @@ export class BitbucketEventsService {
                 pullRequest.source?.branch?.name,
                 accessToken
             )
-            console.log('Content After:========')
 
             prFiles.push({
                 prFileName: file.new?.path || file.old?.path,
@@ -92,7 +91,7 @@ export class BitbucketEventsService {
                 prUser: pullRequest.author?.username || 'unknown',
                 prUserAvatar: pullRequest.author?.links?.avatar?.href || '',
                 owner: repository.owner?.username || 'unknown',
-                repo: repository.name,
+                repo: repository.slug,
                 prNumber: pullRequest.id.toString(),
                 installationId: 'bitbucket_integration', // Bitbucket doesn't have installation concept
                 prRepoName: repository.full_name,
@@ -258,7 +257,6 @@ export class BitbucketEventsService {
             }
 
             const apiUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/src/${commitSha}/${filePath}`
-            console.log('Fetching file content from:', apiUrl)
             const response = await this.httpService.getWithHandleCatch(apiUrl, {
                 headers: {
                     Authorization: `Bearer ${accessToken}`,

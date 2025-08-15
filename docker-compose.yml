@@ -6,6 +6,7 @@ services:
     image: pullsightai-backend
     ports:
       - "3001:3001"
+    restart: unless-stopped
     container_name: pullsightai-backend
     volumes:
       - /app/node_modules
@@ -39,6 +40,7 @@ services:
         - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     ports:
       - "3000:3000"
+    restart: unless-stopped
     container_name: pullsightai-frontend
     volumes:
       - /app/node_modules
@@ -58,6 +60,7 @@ services:
     image: pullsightai-ai-agent
     ports:
       - "8030:8030"
+    restart: unless-stopped
     container_name: pullsightai-ai-agent
     environment:
       - CLAUDE_API_KEY=${CLAUDE_API_KEY}

@@ -26,7 +26,8 @@ export class GitlabEventsService {
         }
 
         // console.log('Handling GitLab Merge Request:', payload)
-        const workspace = project.namespace.path
+        const workspace =
+            project.namespace.path || project.path_with_namespace.split('/')[0]
         const accessToken = await this.getAccessTokenForNamespace(workspace)
         const files = await this.fetchMRFiles(
             project.id,
@@ -84,8 +85,8 @@ export class GitlabEventsService {
                     payload.user?.username ||
                     'unknown',
                 prUserAvatar: mergeRequest.author?.avatar_url || '',
-                prUrl: mergeRequest.web_url,
-                owner: project.namespace.path,
+                prUrl: mergeRequest.web_url || mergeRequest.target.url,
+                owner: workspace,
                 repo: project.path_with_namespace,
                 prNumber: mergeRequest.iid.toString(),
                 installationId: 'gitlab_integration', // GitLab doesn't have installation concept

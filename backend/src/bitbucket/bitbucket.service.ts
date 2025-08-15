@@ -244,7 +244,7 @@ export class BitbucketService {
 
         return await this.bitbucketApiService.getOrgMembers(
             userData.accessToken as string,
-            userData?.currentWorkspace!['name'] as string
+            userData?.currentWorkspace!['slug'] as string
         )
     }
 }

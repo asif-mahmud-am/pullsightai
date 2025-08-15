@@ -39,11 +39,18 @@ export class AnalysisService {
         provider: string,
         providerId: string
     ) {
+        console.log('Checking applicability for analysis:', {
+            repositorySlug,
+            workspaceSlug,
+            provider,
+            providerId
+        })
         const repository = await this.dataService.repositories.findOne({
             slug: repositorySlug,
             'author.username': workspaceSlug,
             provider: provider
         })
+        console.log('repository', repository)
         if (!repository) {
             return false
         }

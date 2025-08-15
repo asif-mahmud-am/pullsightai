@@ -153,6 +153,7 @@ export class BitbucketApiService {
      * Map Bitbucket API repository response to our interface
      */
     private mapRepositoryResponse(repo: any): Repository {
+        console.log('Mapping Bitbucket repository response:', repo)
         return {
             id: repo.uuid,
             name: repo.name,
@@ -161,7 +162,7 @@ export class BitbucketApiService {
             createdOn: repo.created_on,
             updatedOn: repo.updated_on,
             author: {
-                username: repo.owner?.username,
+                username: repo.owner?.nickname,
                 avatarUrl: repo.owner?.links?.avatar?.href
             },
             private: repo.is_private,
@@ -239,6 +240,7 @@ export class BitbucketApiService {
         })
 
         if (response.values && Array.isArray(response.values)) {
+            console.log('Fetched members:', response.values)
             response.values.forEach((member) => {
                 allMembers.push({
                     provider: 'bitbucket',

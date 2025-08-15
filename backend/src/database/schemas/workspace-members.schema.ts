@@ -38,11 +38,7 @@ export class WorkspaceMember {
         required: false,
         nullable: true,
         type: Types.ObjectId,
-        ref: 'User',
-        set: (value) =>
-            Types.ObjectId.isValid(value)
-                ? value
-                : Types.ObjectId.createFromHexString(value)
+        ref: 'User'
     })
     user: Types.ObjectId
 

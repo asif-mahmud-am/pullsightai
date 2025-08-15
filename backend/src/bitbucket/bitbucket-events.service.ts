@@ -238,20 +238,15 @@ export class BitbucketEventsService {
             )
             return null
         }
-
         const bitbucketApiUrl =
             this.configService.get('BITBUCKET_API_URL') ||
             'https://api.bitbucket.org/2.0'
-
-        // URL encode the branch name and file path to handle special characters like '/'
-        const encodedBranch = encodeURIComponent(branch)
-        const encodedFilePath = encodeURIComponent(filePath)
-
-        const apiUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/src/${encodedBranch}/${encodedFilePath}`
+        const apiUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/src/${branch}/${filePath}`
 
         const response = await this.httpService.get(apiUrl, {
             headers: {
-                Authorization: `Bearer ${accessToken}`
+                Authorization: `Bearer ${accessToken}`,
+                Accept: 'text/plain' // Request plain text content
             }
         })
         return response

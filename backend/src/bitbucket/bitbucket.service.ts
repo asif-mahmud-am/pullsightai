@@ -222,11 +222,16 @@ export class BitbucketService {
             prReviewDto.repo,
             +prReviewDto.prNumber
         )
+        console.log('PrAndRepo:==========', PrAndRepo) // Debugging line
         const pullRequestFormattedData =
             await this.bitbucketEventsService.handleBitbucketPullRequest(
                 PrAndRepo
             )
 
+        console.log(
+            'Pull Request Formatted Data:==========',
+            pullRequestFormattedData
+        ) // Debugging line
         if (!pullRequestFormattedData) {
             throw new InternalServerErrorException(
                 'Failed to fetch pull request data'

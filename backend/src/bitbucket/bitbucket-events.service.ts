@@ -286,7 +286,7 @@ export class BitbucketEventsService {
                 }
             }
 
-            const apiUrl = `${bitbucketApiUrl}/repositories/${analysis.repositorySlug}/${analysis.repositorySlug}/pullrequests/${analysis.prNumber}/comments`
+            const apiUrl = `${bitbucketApiUrl}/repositories/${analysis.repositorySlug}/pullrequests/${analysis.prNumber}/comments`
 
             const response = await this.httpService.post(apiUrl, commentData, {
                 headers: {

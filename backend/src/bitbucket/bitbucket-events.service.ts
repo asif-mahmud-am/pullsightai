@@ -241,15 +241,28 @@ export class BitbucketEventsService {
         const bitbucketApiUrl =
             this.configService.get('BITBUCKET_API_URL') ||
             'https://api.bitbucket.org/2.0'
-        const apiUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/src/${branch}/${filePath}`
 
-        const response = await this.httpService.get(apiUrl, {
+        const branchInfoUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/refs/branches/${encodeURIComponent(branch)}`
+        const branchInfo = await this.httpService.get(branchInfoUrl, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
-                Accept: 'text/plain' // Request plain text content
+                Accept: 'application/json'
             }
         })
-        return response
+
+        const commitSha = branchInfo.target?.hash
+        if (!commitSha) {
+            throw new Error('No commit SHA found in branch info')
+        }
+
+        const apiUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/src/${commitSha}/${filePath}`
+
+        return this.httpService.get(apiUrl, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                Accept: 'text/plain'
+            }
+        })
     }
 
     async addPRReviewComments(

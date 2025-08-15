@@ -43,6 +43,19 @@ export class HttpService {
         return res.data
     }
 
+    async getWithHandleCatch<T = any>(
+        url: string,
+        config?: AxiosRequestConfig
+    ) {
+        try {
+            const res$ = this.http.get<T>(url, config)
+            const res = await lastValueFrom(res$)
+            return res.data
+        } catch (error) {
+            return null
+        }
+    }
+
     async post<T = any>(
         url: string,
         data?: any,

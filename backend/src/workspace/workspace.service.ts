@@ -70,12 +70,10 @@ export class WorkspaceService {
                         repository = await this.setWebhook(userData, repository)
                     }
                     await this.dataService.repositories.updateOne(
-                        { _id: user._id },
+                        { _id: repositoryData['_id'] },
                         {
                             $set: {
                                 ...repository,
-                                provider: userData.provider,
-                                workspace: userData?.currentWorkspace!._id,
                                 isActive: true
                             }
                         }

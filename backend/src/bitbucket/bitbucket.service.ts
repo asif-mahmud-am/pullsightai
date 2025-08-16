@@ -121,7 +121,7 @@ export class BitbucketService {
             'issue:updated',
             'issue:comment_created'
         ]
-        const webhook = await this.bitbucketApiService.addWebhook(
+        const response = await this.bitbucketApiService.addWebhook(
             userData?.accessToken as string,
             userData?.currentWorkspace['slug'] as string,
             repository.slug,
@@ -130,7 +130,7 @@ export class BitbucketService {
         )
         return {
             ...repository,
-            webhookToken: webhook.id
+            webhookToken: response.webhook.id
         }
     }
 
@@ -157,14 +157,14 @@ export class BitbucketService {
         const isApplicable =
             await this.analysisService.checkApplicableForAnalysis(
                 payload.repository.name,
-                payload.repository.owner.nickname,
+                payload.repository.owner.username,
                 'bitbucket',
                 payload.actor.uuid
             )
         if (!isApplicable) {
             return {}
         }
-        // console.log('isApplicable===', isApplicable)
+        console.log('isApplicable===', isApplicable)
         await this.dataService.eventLogs.create({
             eventName: event,
             provider: 'bitbucket',

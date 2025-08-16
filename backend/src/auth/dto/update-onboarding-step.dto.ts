@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { IsInt, IsOptional, IsString } from 'class-validator'
 
 export class UpdateOnboardingStepDto {
     @IsInt()
@@ -6,6 +6,6 @@ export class UpdateOnboardingStepDto {
     onboardingStep: number
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     currentWorkspace?: string
 }

@@ -75,6 +75,9 @@ export class AuthService {
     }
 
     async updateProfile(user: any, updateProfileDto: UpdateOnboardingStepDto) {
+        if (!updateProfileDto.currentWorkspace) {
+            delete updateProfileDto.currentWorkspace
+        }
         return await this.dataService.users.findByIdAndUpdate(
             {
                 _id: user.sub

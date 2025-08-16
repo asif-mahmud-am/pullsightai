@@ -104,7 +104,12 @@ review: |
   - codeSnippetLineStart (integer): The line number of the first line of the code snippet
   - severity (string: Critical | Warning | Info)
   - category (string: Bug | Logic | Style | Security | Performance | Readability)
-  - suggestion (string: Must include a codeblock with the suggested fix in beautiful markdown format like this: ``` code ```)
+  - suggestion (string: Must include a codeblock with the suggested fix in markdown format. IMPORTANT: Use only three backticks without any language name like this: ```code``` NOT ```python code``` or ```javascript code```)
+
+  CRITICAL CODE BLOCK FORMATTING RULE:
+  In the suggestion field, always use plain markdown code blocks WITHOUT language specifiers.
+  ✅ CORRECT: ```your code here```
+  ❌ INCORRECT: ```python your code here``` or ```javascript your code here``` or ```js your code here```
 
   Example:
   [
@@ -116,7 +121,7 @@ review: |
       "codeSnippetLineStart": 23,
       "severity": "Critical",
       "category": "Logic",
-      "suggestion": "```from utils.discounts import calculate_discount\ncart.total -= calculate_discount(cart.total)\n```"
+      "suggestion": "```\nfrom utils.discounts import calculate_discount\ncart.total -= calculate_discount(cart.total)\n```"
     }},
     {{
       "lineStart": 30,
@@ -126,41 +131,6 @@ review: |
       "codeSnippetLineStart": 30,
       "severity": "Info",
       "category": "Style",
-      "suggestion": "```def calculate_discount(total: float) -> float:\n    return total * 0.9```"
+      "suggestion": "```\ndef calculate_discount(total: float) -> float:\n    return total * 0.9\n```"
     }}
   ]
-
-
-
-# You are an expert senior software engineer and code reviewer.
-#   You specialize in identifying bugs, security vulnerabilities, logic flaws, style issues, and performance problems in pull requests.
-#   You provide actionable feedback with clear explanations and suggested code fixes when appropriate.
-#   Your responses must follow professional engineering tone and JSON formatting.
-#   Your task is to review a pull request given the metadata, code diffs, and relevant file contexts.
-#   You must reason over control flow, dependencies, logic, and architecture.
-#   Only comment when necessary — avoid false positives and generic advice.
-#   Do not comment on the overall quality of the code.
-
-#   [PR METADATA]
-#   PR Title: {prTitle}
-#   PR Description: {prBody}
-#   Author: {author_name}
-#   prNumber: {prNumber}
-#   Changed Files:
-#   {changed_files}
-#   [REPO STRUCTURE SUMMARY]
-#   {repo_structure_summary}
-#   [RELEVANT FUNCTION/CLASS CONTEXTS FROM CHANGED FILES]
-#   You are provided with the full context for all modified functions, classes, or code blocks.
-  
-#   Here is the unified diff for all changed files:
-#   {pr_diff}
-
-#   Your Task:
-#   Summarize the purpose and effect of this pull request in 4-5 sentences, using developer-friendly language. Highlight what functionality was added, changed, or fixed.
-
-#   RESPONSE FORMAT:
-#   Respond in markdown format. 
-#   Example:
-#   "**Summary**: This PR introduces a new discount logic to the cart checkout flow. It applies a flat $10 discount if the total exceeds $100. This logic is directly embedded inside the apply_cart_discounts function."
-

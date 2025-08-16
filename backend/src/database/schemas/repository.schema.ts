@@ -42,9 +42,6 @@ export class Repository {
     @Prop({ required: false })
     updatedOn?: string
 
-    @Prop({ required: false })
-    webhookSecret?: string
-
     @Prop({ required: false, type: Object })
     author: Author
 

@@ -130,10 +130,7 @@ export class GitlabService {
         )
     }
 
-    async addWebhook(
-        userData: any,
-        repositories: RepositoryDto[]
-    ): Promise<any> {
+    async addWebhook(userData: any, repository: RepositoryDto): Promise<any> {
         const webhookUrl = `${this.configService.get('BASE_URL')}/v1/gitlab/events`
         const events = [
             'push',
@@ -148,19 +145,16 @@ export class GitlabService {
             'release'
         ]
 
-        const webhookPromises = repositories.map(async (repository) => {
-            const webhook = await this.gitlabApiService.addWebhook(
-                userData?.accessToken,
-                repository.slug,
-                webhookUrl,
-                events
-            )
-            return {
-                ...repository,
-                webhookToken: webhook.id
-            }
-        })
-        return await Promise.all(webhookPromises)
+        const webhook = await this.gitlabApiService.addWebhook(
+            userData?.accessToken,
+            repository.slug,
+            webhookUrl,
+            events
+        )
+        return {
+            ...repository,
+            webhookToken: webhook.id
+        }
     }
 
     async handleOAuthCallback(code: string): Promise<any> {

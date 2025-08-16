@@ -72,7 +72,6 @@ export class AnalysisService {
                 startedAt: new Date(),
                 pullRequest: savedPullRequestFormattedData._id
             })
-
         try {
             await this.httpService.post(
                 this.configService.get('AI_AGENT_PR_POST_URL') as string,
@@ -81,6 +80,9 @@ export class AnalysisService {
                         ...pullRequestFormattedData.pullRequest,
                         pullRequestAnalysisId: pullRequestAnalysis['_id']
                     }
+                },
+                {
+                    timeout: 1000 // 1 second timeout
                 }
             )
         } catch (error) {
@@ -93,10 +95,6 @@ export class AnalysisService {
     }
 
     async addPRReviewComments(postReviewDto: PullRequestAnalysisCommentsDto) {
-        console.log(
-            '=========Adding PR review comments:===========',
-            postReviewDto
-        )
         let analysis
         if (postReviewDto.completed) {
             analysis =

@@ -15,7 +15,7 @@ class ClaudeService(BaseLLMService):
         try:
             response = await self.client.messages.create(
                 model="claude-sonnet-4-20250514",
-                max_tokens=512,
+                max_tokens=5000,
                 temperature=0.5,
                 system="You are a code review assistant. Summarize the pull request for a developer audience.",
                 messages=[{"role": "user", "content": prompt}]
@@ -30,7 +30,7 @@ class ClaudeService(BaseLLMService):
             # Prompt-only approach: ask Claude to return ONLY a JSON array of review items
             response = await self.client.messages.create(
                 model="claude-sonnet-4-20250514",
-                max_tokens=1024,
+                max_tokens=2048,
                 temperature=0.2,
                 system=(
                     "You are a code review assistant. Provide actionable, line-by-line feedback on code changes. "

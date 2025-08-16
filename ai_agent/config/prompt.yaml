@@ -26,15 +26,15 @@ summary: |
   {pr_diff}
 
   Your Task:
-  Summarize the purpose and effect of this pull request in 4-5 sentences, using developer-friendly language. Highlight what functionality was added, changed, or fixed.
+  Summarize the purpose and effect of this pull request, using developer-friendly language. Highlight what functionality was added, changed, or fixed.
 
   RESPONSE FORMAT (Markdown - GitHub/BitBucket/Gitlab friendly):
   - Always produce Markdown only.
   - The top-level title must be an H1: "# Summary by Pullsight AI".
   - First output a short **Summary** paragraph of exactly 2-3 sentences that concisely explains the intent and effect of the PR in developer language (what was added/changed/fixed and why).
-  - Next include a **Major changes** table with columns: "File", "Change type" (Added/Modified/Removed), and "Short description" (single-sentence). Use a Markdown table.
-  - Then include a **Files changed (high level)** bullet list with one-line highlights for each modified file (file path + one short note).
-  - Keep the whole response focused and concise (aim for ~100–150 words). Avoid repeating code or pasting large diffs.
+  - Next include a **File changes** table with columns: "File Path", "Change type" (Added/Modified/Removed), and "Short description" (single-sentence). Use a Markdown table.
+  - You must have to mention about each file from the given list of "Changed Files" for **File changes** table. Do not skip a single file. (This is very important)
+  - Keep the whole response focused and concise. Avoid repeating code or pasting large diffs.
   - Do NOT include any private notes, YAML, or JSON — only Markdown.
 
   Example layout (follow exactly, substituting with PR-specific content):
@@ -43,16 +43,12 @@ summary: |
 
   **Summary**: This PR introduces ... (2-3 sentences)
 
-  **Major changes**
-  | File | Change type | Short description |
+  **File changes**
+  | File Path| Change type | Short description |
   | --- | ---: | --- |
   | src/api/user.py | Modified | Adds pagination to /users endpoint and fixes a race condition in DB access. |
   | tests/test_user.py | Added | Adds unit tests for pagination and race condition handling. |
 
-  **Files changed (high level)**
-  - `src/api/user.py` — implements cursor-based pagination and locks DB session.
-  - `src/services/auth.py` — minor refactor: extract token validation helper.
-  - `tests/test_user.py` — new tests for pagination.
 
   End of response.
 
@@ -85,11 +81,12 @@ review: |
   {pr_diff}
 
   Your Task:
-  Perform a line-by-line review of the changed code. For each issue you find (style, bug, logic, performance, security):
+  Perform a line-by-line review of the changed code. For each issue you find (security, logic, bug, performance, style):
   Identify the exact line number from the diff.
   Describe the issue concisely.
   Explain the reasoning.
   Suggest a fix (always include a code block in the suggestion in markdown format like this: ``` code ````).
+  You MUST consolidate ALL issues found on a single line into ONE SINGLE comment. NEVER create separate comments for multiple issues on the same line. This is a strict formatting requirement that cannot be violated.
   Do not comment on the overall quality of the code.
   Only review lines that have actual changes (additions, modifications, deletions). But do not comment if unnecessary such as import statements, whitespace changes, add or remove comments. Only comment when you find a real issue or have a suggestion. 
   If there is serious bug, or potential bug, then you must comment. If severity is 'Critical', you must comment. If there is a potential bug, or a suggestion that you think should be addressed, then comment. But do not comment on all lines, just comment on those lines in which it is absolutely necessary.
@@ -103,8 +100,8 @@ review: |
   - codeSnippet (string): The code snippet that contains the issue
   - codeSnippetLineStart (integer): The line number of the first line of the code snippet
   - severity (string: Critical | Warning | Info)
-  - category (string: Bug | Logic | Style | Security | Performance | Readability)
-  - suggestion (string: Must include a codeblock with the suggested fix in markdown format. IMPORTANT: Use only three backticks without any language name like this: ```code``` NOT ```python code``` or ```javascript code```)
+  - category (string: Security| Logic | Bug | Performance | Style | Readability)
+  - suggestion (string: Must include a codeblock with the suggested fix in markdown format. IMPORTANT: Use only three backticks without any language name like this: ```code``` NOT like this:```python code``` or ```javascript code```)
 
   CRITICAL CODE BLOCK FORMATTING RULE:
   In the suggestion field, always use plain markdown code blocks WITHOUT language specifiers.
@@ -121,7 +118,8 @@ review: |
       "codeSnippetLineStart": 23,
       "severity": "Critical",
       "category": "Logic",
-      "suggestion": "```\nfrom utils.discounts import calculate_discount\ncart.total -= calculate_discount(cart.total)\n```"
+      "suggestion": "```from utils.discounts import calculate_discount
+                        cart.total -= calculate_discount(cart.total)```"
     }},
     {{
       "lineStart": 30,
@@ -131,6 +129,7 @@ review: |
       "codeSnippetLineStart": 30,
       "severity": "Info",
       "category": "Style",
-      "suggestion": "```\ndef calculate_discount(total: float) -> float:\n    return total * 0.9\n```"
+      "suggestion": "```def calculate_discount(total: float) -> float:
+                            return total * 0.9```"
     }}
   ]

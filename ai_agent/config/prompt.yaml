@@ -101,8 +101,9 @@ review: |
   - codeSnippetLineStart (integer): The line number of the first line of the code snippet
   - severity (string: Critical | Warning | Info)
   - category (string: Security| Logic | Bug | Performance | Style | Readability)
-  - suggestion (string: Must include a codeblock with the suggested fix in markdown format. IMPORTANT: Use only three backticks without any language name like this: ```code``` NOT like this:```python code``` or ```javascript code```)
-
+  - suggestion (string: Must include a codeblock with the suggested fix in markdown format. IMPORTANT: Use only three backticks without any language name like this: ```\n code \n``` NOT like this:```python code``` or ```javascript code```)
+  - Suggestion format will be like this: "Suggestion":\n\n"```\n code \n```"
+  
   CRITICAL CODE BLOCK FORMATTING RULE:
   In the suggestion field, always use plain markdown code blocks WITHOUT language specifiers.
   ✅ CORRECT: ```your code here```
@@ -118,8 +119,8 @@ review: |
       "codeSnippetLineStart": 23,
       "severity": "Critical",
       "category": "Logic",
-      "suggestion": "```from utils.discounts import calculate_discount
-                        cart.total -= calculate_discount(cart.total)```"
+      "suggestion":\n\n"```\n from utils.discounts import calculate_discount
+                        cart.total -= calculate_discount(cart.total)\n```"
     }},
     {{
       "lineStart": 30,
@@ -129,7 +130,7 @@ review: |
       "codeSnippetLineStart": 30,
       "severity": "Info",
       "category": "Style",
-      "suggestion": "```def calculate_discount(total: float) -> float:
-                            return total * 0.9```"
+      "suggestion":\n\n"```\n def calculate_discount(total: float) -> float:
+                            return total * 0.9 \n```"
     }}
   ]

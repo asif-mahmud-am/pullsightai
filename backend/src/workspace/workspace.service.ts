@@ -18,6 +18,29 @@ export class WorkspaceService {
         private readonly bitbucketService: BitbucketService
     ) {}
 
+    async setWebhook(userData, repository) {
+        let repositoryData
+        switch (userData?.provider) {
+            case 'github':
+                repositoryData = repository
+                break
+            case 'gitlab':
+                repositoryData = await this.gitlabService.addWebhook(
+                    userData,
+                    repository
+                )
+                break
+            case 'bitbucket':
+                repositoryData = await this.bitbucketService.addWebhook(
+                    userData,
+                    repository
+                )
+                break
+            default:
+                throw new Error('Unsupported provider')
+        }
+        return repositoryData
+    }
     async makeSubscription(
         makeSubscriptionDto: MakeSubscriptionDto,
         user: any
@@ -25,25 +48,7 @@ export class WorkspaceService {
         const userData =
             await this.analysisService.getUserDataWithWorkspace(user)
         let repositories = makeSubscriptionDto.repositories
-        switch (userData?.provider) {
-            case 'github':
-                repositories = makeSubscriptionDto.repositories
-                break
-            case 'gitlab':
-                repositories = await this.gitlabService.addWebhook(
-                    userData,
-                    makeSubscriptionDto.repositories
-                )
-                break
-            case 'bitbucket':
-                repositories = await this.bitbucketService.addWebhook(
-                    userData,
-                    makeSubscriptionDto.repositories
-                )
-                break
-            default:
-                throw new Error('Unsupported provider')
-        }
+
         Promise.all(
             repositories.map(async (repository) => {
                 let repositoryData =
@@ -53,15 +58,17 @@ export class WorkspaceService {
                         workspace: userData?.currentWorkspace!._id
                     })
                 if (!repositoryData) {
-                    repositoryData = await this.dataService.repositories.create(
-                        {
-                            ...repository,
-                            provider: userData.provider,
-                            workspace: userData?.currentWorkspace!._id,
-                            isActive: true
-                        }
-                    )
+                    repository = await this.setWebhook(userData, repository)
+                    await this.dataService.repositories.create({
+                        ...repository,
+                        provider: userData.provider,
+                        workspace: userData?.currentWorkspace!._id,
+                        isActive: true
+                    })
                 } else {
+                    if (!repositoryData.webhookToken) {
+                        repository = await this.setWebhook(userData, repository)
+                    }
                     await this.dataService.repositories.updateOne(
                         { _id: user._id },
                         {

@@ -107,10 +107,7 @@ export class BitbucketService {
         )
     }
 
-    async addWebhook(
-        userData: any,
-        repositories: RepositoryDto[]
-    ): Promise<any> {
+    async addWebhook(userData: any, repository: RepositoryDto): Promise<any> {
         const webhookUrl = `${this.configService.get('BASE_URL')}/v1/bitbucket/events`
         const events = [
             'repo:push',
@@ -124,20 +121,17 @@ export class BitbucketService {
             'issue:updated',
             'issue:comment_created'
         ]
-        const webhookPromises = repositories.map(async (repository) => {
-            const webhook = await this.bitbucketApiService.addWebhook(
-                userData?.accessToken as string,
-                userData?.currentWorkspace['slug'] as string,
-                repository.slug,
-                webhookUrl,
-                events
-            )
-            return {
-                ...repository,
-                webhookToken: webhook.id
-            }
-        })
-        return await Promise.all(webhookPromises)
+        const webhook = await this.bitbucketApiService.addWebhook(
+            userData?.accessToken as string,
+            userData?.currentWorkspace['slug'] as string,
+            repository.slug,
+            webhookUrl,
+            events
+        )
+        return {
+            ...repository,
+            webhookToken: webhook.id
+        }
     }
 
     async getPullRequests(user: any, getPRDto: GetPRDto) {

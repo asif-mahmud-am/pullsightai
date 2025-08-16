@@ -88,7 +88,7 @@ export class BitbucketEventsService {
             pullRequest: {
                 provider: 'bitbucket',
                 prId: pullRequest.id.toString(),
-                prUser: pullRequest.author?.username || 'unknown',
+                prUser: pullRequest.author?.nickname,
                 prUserAvatar: pullRequest.author?.links?.avatar?.href || '',
                 owner: workspace || 'unknown',
                 repo: repository.name || repository.slug,

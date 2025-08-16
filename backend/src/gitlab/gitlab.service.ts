@@ -209,11 +209,11 @@ export class GitlabService {
             return {}
         }
 
-        await this.dataService.eventLogs.create({
-            eventName: event,
-            provider: 'gitlab',
-            eventPayload: payload
-        })
+        // await this.dataService.eventLogs.create({
+        //     eventName: event,
+        //     provider: 'gitlab',
+        //     eventPayload: payload
+        // })
         let pullRequestFormattedData: StructuredPRData | boolean
         switch (event) {
             case 'Merge Request Hook':
@@ -225,7 +225,6 @@ export class GitlabService {
             default:
                 pullRequestFormattedData = false
         }
-        console.log('pullRequestFormattedData:======', pullRequestFormattedData)
         if (pullRequestFormattedData) {
             this.analysisService.makeAnalysis(pullRequestFormattedData)
         }

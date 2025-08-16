@@ -374,11 +374,11 @@ export class GithubService {
         if (!isApplicable) {
             return {}
         }
-        await this.dataService.eventLogs.create({
-            eventName: event,
-            provider: 'github',
-            eventPayload: payload
-        })
+        // await this.dataService.eventLogs.create({
+        //     eventName: event,
+        //     provider: 'github',
+        //     eventPayload: payload
+        // })
         let pullRequestFormattedData: StructuredPRData | boolean
         switch (event) {
             case 'pull_request':

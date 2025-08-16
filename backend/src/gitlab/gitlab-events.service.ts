@@ -80,11 +80,9 @@ export class GitlabEventsService {
             pullRequest: {
                 provider: 'gitlab',
                 prId: mergeRequest.id.toString(),
-                prUser:
-                    mergeRequest.author?.username ||
-                    payload.user?.username ||
-                    'unknown',
-                prUserAvatar: mergeRequest.author?.avatar_url || '',
+                prUser: mergeRequest.author?.username || payload.user?.username,
+                prUserAvatar:
+                    payload.user?.avatar_url || mergeRequest.author?.avatar_url,
                 prUrl: mergeRequest.web_url || mergeRequest.target.url,
                 owner: workspace,
                 repo: project.path_with_namespace,

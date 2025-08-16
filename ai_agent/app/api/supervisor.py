@@ -64,43 +64,77 @@ def get_backend_url(provider: str, endpoint: Literal["summary", "reviews"]) -> s
         provider = "github"  # Default fallback
     return f"{BACKEND_BASE_URL}/v1/{provider}/{endpoint}"
 
-@supervisor.post("/ai_agent")
-async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: BackgroundTasks):
+def validate_pr_payload(payload: PRPayloadV2) -> tuple[bool, str, dict]:
+    """
+    Validate the PR payload format and extract essential data.
+    Returns: (is_valid, error_message, extracted_data)
+    """
+    try:
+        pr = payload.pullRequest
+        if not pr:
+            return False, "No pullRequest data in payload", {}
+        
+        # Check required fields
+        required_fields = ["prNumber", "prTitle"]
+        missing_fields = [field for field in required_fields if not pr.get(field)]
+        if missing_fields:
+            return False, f"Missing required fields: {', '.join(missing_fields)}", {}
+        
+        # Extract and validate data
+        extracted_data = {
+            "provider": pr.get("provider", "unknown"),
+            "installation_id": pr.get("installationId", "0"),
+            "pullRequestAnalysisId": pr.get("pullRequestAnalysisId", "0"),
+            "number_of_files": pr.get("prFilesChanged", 0),
+            "prNumber": pr["prNumber"],
+            "prTitle": pr["prTitle"],
+            "prBody": pr.get("prBody", ""),
+            "author_name": pr.get("prUser", ""),
+            "repo_structure_summary": pr.get("prRepoName", ""),
+            "prFiles": pr.get("prFiles", [])
+        }
+        
+        # Validate prFiles structure if present
+        if extracted_data["prFiles"] and not isinstance(extracted_data["prFiles"], list):
+            return False, "prFiles must be a list", {}
+        
+        # Check if files have required structure
+        for i, file_info in enumerate(extracted_data["prFiles"]):
+            if not isinstance(file_info, dict):
+                return False, f"File {i} is not a valid object", {}
+            if "prFileName" not in file_info:
+                return False, f"File {i} missing prFileName", {}
+            if "prFileDiff" not in file_info:
+                return False, f"File {i} missing prFileDiff", {}
+        
+        logger.info(f"Payload validation successful. PR: {extracted_data['prNumber']}, Files: {len(extracted_data['prFiles'])}")
+        return True, "", extracted_data
+        
+    except Exception as e:
+        logger.error(f"Payload validation failed with exception: {str(e)}")
+        return False, f"Payload validation error: {str(e)}", {}
+
+async def process_pr_review_background(extracted_data: dict):
+    """
+    Background task to process PR review after responding to the client.
+    """
     start_time = time.time()
     
     logger.info("=" * 80)
-    logger.info("Starting PR review process")
+    logger.info("Starting background PR review process")
+    logger.info(f"PR Details: Number={extracted_data['prNumber']}, Title={extracted_data['prTitle'][:50]}...")
+    logger.info(f"Configuration: Provider={extracted_data['provider']}, InstallationId={extracted_data['installation_id']}, AnalysisId={extracted_data['pullRequestAnalysisId']}")
+    logger.info(f"Files to process: {extracted_data['number_of_files']}")
     
     llm_service = ClaudeService()
-    pr = payload.pullRequest
-
-    if pr:
-        logger.info("Received PR payload successfully")
-        logger.info(f"PR Details: Number={pr.get('prNumber')}, Title={pr.get('prTitle', '')[:50]}...")
-    else:
-        logger.error("No PR data in payload")
-        return {"status": "error", "message": "No PR data found"}
-
-    provider = pr.get("provider", "unknown")
-    installation_id = pr.get("installationId", "0")
-    pullRequestAnalysisId = pr.get("pullRequestAnalysisId", "0")
-    number_of_files = pr.get("prFilesChanged", 0)
     
-    logger.info(f"Configuration: Provider={provider}, InstallationId={installation_id}, AnalysisId={pullRequestAnalysisId}")
-    logger.info(f"Files to process: {number_of_files}")
-
-    prNumber = pr["prNumber"]
-    prTitle = pr["prTitle"]
-    prBody = pr.get("prBody", "")
-    author_name = pr.get("prUser", "")
-    repo_structure_summary = pr.get("prRepoName", "")
-
+    # Prepare changed files and diff
     changed_files = []
     pr_diff = ""
-
-    if "prFiles" in pr and isinstance(pr["prFiles"], list):
-        logger.info(f"Processing {len(pr['prFiles'])} files for diff generation")
-        for file_info in pr["prFiles"]:
+    
+    if extracted_data["prFiles"]:
+        logger.info(f"Processing {len(extracted_data['prFiles'])} files for diff generation")
+        for file_info in extracted_data["prFiles"]:
             changed_files.append(file_info["prFileName"])
             pr_diff += f"\n\n--- File: {file_info['prFileName']} ---\n{file_info['prFileDiff']}"
         logger.info(f"Generated unified diff for files: {', '.join(changed_files)}")
@@ -109,12 +143,12 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
 
     # Prepare summary variables
     summary_variables = {
-        "prTitle": prTitle,
-        "prBody": prBody,
-        "author_name": author_name,
-        "prNumber": prNumber,
+        "prTitle": extracted_data["prTitle"],
+        "prBody": extracted_data["prBody"],
+        "author_name": extracted_data["author_name"],
+        "prNumber": extracted_data["prNumber"],
         "changed_files": ", ".join(changed_files),
-        "repo_structure_summary": repo_structure_summary,
+        "repo_structure_summary": extracted_data["repo_structure_summary"],
         "pr_diff": pr_diff
     }
     
@@ -128,13 +162,13 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
         logger.info(f"LLM summary generated successfully in {summary_duration:.2f}s")
     except Exception as e:
         logger.error(f"Failed to generate summary: {str(e)}")
-        return {"status": "error", "message": f"Summary generation failed: {str(e)}"}
+        return
 
     # Post summary to backend
     logger.info("Posting summary to backend...")
     async with httpx.AsyncClient() as client:
         summary_payload = {
-            "pullRequestAnalysisId": pullRequestAnalysisId,
+            "pullRequestAnalysisId": extracted_data["pullRequestAnalysisId"],
             "summary": summary.pr_summary,
             "modelInfo": {},
             "usageInfo": {}
@@ -148,23 +182,25 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
             if response.status_code == 200:
                 logger.info(f"Summary posted to backend successfully in {summary_post_duration:.2f}s")
             else:
-                logger.error(f"Failed to post summary. Status: {response.status_code}, Response: {response.text}")
+                # Truncate response for cleaner logs
+                response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
+                logger.error(f"Failed to post summary. Status: {response.status_code}, Response: {response_text}")
         except Exception as e:
             logger.error(f"Exception while posting summary: {str(e)}")
 
     # Process reviews in batches
     logger.info("Starting review generation process...")
     async with httpx.AsyncClient() as client:
-        if "prFiles" in pr and isinstance(pr["prFiles"], list):
-            pr_files = pr["prFiles"]
-            total_batches = math.ceil(number_of_files / BATCH_SIZE)
+        if extracted_data["prFiles"]:
+            pr_files = extracted_data["prFiles"]
+            total_batches = math.ceil(extracted_data["number_of_files"] / BATCH_SIZE)
             
-            logger.info(f"Processing {number_of_files} files in {total_batches} batches (batch size: {BATCH_SIZE})")
+            logger.info(f"Processing {extracted_data['number_of_files']} files in {total_batches} batches (batch size: {BATCH_SIZE})")
             
             for batch_index in range(total_batches):
                 batch_start_time = time.time()
                 start_index = batch_index * BATCH_SIZE
-                end_index = min(start_index + BATCH_SIZE, number_of_files)
+                end_index = min(start_index + BATCH_SIZE, extracted_data["number_of_files"])
                 current_batch = pr_files[start_index:end_index]
                 
                 logger.info(f"Processing batch {batch_index + 1}/{total_batches} (files {start_index + 1}-{end_index})")
@@ -176,15 +212,15 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
                     file_start_time = time.time()
                     file_name = file_info["prFileName"]
                     
-                    logger.info(f"Processing file {start_index + file_index + 1}/{number_of_files}: {file_name}")
+                    logger.info(f"Processing file {start_index + file_index + 1}/{extracted_data['number_of_files']}: {file_name}")
                     
                     review_variables = {
-                        "prTitle": prTitle,
-                        "prBody": prBody,
-                        "author_name": author_name,
-                        "prNumber": prNumber,
+                        "prTitle": extracted_data["prTitle"],
+                        "prBody": extracted_data["prBody"],
+                        "author_name": extracted_data["author_name"],
+                        "prNumber": extracted_data["prNumber"],
                         "changed_files": file_info["prFileName"],
-                        "repo_structure_summary": repo_structure_summary,
+                        "repo_structure_summary": extracted_data["repo_structure_summary"],
                         "pr_diff": file_info["prFileDiff"],
                         "prFileContentBefore": file_info.get("prFileContentBefore", "")
                     }
@@ -215,7 +251,7 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
                 is_last_batch = batch_index == total_batches - 1
                 
                 review_payload = {
-                    "pullRequestAnalysisId": pullRequestAnalysisId,
+                    "pullRequestAnalysisId": extracted_data["pullRequestAnalysisId"],
                     "comments": batch_comments,
                     "completed": 1 if is_last_batch else 0
                 }
@@ -230,7 +266,9 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
                     if response.status_code == 200:
                         logger.info(f"Batch {batch_index + 1} posted successfully in {post_duration:.2f}s")
                     else:
-                        logger.error(f"Failed to post batch {batch_index + 1}. Status: {response.status_code}, Response: {response.text}")
+                        # Truncate response for cleaner logs
+                        response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
+                        logger.error(f"Failed to post batch {batch_index + 1}. Status: {response.status_code}, Response: {response_text}")
                         
                 except Exception as e:
                     logger.error(f"Exception while posting batch {batch_index + 1}: {str(e)}")
@@ -241,7 +279,40 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
             logger.warning("No prFiles found for review processing")
 
     total_duration = time.time() - start_time
-    logger.info(f"PR review process completed successfully in {total_duration:.2f}s")
+    logger.info(f"Background PR review process completed successfully in {total_duration:.2f}s")
     logger.info("=" * 80)
+
+@supervisor.post("/ai_agent")
+async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: BackgroundTasks):
+    """
+    AI Agent endpoint for PR review processing.
+    Validates input, responds immediately, then processes in background.
+    """
+    logger.info("Received PR review request")
     
-    return {"status": "completed"}
+    # Validate payload format
+    is_valid, error_message, extracted_data = validate_pr_payload(payload)
+    
+    if not is_valid:
+        logger.error(f"Payload validation failed: {error_message}")
+        return {
+            "status": "error", 
+            "message": f"Invalid payload format: {error_message}"
+        }
+    
+    # Log successful validation
+    logger.info(f"Payload validation successful for PR #{extracted_data['prNumber']}")
+    logger.info(f"Scheduling background processing for {extracted_data['number_of_files']} files")
+    
+    # Add background task for processing
+    background_tasks.add_task(process_pr_review_background, extracted_data)
+    
+    # Return immediate response
+    logger.info("Sending immediate response: Data received, review in progress")
+    return {
+        "status": "accepted",
+        "message": "Data received, review in progress",
+        "pullRequestAnalysisId": extracted_data["pullRequestAnalysisId"],
+        "prNumber": extracted_data["prNumber"],
+        "filesCount": extracted_data["number_of_files"]
+    }

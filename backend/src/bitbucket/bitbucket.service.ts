@@ -163,7 +163,7 @@ export class BitbucketService {
         const isApplicable =
             await this.analysisService.checkApplicableForAnalysis(
                 payload.repository.name,
-                payload.repository.owner.username,
+                payload.repository.owner.nickname,
                 'bitbucket',
                 payload.actor.uuid
             )

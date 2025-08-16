@@ -164,12 +164,11 @@ export class BitbucketService {
         if (!isApplicable) {
             return {}
         }
-        console.log('isApplicable===', isApplicable)
-        await this.dataService.eventLogs.create({
-            eventName: event,
-            provider: 'bitbucket',
-            eventPayload: payload
-        })
+        // await this.dataService.eventLogs.create({
+        //     eventName: event,
+        //     provider: 'bitbucket',
+        //     eventPayload: payload
+        // })
         let pullRequestFormattedData: StructuredPRData | boolean
         switch (event) {
             case 'pullrequest:created':

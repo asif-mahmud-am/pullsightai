@@ -39,12 +39,23 @@ export class AnalysisService {
         provider: string,
         providerId: string
     ) {
+        console.log(
+            'Checking if analysis is applicable for repository:',
+            repositorySlug,
+            'in workspace:',
+            workspaceSlug,
+            'with provider:',
+            provider,
+            'and providerId:',
+            providerId
+        )
         const repository = await this.dataService.repositories.findOne({
             slug: repositorySlug,
             'author.username': workspaceSlug,
             provider: provider
         })
         if (!repository) {
+            console.log('Repository not found or does not match the criteria')
             return false
         }
         return await this.dataService.workspaceMembers.countDocuments({

@@ -31,23 +31,28 @@ summary: |
   RESPONSE FORMAT (Markdown - GitHub/BitBucket/Gitlab friendly):
   - Always produce Markdown only.
   - The top-level title must be an H1: "# Summary by Pullsight AI".
-  - First output a short **Summary** paragraph of exactly 2-3 sentences that concisely explains the intent and effect of the PR in developer language (what was added/changed/fixed and why).
+  - Start with a **Walkthrough** section that describes the changes in a concise manner (preferably in 1-2 sentences).
+  - Follow with a short **Summary** paragraph of exactly 2-3 sentences that concisely explains the intent and effect of the PR in developer language (what was added/changed/fixed and why).
   - Next include a **File changes** table with columns: "File Path", "Change type" (Added/Modified/Removed), and "Short description" (single-sentence). Use a Markdown table.
   - You must have to mention about each file from the given list of "Changed Files" for **File changes** table. Do not skip a single file. (This is very important)
   - Keep the whole response focused and concise. Avoid repeating code or pasting large diffs.
   - Do NOT include any private notes, YAML, or JSON — only Markdown.
+  - While doing markdown formatting for the changes table, follow this: 
+    - Use `|` to separate columns.
+    - Use `---` to separate header from content.
+    - Use `:` for right alignment of numbers in the "Change type" column.
+    - Example: | File Path| Change type | Short description |\n | --- | ---: | --- |\n | src/api/user.py | Modified | Adds pagination to /users endpoint |
 
   Example layout (follow exactly, substituting with PR-specific content):
 
-  # Summary by Pullsight AI
+  # Summary by Pullsight AI\n\n
 
-  **Summary**: This PR introduces ... (2-3 sentences)
+  **Walkthrough**: This PR introduces pagination to the `/users` endpoint and fixes\n\n
 
-  **File changes**
-  | File Path| Change type | Short description |
-  | --- | ---: | --- |
-  | src/api/user.py | Modified | Adds pagination to /users endpoint and fixes a race condition in DB access. |
-  | tests/test_user.py | Added | Adds unit tests for pagination and race condition handling. |
+  **Summary**: This PR introduces ... (2-3 sentences) \n\n
+
+  **File changes**\n
+  | File Path| Change type | Short description |\n | --- | ---: | --- |\n | src/api/user.py | Modified | Adds pagination to /users endpoint and fixes a race condition in DB access. |\n | tests/test_user.py | Added | Adds unit tests for pagination and race condition handling. |
 
 
   End of response.

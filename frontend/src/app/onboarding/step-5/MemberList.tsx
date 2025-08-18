@@ -1,9 +1,7 @@
 import { useOrganizationMembersQuery } from "@/api/queries/member";
 import ContentCard from "@/components/reusable/ContentCard";
-import { DataTable } from "@/components/reusable/DataTable";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import DataTable from "@/components/reusable/DataTable";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useSearchable } from "@/hooks/use-searchable";
 import { useAuthStore } from "@/store/authStore";
 import { TeamMember } from "@/types/user";
 import { ColumnDef } from "@tanstack/react-table";
@@ -84,18 +82,11 @@ const MemberList = ({ onSelectionChange }: Props) => {
     const shouldSelectMember = (member: TeamMember) => {
         return member.username === user?.username;
     };
-    const { searchInput, filteredData } = useSearchable({
-        data: members || [],
-        searchFn: (item, search) =>
-            search.trim()
-                ? item.username.toLowerCase().includes(search.toLowerCase())
-                : true,
-        inputProps: {
-            className: "ml-auto",
-        },
-    });
 
-    console.log("Selected members:");
+    const otherMembers = members?.filter(
+        (member) => !shouldSelectMember(member)
+    );
+    const selectedMember = members.filter(shouldSelectMember);
 
     return (
         <ContentCard className="mb-4">
@@ -104,14 +95,13 @@ const MemberList = ({ onSelectionChange }: Props) => {
                     Team members list{" "}
                     <span className="text-muted">({members?.length})</span>
                 </h3>
-                {searchInput}
             </ContentCard.Header>
-            <ContentCard.Body>
-                <DataTable
+            <ContentCard.Body className="max-h-[calc(100vh-650px)]">
+                <DataTable<TeamMember>
                     className="min-w-full"
                     isLoading={isFetching}
                     columns={columns}
-                    data={members}
+                    data={[...selectedMember, ...otherMembers]}
                     initialSelection={shouldSelectMember}
                     onSelectionChange={(selectedRows) =>
                         onSelectionChange?.(selectedRows)

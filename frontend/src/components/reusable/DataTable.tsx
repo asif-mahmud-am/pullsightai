@@ -7,7 +7,7 @@ import {
     Row,
     useReactTable,
 } from "@tanstack/react-table";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
     Table,
@@ -32,9 +32,18 @@ interface DataTableProps<TData> {
     noBorder?: boolean;
     onSelectionChange?: (selectedRows: TData[]) => void;
     initialSelection?: (row: TData) => boolean;
+    columnFilters?: { id: string; value: unknown }[];
+    onColumnFiltersChange?: (filters: { id: string; value: unknown }[]) => void;
 }
 
-export function DataTable<TData>({
+interface SearchInputProps {
+    value: string;
+    onChange: (value: string) => void;
+}
+
+// SearchInput removed; parent should render any search UI and control filtering logic
+
+const DataTable = <TData,>({
     className,
     isLoading,
     columns,
@@ -42,8 +51,11 @@ export function DataTable<TData>({
     noBorder = true,
     onSelectionChange,
     initialSelection,
-}: DataTableProps<TData>) {
+    columnFilters,
+    onColumnFiltersChange,
+}: DataTableProps<TData>) => {
     const [rowSelection, setRowSelection] = useState({});
+    const prevDataLength = useRef<number>(0);
 
     const table = useReactTable({
         data,
@@ -52,13 +64,32 @@ export function DataTable<TData>({
         onRowSelectionChange: setRowSelection,
         state: {
             rowSelection,
+            columnFilters: columnFilters || [],
         },
+        onColumnFiltersChange: onColumnFiltersChange
+            ? (updaterOrValue) => {
+                  // updaterOrValue can be a value or a function
+                  const nextFilters =
+                      typeof updaterOrValue === "function"
+                          ? updaterOrValue(columnFilters || [])
+                          : updaterOrValue;
+                  // Always pass an array
+                  onColumnFiltersChange(
+                      Array.isArray(nextFilters) ? nextFilters : []
+                  );
+              }
+            : undefined,
         enableRowSelection: true,
+        enableFilters: true,
     });
 
     // Set initial selection based on initialSelection function
     useEffect(() => {
-        if (initialSelection && data.length > 0) {
+        if (
+            initialSelection &&
+            data.length > 0 &&
+            data.length !== prevDataLength.current
+        ) {
             const initialSelectionState: Record<string, boolean> = {};
             data.forEach((row, index) => {
                 if (initialSelection(row)) {
@@ -66,8 +97,9 @@ export function DataTable<TData>({
                 }
             });
             setRowSelection(initialSelectionState);
+            prevDataLength.current = data.length;
         }
-    }, [data]);
+    }, [data, initialSelection]);
 
     // Call the callback whenever selection changes
     useEffect(() => {
@@ -151,4 +183,6 @@ export function DataTable<TData>({
             )}
         </div>
     );
-}
+};
+
+export default DataTable;

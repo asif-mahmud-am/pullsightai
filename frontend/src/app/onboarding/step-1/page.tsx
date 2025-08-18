@@ -14,6 +14,9 @@ import { useAuthStore } from "@/store/authStore";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUpdateUserMutation } from "@/api/queries/auth";
+import ContentCard from "@/components/reusable/ContentCard";
+import Avatar from "@/components/reusable/Avatar";
+import { humanizeDate } from "@/lib/dayjs";
 
 const Step1Page = () => {
     const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
@@ -108,65 +111,80 @@ const Step1Page = () => {
                 {/* Right column */}
                 <div className="col-span-6">
                     <div className="mb-4 bg-[var(--body-900)] p-4 rounded-xl">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-[var(--title-50)] font-medium text-lg">
-                                Organizations list
-                            </h3>
-                            {provider === "github" && (
-                                <Button
-                                    variant="outline"
-                                    className=""
-                                    onClick={handleInstall}
-                                >
-                                    <Plus className="inline mr-1" />
-                                    <span>Add New Organization</span>
-                                </Button>
-                            )}
-                        </div>
-                        <div className="border border-dashed py-5 px-5 rounded-xl">
-                            {isLoading && (
-                                <p className="text-[var(--subtitle-400)]">
-                                    Loading organizations...
-                                </p>
-                            )}
-                            {error && (
-                                <p className="text-[var(--subtitle-400)]">
-                                    Error loading organizations. Please try
-                                    again.
-                                </p>
-                            )}
-
-                            {organizations && organizations?.length > 0 && (
+                        <ContentCard>
+                            <ContentCard.Header>
+                                <h3 className="text-[var(--title-50)] font-medium text-lg">
+                                    Organizations list
+                                </h3>
+                                {provider === "github" && (
+                                    <Button
+                                        variant="outline"
+                                        className=""
+                                        onClick={handleInstall}
+                                    >
+                                        <Plus className="inline mr-1" />
+                                        <span>Add New Organization</span>
+                                    </Button>
+                                )}
+                            </ContentCard.Header>
+                            <ContentCard.Body
+                                hasError={!!error}
+                                isLoading={isLoading}
+                                errorLabel={
+                                    error
+                                        ? "Error loading organizations. Please try again."
+                                        : undefined
+                                }
+                                noContentLabel={
+                                    organizations && organizations?.length === 0
+                                        ? "No organizations found. Please add an organization to continue."
+                                        : undefined
+                                }
+                            >
                                 <SelectableList
-                                    items={organizations?.map(
-                                        (org: Organization) => ({
-                                            id: String(org.id || org.slug),
-                                            title: org.name,
-                                            subtitle: org.name,
-                                            avatar: org.avatarUrl,
-                                            timestamp: org?.createdOn,
-                                        })
-                                    )}
+                                    items={organizations || []}
                                     selectedId={selectedOrg?.id}
                                     onSelect={(id) =>
                                         setSelectedOrg(
-                                            organizations.find(
-                                                (org) =>
-                                                    org.id === id ||
-                                                    org.slug === id
+                                            organizations?.find(
+                                                (org) => org.id === id
                                             ) || null
                                         )
                                     }
+                                    getKey={(item) => String(item.id)}
+                                    renderItem={(item) => (
+                                        <div className="grid grid-cols-5 items-center gap-4 flex-grow-1 text-sm">
+                                            <h4 className="col-span-2">
+                                                {item.name}
+                                            </h4>
+                                            <Avatar
+                                                className="col-span-2"
+                                                src={item.avatarUrl || ""}
+                                                name={item.name}
+                                            />
+                                            <div className="col-span-1 text-right text-[var(--subtitle-500)] text-sm whitespace-nowrap">
+                                                {humanizeDate(
+                                                    item.createdAt || ""
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                    renderHeader={() => (
+                                        <div className="ml-9 grid grid-cols-5 gap-4 py-2 px-4 text-[var(--subtitle-400)] text-xs">
+                                            <div className="col-span-2">
+                                                Title
+                                            </div>
+                                            <div className="col-span-2">
+                                                Author
+                                            </div>
+                                            <div className="col-span-1 text-right">
+                                                Created at
+                                            </div>
+                                        </div>
+                                    )}
                                 />
-                            )}
-
-                            {organizations && organizations?.length === 0 && (
-                                <p className="text-[var(--subtitle-400)]">
-                                    No organizations found. Please add an
-                                    organization to continue.
-                                </p>
-                            )}
-                        </div>
+                            </ContentCard.Body>
+                        </ContentCard>
                     </div>
                 </div>
             </div>

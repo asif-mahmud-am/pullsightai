@@ -11,6 +11,11 @@ import { useAuthStore } from "@/store/authStore";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
+import ContentCard from "@/components/reusable/ContentCard";
+import Avatar from "@/components/reusable/Avatar";
+import { formatDate, humanizeDate } from "@/lib/dayjs";
+import Badge from "@/components/reusable/Badge";
+import { useSearchable } from "@/hooks/use-searchable";
 
 const Step3Page = () => {
     const router = useRouter();
@@ -34,6 +39,16 @@ const Step3Page = () => {
     } = usePullRequestQuery({
         provider: user?.provider || "github", // Default to GitHub if not set
         repoId,
+    });
+    const { searchInput, filteredData } = useSearchable({
+        data: pullRequests || [],
+        searchFn: (item, search) =>
+            search.trim()
+                ? item.prTitle.toLowerCase().includes(search.toLowerCase())
+                : true,
+        inputProps: {
+            className: "ml-auto",
+        },
     });
 
     const onStepComplete = () => {
@@ -63,12 +78,12 @@ const Step3Page = () => {
 
                 {/* Right column */}
                 <div className="col-span-8">
-                    <div className="mb-4">
-                        <div className="flex justify-between items-center mb-4">
+                    <ContentCard>
+                        <ContentCard.Header>
                             <h3 className="text-[var(--title-50)] font-medium text-lg">
-                                PRs list
+                                Repositories List
                             </h3>
-                            {/* add another organization button here */}
+                            {searchInput}
                             <Button
                                 variant="outline"
                                 size="icon"
@@ -77,54 +92,76 @@ const Step3Page = () => {
                             >
                                 <RefreshCw className="inline mr-1" />
                             </Button>
-                        </div>
-                        {isFetching && (
-                            <p className="text-[var(--subtitle-400)]">
-                                Loading pull requests...
-                            </p>
-                        )}
-                        {error && (
-                            <p className="text-[var(--subtitle-400)]">
-                                Error loading pull requests. Please try again.
-                            </p>
-                        )}
-
-                        {!isFetching &&
-                            pullRequests &&
-                            pullRequests?.length > 0 && (
-                                <SelectableList
-                                    items={
-                                        pullRequests?.map((pr) => ({
-                                            id: String(pr.prNumber),
-                                            title: pr.prTitle,
-                                            avatar:
-                                                pr.prUserAvatar || '',
-                                            subtitle:
-                                                pr.prUser || '',
-                                            status: {
-                                                label: pr.prState,
-                                                colorClass:
-                                                    pr.prState === "closed" ||
-                                                    pr.prState === "merged"
-                                                        ? "bg-red-500 text-white"
-                                                        : "bg-green-500 text-white",
-                                            },
-                                            timestamp: pr.prCreatedAt,
-                                            updatedAt: pr.prUpdatedAt,
-                                        })) || []
-                                    }
-                                    selectedId={selectedPR}
-                                    onSelect={(id) => setSelectedPR(id)}
-                                />
-                            )}
-                        {!isFetching &&
-                            pullRequests &&
-                            pullRequests?.length === 0 && (
-                                <p className="text-[var(--subtitle-400)]">
-                                    No pull requests found for this repository.
-                                </p>
-                            )}
-                    </div>
+                        </ContentCard.Header>
+                        <ContentCard.Body
+                            className="max-h-[calc(100vh-450px)]"
+                            hasError={!!error}
+                            isLoading={isFetching}
+                            errorLabel={
+                                error
+                                    ? "Error loading organizations. Please try again."
+                                    : undefined
+                            }
+                            noContentLabel={
+                                pullRequests && pullRequests?.length === 0
+                                    ? "No pull requests found. Please add a pull request to continue."
+                                    : undefined
+                            }
+                        >
+                            <SelectableList
+                                items={filteredData || []}
+                                selectedId={selectedPR}
+                                onSelect={(prNumber) => setSelectedPR(prNumber)}
+                                getKey={(item) => String(item.prNumber)}
+                                renderItem={(item) => (
+                                    <div className="grid grid-cols-8 items-center flex-grow-1 text-sm">
+                                        <h4 className="col-span-3">
+                                            {item?.prTitle}
+                                        </h4>
+                                        <Avatar
+                                            className="col-span-2"
+                                            src={item?.prUserAvatar || ""}
+                                            name={item?.prUser}
+                                        />
+                                        <div className="col-span-1 text-center text-[var(--subtitle-500)] text-sm whitespace-nowrap">
+                                            <Badge
+                                                variant={
+                                                    item?.prState ===
+                                                        "merged" ||
+                                                    item?.prState === "closed"
+                                                        ? "destructive"
+                                                        : "success"
+                                                }
+                                            >
+                                                {item.prState}
+                                            </Badge>
+                                        </div>
+                                        <div className="col-span-1 text-right text-[var(--subtitle-500)] text-sm whitespace-nowrap">
+                                            {formatDate(item.prCreatedAt || "")}
+                                        </div>
+                                        <div className="col-span-1 text-right text-[var(--subtitle-500)] text-sm whitespace-nowrap">
+                                            {formatDate(item.prUpdatedAt || "")}
+                                        </div>
+                                    </div>
+                                )}
+                                renderHeader={() => (
+                                    <div className="ml-9 grid grid-cols-8 py-2 px-4 text-[var(--subtitle-400)] text-xs">
+                                        <div className="col-span-3">Title</div>
+                                        <div className="col-span-2">Author</div>
+                                        <div className="col-span-1 text-center">
+                                            Status
+                                        </div>
+                                        <div className="col-span-1 text-right">
+                                            Created At
+                                        </div>
+                                        <div className="col-span-1 text-right">
+                                            Updated at
+                                        </div>
+                                    </div>
+                                )}
+                            />
+                        </ContentCard.Body>
+                    </ContentCard>
                 </div>
             </div>
 

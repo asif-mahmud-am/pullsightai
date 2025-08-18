@@ -1,7 +1,9 @@
 import { useOrganizationMembersQuery } from "@/api/queries/member";
+import ContentCard from "@/components/reusable/ContentCard";
 import { DataTable } from "@/components/reusable/DataTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useSearchable } from "@/hooks/use-searchable";
 import { useAuthStore } from "@/store/authStore";
 import { TeamMember } from "@/types/user";
 import { ColumnDef } from "@tanstack/react-table";
@@ -82,16 +84,29 @@ const MemberList = ({ onSelectionChange }: Props) => {
     const shouldSelectMember = (member: TeamMember) => {
         return member.username === user?.username;
     };
+    const { searchInput, filteredData } = useSearchable({
+        data: members || [],
+        searchFn: (item, search) =>
+            search.trim()
+                ? item.username.toLowerCase().includes(search.toLowerCase())
+                : true,
+        inputProps: {
+            className: "ml-auto",
+        },
+    });
+
+    console.log("Selected members:");
 
     return (
-        <Card className="mb-4">
-            <CardHeader>
-                <CardTitle className="font-medium text-lg">
+        <ContentCard className="mb-4">
+            <ContentCard.Header>
+                <h3 className="font-medium text-lg">
                     Team members list{" "}
                     <span className="text-muted">({members?.length})</span>
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
+                </h3>
+                {searchInput}
+            </ContentCard.Header>
+            <ContentCard.Body>
                 <DataTable
                     className="min-w-full"
                     isLoading={isFetching}
@@ -105,8 +120,8 @@ const MemberList = ({ onSelectionChange }: Props) => {
                 <div className="text-muted text-sm mt-3">
                     You can add or remove team members at any time
                 </div>
-            </CardContent>
-        </Card>
+            </ContentCard.Body>
+        </ContentCard>
     );
 };
 

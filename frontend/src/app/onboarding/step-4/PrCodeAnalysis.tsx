@@ -55,7 +55,7 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
             <div className="border-b border-gray-700 p-4">
                 <div className="flex items-start gap-3">
                     <div className="w-10 h-10">
-                        {pr?.prUserAvatar  ? (
+                        {pr?.prUserAvatar ? (
                             <img
                                 src={pr.prUserAvatar}
                                 alt={pr.prUser}
@@ -75,7 +75,7 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                                 {pr?.prUser}
                             </span>
                             <Badge className="bg-purple-900/30 text-purple-300 border-purple-700">
-                                {pr?.prState == 'merged' ? (
+                                {pr?.prState == "merged" ? (
                                     <GitMerge className="w-3 h-3 mr-1" />
                                 ) : (
                                     <GitPullRequest className="w-3 h-3 mr-1" />
@@ -96,7 +96,7 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                         </div>
 
                         <h3 className="text-lg font-semibold text-gray-200 mb-2">
-                            {pr.prTitle  || "Untitled PR"}
+                            {pr?.prTitle || "Untitled PR"}
                         </h3>
 
                         {/* <div className="flex items-center gap-4 text-sm text-gray-400">

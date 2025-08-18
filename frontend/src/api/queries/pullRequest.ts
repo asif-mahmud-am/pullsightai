@@ -41,6 +41,7 @@ export const usePullRequestQuery = ({
             return response.data;
         },
         enabled: isEnabled && !!repoId,
+        retry: 2,
     });
 };
 

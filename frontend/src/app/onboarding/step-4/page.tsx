@@ -222,7 +222,7 @@ const Step4Page = () => {
 
                 {/* Right column */}
                 <div className="col-span-8">
-                    <div className="mb-4">
+                    <div className="mb-4 relative">
                         <h3 className="text-[var(--title-50)] font-medium mb-4 text-lg">
                             PR Summary
                         </h3>
@@ -283,11 +283,15 @@ const Step4Page = () => {
                                         </div>
                                     </div>
                                     <div className="col-span-1 text-center">
-                                        
                                         <span
-                                            className={`px-2 py-1 rounded-full text-xs font-medium ${data?.pullRequest?.prState === "merged" || data?.pullRequest?.prState === "closed"
-                                                ? "bg-red-500 text-white"
-                                                : "bg-green-500 text-white"}`}
+                                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                data?.pullRequest?.prState ===
+                                                    "merged" ||
+                                                data?.pullRequest?.prState ===
+                                                    "closed"
+                                                    ? "bg-red-500 text-white"
+                                                    : "bg-green-500 text-white"
+                                            }`}
                                         >
                                             {data?.pullRequest?.prState}
                                         </span>
@@ -333,8 +337,8 @@ const Step4Page = () => {
 
             {/* Footer with action button */}
             <ActionFooter
-                buttonText="Invite team members"
-                isEnabled={!isLoading}
+                buttonText="Final set up"
+                isEnabled={!isLoading && analysisData?.status === "completed"}
                 isLoading={isLoading}
                 onClick={onStepComplete}
                 onBackClick={() =>

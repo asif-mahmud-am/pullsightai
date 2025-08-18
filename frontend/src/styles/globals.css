@@ -133,4 +133,22 @@
     body {
         @apply bg-background text-foreground;
     }
+
+    /* style scrollbar */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+        transition: all 0.2s ease-in-out;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #727274;
+        border: 3px solid transparent;
+        @apply rounded-full;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover,
+    .custom-scrollbar::-webkit-scrollbar-thumb:active {
+        background: #818184;
+    }
 }

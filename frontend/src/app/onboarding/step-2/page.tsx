@@ -10,6 +10,10 @@ import { ROUTE_CONSTANTS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { Repository } from "@/types/repository";
+import ContentCard from "@/components/reusable/ContentCard";
+import Avatar from "@/components/reusable/Avatar";
+import { formatDate, humanizeDate } from "@/lib/dayjs";
+import { useSearchable } from "@/hooks/use-searchable";
 
 const Step2Page = () => {
     const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
@@ -18,10 +22,6 @@ const Step2Page = () => {
     const user = useAuthStore((s) => s.user);
     const provider = user?.provider || "github";
 
-    // if (!orgName && !installationId) {
-    //     redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_1);
-    // }
-
     const {
         data: repositories = [],
         refetch: refetchRepositories,
@@ -29,6 +29,17 @@ const Step2Page = () => {
         error,
     } = useRepositoryQuery({
         provider,
+    });
+
+    const { searchInput, filteredData } = useSearchable({
+        data: repositories,
+        searchFn: (item, search) =>
+            search.trim()
+                ? item.name.toLowerCase().includes(search.toLowerCase())
+                : true,
+        inputProps: {
+            className: "ml-auto",
+        },
     });
 
     const onStepComplete = () => {
@@ -56,12 +67,12 @@ const Step2Page = () => {
 
                 {/* Right column */}
                 <div className="col-span-6">
-                    <div className="mb-4">
-                        <div className="flex justify-between items-center mb-4">
+                    <ContentCard>
+                        <ContentCard.Header>
                             <h3 className="text-[var(--title-50)] font-medium text-lg">
-                                Repositories List{" "}
+                                Repositories List
                             </h3>
-                            {/* add another organization button here */}
+                            {searchInput}
                             <Button
                                 variant="outline"
                                 size="icon"
@@ -70,38 +81,60 @@ const Step2Page = () => {
                             >
                                 <RefreshCw className="inline mr-1" />
                             </Button>
-                        </div>
-                        {isFetching && (
-                            <p className="text-[var(--subtitle-400)]">
-                                Loading repositories...
-                            </p>
-                        )}
-                        {error && (
-                            <p className="text-[var(--subtitle-400)]">
-                                Error loading repositories. Please try again.
-                            </p>
-                        )}
-
-                        {!isFetching && repositories.length > 0 && (
+                        </ContentCard.Header>
+                        <ContentCard.Body
+                            className="max-h-[calc(100vh-450px)]"
+                            hasError={!!error}
+                            isLoading={isFetching}
+                            errorLabel={
+                                error
+                                    ? "Error loading organizations. Please try again."
+                                    : undefined
+                            }
+                            noContentLabel={
+                                repositories && repositories?.length === 0
+                                    ? "No repositories found. Please add a repository to continue."
+                                    : undefined
+                            }
+                        >
                             <SelectableList
-                                items={repositories.map((repo) => ({
-                                    id: String(repo.name),
-                                    title: repo.name,
-                                    subtitle: repo.author?.username,
-                                    avatar: repo.author?.avatarUrl,
-                                    timestamp: repo.createdOn,
-                                }))}
+                                items={filteredData || []}
                                 selectedId={selectedRepo?.name}
-                                onSelect={(id) =>
+                                onSelect={(name) =>
                                     setSelectedRepo(
                                         repositories?.find(
-                                            (repo) => repo.name === id
+                                            (repo) => repo.name === name
                                         ) || null
                                     )
                                 }
+                                getKey={(item) => String(item.name)}
+                                renderItem={(item) => (
+                                    <div className="grid grid-cols-5 items-center gap-4 flex-grow-1 text-sm">
+                                        <h4 className="col-span-2">
+                                            {item.name}
+                                        </h4>
+                                        <Avatar
+                                            className="col-span-2"
+                                            src={item.author?.avatarUrl || ""}
+                                            name={item.name}
+                                        />
+                                        <div className="col-span-1 text-right text-[var(--subtitle-500)] text-sm whitespace-nowrap">
+                                            {formatDate(item.createdOn || "")}
+                                        </div>
+                                    </div>
+                                )}
+                                renderHeader={() => (
+                                    <div className="ml-9 grid grid-cols-5 gap-4 py-2 px-4 text-[var(--subtitle-400)] text-xs">
+                                        <div className="col-span-2">Title</div>
+                                        <div className="col-span-2">Author</div>
+                                        <div className="col-span-1 text-right">
+                                            Created at
+                                        </div>
+                                    </div>
+                                )}
                             />
-                        )}
-                    </div>
+                        </ContentCard.Body>
+                    </ContentCard>
                 </div>
             </div>
 

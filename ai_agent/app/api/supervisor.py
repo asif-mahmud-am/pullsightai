@@ -3,6 +3,8 @@ from app.models.pr_event import PRPayloadV2, PRFileInfo
 from app.api.summary import generate_summary_response
 from app.api.review import generate_review_response
 from app.services.claude_service import ClaudeService
+from app.utils.chunking_strategy import create_summary_chunks, prepare_chunk_for_summary
+from app.utils.summary_aggregator import aggregate_chunk_summaries
 import httpx
 import os
 import json
@@ -128,41 +130,74 @@ async def process_pr_review_background(extracted_data: dict):
     
     llm_service = ClaudeService()
     
-    # Prepare changed files and diff
-    changed_files = []
-    pr_diff = ""
-    
+    # Prepare summary generation with chunking strategy
     if extracted_data["prFiles"]:
-        logger.info(f"Processing {len(extracted_data['prFiles'])} files for diff generation")
-        for file_info in extracted_data["prFiles"]:
-            changed_files.append(file_info["prFileName"])
-            pr_diff += f"\n\n--- File: {file_info['prFileName']} ---\n{file_info['prFileDiff']}"
-        logger.info(f"Generated unified diff for files: {', '.join(changed_files)}")
+        logger.info(f"Processing {len(extracted_data['prFiles'])} files for summary generation with chunking strategy")
+        
+        # Create chunks for summary generation
+        chunks, ignored_files = create_summary_chunks(
+            files=extracted_data["prFiles"],
+            max_chunk_tokens=150000,  # LLM limit
+            max_file_tokens=100000    # File size limit
+        )
+        
+        if ignored_files:
+            logger.warning(f"Ignored {len(ignored_files)} files for summary due to size limits")
+            for ignored in ignored_files:
+                logger.warning(f"  - {ignored['fileName']}: {ignored['reason']} ({ignored['token_count']} tokens)")
+        
+        # Generate summaries for each chunk
+        chunk_summaries = []
+        for chunk in chunks:
+            logger.info(f"Generating summary for chunk {chunk['chunk_index'] + 1}/{len(chunks)} with {len(chunk['files'])} files")
+            
+            # Prepare chunk variables
+            chunk_variables = prepare_chunk_for_summary(chunk, extracted_data)
+            
+            try:
+                chunk_summary = await generate_summary_response(chunk_variables, llm_service)
+                chunk_summaries.append(chunk_summary.pr_summary)
+                logger.info(f"Successfully generated summary for chunk {chunk['chunk_index'] + 1}")
+            except Exception as e:
+                logger.error(f"Failed to generate summary for chunk {chunk['chunk_index'] + 1}: {str(e)}")
+                # Continue with other chunks
+                continue
+        
+        # Aggregate chunk summaries if multiple chunks
+        if len(chunk_summaries) > 1:
+            logger.info(f"Aggregating {len(chunk_summaries)} chunk summaries")
+            try:
+                final_summary = await aggregate_chunk_summaries(chunk_summaries, extracted_data, llm_service)
+                summary = type('Summary', (), {'pr_summary': final_summary})()
+                logger.info("Successfully aggregated chunk summaries")
+            except Exception as e:
+                logger.error(f"Failed to aggregate summaries: {str(e)}")
+                # Fallback to first chunk summary
+                summary = type('Summary', (), {'pr_summary': chunk_summaries[0] if chunk_summaries else ""})()
+        elif len(chunk_summaries) == 1:
+            summary = type('Summary', (), {'pr_summary': chunk_summaries[0]})()
+        else:
+            logger.error("No summaries generated from any chunks")
+            return
+        
+        # Prepare changed files list for backward compatibility
+        changed_files = []
+        for chunk in chunks:
+            for file_info in chunk["files"]:
+                changed_files.append(file_info["prFileName"])
+        
+        logger.info(f"Summary generation completed. Processed {len(changed_files)} files in {len(chunks)} chunks")
+        
     else:
         logger.warning("No prFiles found in payload")
+        summary = type('Summary', (), {'pr_summary': ""})()
+        changed_files = []
+    
+    # Log summary generation completion
+    logger.info("PR summary generation completed successfully")
 
-    # Prepare summary variables
-    summary_variables = {
-        "prTitle": extracted_data["prTitle"],
-        "prBody": extracted_data["prBody"],
-        "author_name": extracted_data["author_name"],
-        "prNumber": extracted_data["prNumber"],
-        "changed_files": ", ".join(changed_files),
-        "repo_structure_summary": extracted_data["repo_structure_summary"],
-        "pr_diff": pr_diff
-    }
-    
-    logger.info("Generating PR summary with LLM...")
-    logger.debug(f"Summary variables: {json.dumps({k: str(v)[:100] + '...' if len(str(v)) > 100 else v for k, v in summary_variables.items()}, indent=2)}")
-    
-    summary_start_time = time.time()
-    try:
-        summary = await generate_summary_response(summary_variables, llm_service)
-        summary_duration = time.time() - summary_start_time
-        logger.info(f"LLM summary generated successfully in {summary_duration:.2f}s")
-    except Exception as e:
-        logger.error(f"Failed to generate summary: {str(e)}")
-        return
+    sumery_result=None
+    review_result=[]
 
     # Post summary to backend
     logger.info("Posting summary to backend...")
@@ -173,6 +208,8 @@ async def process_pr_review_background(extracted_data: dict):
             "modelInfo": {},
             "usageInfo": {}
         }
+
+        sumery_result=summary_payload
 
         try:
             summary_post_start = time.time()
@@ -258,6 +295,8 @@ async def process_pr_review_background(extracted_data: dict):
                 
                 logger.info(f"Posting batch {batch_index + 1}/{total_batches} with {len(batch_comments)} comments to backend...")
                 
+                review_result.append(review_payload)
+
                 try:
                     post_start_time = time.time()
                     response = await client.post(BACKEND_REVIEW_ENDPOINT, json=review_payload)
@@ -282,6 +321,11 @@ async def process_pr_review_background(extracted_data: dict):
     logger.info(f"Background PR review process completed successfully in {total_duration:.2f}s")
     logger.info("=" * 80)
 
+    return {
+        "summary": sumery_result,
+        "reviews": review_result
+    }
+
 @supervisor.post("/ai_agent")
 async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: BackgroundTasks):
     """
@@ -305,14 +349,15 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
     logger.info(f"Scheduling background processing for {extracted_data['number_of_files']} files")
     
     # Add background task for processing
-    background_tasks.add_task(process_pr_review_background, extracted_data)
+    result=background_tasks.add_task(process_pr_review_background, extracted_data)
     
     # Return immediate response
     logger.info("Sending immediate response: Data received, review in progress")
-    return {
-        "status": "accepted",
-        "message": "Data received, review in progress",
-        "pullRequestAnalysisId": extracted_data["pullRequestAnalysisId"],
-        "prNumber": extracted_data["prNumber"],
-        "filesCount": extracted_data["number_of_files"]
-    }
+    # return {
+    #     "status": "accepted",
+    #     "message": "Data received, review in progress",
+    #     "pullRequestAnalysisId": extracted_data["pullRequestAnalysisId"],
+    #     "prNumber": extracted_data["prNumber"],
+    #     "filesCount": extracted_data["number_of_files"]
+    # }
+    return result

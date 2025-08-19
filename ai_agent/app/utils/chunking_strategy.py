@@ -1,0 +1,126 @@
+import logging
+from typing import List, Dict, Tuple
+from .token_counter import estimate_tokens_for_file, is_file_too_large
+
+logger = logging.getLogger(__name__)
+
+def sort_files_by_path(files: List[Dict]) -> List[Dict]:
+    """
+    Sort files by their path/filename alphabetically to group files from the same folder.
+    
+    Args:
+        files (List[Dict]): List of file dictionaries with 'prFileName' key
+    
+    Returns:
+        List[Dict]: Sorted list of files
+    """
+    return sorted(files, key=lambda x: x["prFileName"])
+
+def create_summary_chunks(files: List[Dict], max_chunk_tokens: int = 200000, max_file_tokens: int = 100000) -> List[Dict]:
+    """
+    Create chunks of files for summary generation based on token limits.
+    
+    Args:
+        files (List[Dict]): List of file dictionaries
+        max_chunk_tokens (int): Maximum tokens per chunk (default: 200000)
+        max_file_tokens (int): Maximum tokens per file (default: 100000)
+    
+    Returns:
+        List[Dict]: List of chunks, each containing files and metadata
+    """
+    # Sort files by path for better context grouping
+    sorted_files = sort_files_by_path(files)
+    
+    chunks = []
+    current_chunk = {
+        "files": [],
+        "total_tokens": 0,
+        "chunk_index": 1
+    }
+    
+    ignored_files = []
+    
+    logger.info(f"Starting chunking with max_chunk_tokens={max_chunk_tokens}, max_file_tokens={max_file_tokens}")
+    
+    for file_info in sorted_files:
+        file_name = file_info["prFileName"]
+        file_diff = file_info["prFileDiff"]
+        
+        # Check if file is too large
+        if is_file_too_large(file_diff, max_file_tokens):
+            logger.warning(f"File {file_name} exceeds {max_file_tokens} tokens, ignoring for summary")
+            ignored_files.append({
+                "fileName": file_name,
+                "reason": f"File exceeds {max_file_tokens} token limit",
+                "token_count": estimate_tokens_for_file(file_diff)
+            })
+            continue
+        
+        file_tokens = estimate_tokens_for_file(file_diff)
+        logger.debug(f"Processing file {file_name} with {file_tokens} tokens")
+        
+        # Check if adding this file would exceed chunk limit
+        if current_chunk["total_tokens"] + file_tokens > max_chunk_tokens:
+            # Current chunk is full, save it and start a new one
+            if current_chunk["files"]:
+                chunks.append(current_chunk)
+                logger.info(f"Created chunk {current_chunk['chunk_index']} with {len(current_chunk['files'])} files, {current_chunk['total_tokens']} tokens")
+            
+            # Start new chunk
+            current_chunk = {
+                "files": [file_info],
+                "total_tokens": file_tokens,
+                "chunk_index": len(chunks) + 1
+            }
+            logger.debug(f"Started new chunk {current_chunk['chunk_index']} with file {file_name}")
+        else:
+            # Add file to current chunk
+            current_chunk["files"].append(file_info)
+            current_chunk["total_tokens"] += file_tokens
+            logger.debug(f"Added file {file_name} to chunk {current_chunk['chunk_index']}, total tokens: {current_chunk['total_tokens']}")
+    
+    # Add the last chunk if it has files
+    if current_chunk["files"]:
+        chunks.append(current_chunk)
+        logger.info(f"Created final chunk {current_chunk['chunk_index']} with {len(current_chunk['files'])} files, {current_chunk['total_tokens']} tokens")
+    
+    # Log summary
+    total_files_processed = sum(len(chunk["files"]) for chunk in chunks)
+    total_files_ignored = len(ignored_files)
+    
+    logger.info(f"Chunking complete: {len(chunks)} chunks created")
+    logger.info(f"Files processed: {total_files_processed}, Files ignored: {total_files_ignored}")
+    
+    if ignored_files:
+        logger.warning(f"Ignored files: {[f['fileName'] for f in ignored_files]}")
+    
+    return chunks, ignored_files
+
+def prepare_chunk_for_summary(chunk: Dict, pr_metadata: Dict) -> Dict:
+    """
+    Prepare a chunk for summary generation by creating the necessary variables.
+    
+    Args:
+        chunk (Dict): Chunk containing files and metadata
+        pr_metadata (Dict): PR metadata (title, body, etc.)
+    
+    Returns:
+        Dict: Variables ready for summary generation
+    """
+    changed_files = []
+    pr_diff = ""
+    
+    for file_info in chunk["files"]:
+        changed_files.append(file_info["prFileName"])
+        pr_diff += f"\n\n--- File: {file_info['prFileName']} ---\n{file_info['prFileDiff']}"
+    
+    return {
+        "prTitle": pr_metadata.get("prTitle", ""),
+        "prBody": pr_metadata.get("prBody", ""),
+        "author_name": pr_metadata.get("author_name", ""),
+        "prNumber": pr_metadata.get("prNumber", ""),
+        "changed_files": ", ".join(changed_files),
+        "repo_structure_summary": pr_metadata.get("repo_structure_summary", ""),
+        "pr_diff": pr_diff,
+        "chunk_info": f"Chunk {chunk['chunk_index'] + 1} of multiple chunks"
+    } 

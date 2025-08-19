@@ -144,7 +144,7 @@ async def process_pr_review_background(extracted_data: dict):
         if ignored_files:
             logger.warning(f"Ignored {len(ignored_files)} files for summary due to size limits")
             for ignored in ignored_files:
-                logger.warning(f"  - {ignored['fileName']}: {ignored['reason']} ({ignored['token_count']} tokens)")
+                logger.warning(f"  - {ignored['fileName']}: {ignored['reason']}")
         
         # Generate summaries for each chunk
         chunk_summaries = []
@@ -208,8 +208,6 @@ async def process_pr_review_background(extracted_data: dict):
             "modelInfo": {},
             "usageInfo": {}
         }
-
-        sumery_result=summary_payload
 
         try:
             summary_post_start = time.time()
@@ -294,8 +292,6 @@ async def process_pr_review_background(extracted_data: dict):
                 }
                 
                 logger.info(f"Posting batch {batch_index + 1}/{total_batches} with {len(batch_comments)} comments to backend...")
-                
-                review_result.append(review_payload)
 
                 try:
                     post_start_time = time.time()
@@ -321,11 +317,6 @@ async def process_pr_review_background(extracted_data: dict):
     logger.info(f"Background PR review process completed successfully in {total_duration:.2f}s")
     logger.info("=" * 80)
 
-    return {
-        "summary": sumery_result,
-        "reviews": review_result
-    }
-
 @supervisor.post("/ai_agent")
 async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: BackgroundTasks):
     """
@@ -349,15 +340,15 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
     logger.info(f"Scheduling background processing for {extracted_data['number_of_files']} files")
     
     # Add background task for processing
-    result=background_tasks.add_task(process_pr_review_background, extracted_data)
+    background_tasks.add_task(process_pr_review_background, extracted_data)
     
     # Return immediate response
     logger.info("Sending immediate response: Data received, review in progress")
-    # return {
-    #     "status": "accepted",
-    #     "message": "Data received, review in progress",
-    #     "pullRequestAnalysisId": extracted_data["pullRequestAnalysisId"],
-    #     "prNumber": extracted_data["prNumber"],
-    #     "filesCount": extracted_data["number_of_files"]
-    # }
-    return result
+    return {
+        "status": "accepted",
+        "message": "Data received, review in progress",
+        "pullRequestAnalysisId": extracted_data["pullRequestAnalysisId"],
+        "prNumber": extracted_data["prNumber"],
+        "filesCount": extracted_data["number_of_files"]
+    }
+    

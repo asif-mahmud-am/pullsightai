@@ -129,7 +129,11 @@ const RepositoryList = ({ onSelectionChange }: Props) => {
         return repo.slug === repoId;
     };
 
-    const { data: repositories = [], isFetching } = useRepositoryQuery({
+    const {
+        data: repositories = [],
+        isFetching,
+        error,
+    } = useRepositoryQuery({
         provider,
     });
     const selectedRepo = repositories?.filter(shouldSelectMember);
@@ -165,7 +169,21 @@ const RepositoryList = ({ onSelectionChange }: Props) => {
                     className="border rounded px-2 py-1 mb-2"
                 /> */}
             </ContentCard.Header>
-            <ContentCard.Body className="xl:max-h-[calc(100vh-650px)]">
+            <ContentCard.Body
+                className="xl:max-h-[calc(100vh-650px)]"
+                hasError={!!error}
+                isLoading={isFetching}
+                errorLabel={
+                    error
+                        ? "Error loading repositories. Please try again."
+                        : undefined
+                }
+                noContentLabel={
+                    repositories && repositories?.length === 0
+                        ? "No repositories found. Please add a repository to continue."
+                        : undefined
+                }
+            >
                 <DataTable<Repository>
                     className="min-w-full"
                     isLoading={isFetching}

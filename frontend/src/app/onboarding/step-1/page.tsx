@@ -157,7 +157,7 @@ const Step1Page = () => {
                                             {item.name}
                                         </h4>
                                         <Avatar
-                                            className="col-span-2 hidden md:block"
+                                            className="col-span-2 hidden md:flex"
                                             src={item.avatarUrl || ""}
                                             name={item.name}
                                         />

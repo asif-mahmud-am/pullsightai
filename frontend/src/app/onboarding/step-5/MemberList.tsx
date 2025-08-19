@@ -74,7 +74,11 @@ export const columns: ColumnDef<TeamMember>[] = [
 const MemberList = ({ onSelectionChange }: Props) => {
     const user = useAuthStore((s) => s.user);
     const provider = user?.provider || "github";
-    const { data: members = [], isFetching } = useOrganizationMembersQuery({
+    const {
+        data: members = [],
+        isFetching,
+        error,
+    } = useOrganizationMembersQuery({
         provider,
     });
 
@@ -96,7 +100,21 @@ const MemberList = ({ onSelectionChange }: Props) => {
                     <span className="text-muted">({members?.length})</span>
                 </h3>
             </ContentCard.Header>
-            <ContentCard.Body className="xl:max-h-[calc(100vh-650px)]">
+            <ContentCard.Body
+                className="xl:max-h-[calc(100vh-650px)]"
+                hasError={!!error}
+                isLoading={isFetching}
+                errorLabel={
+                    error
+                        ? "Error loading team members. Please try again."
+                        : undefined
+                }
+                noContentLabel={
+                    members && members?.length === 0
+                        ? "No team members found. Please add a team member to continue."
+                        : undefined
+                }
+            >
                 <DataTable<TeamMember>
                     className="min-w-full"
                     isLoading={isFetching}

@@ -99,7 +99,7 @@ const Step3Page = () => {
                             isLoading={isFetching}
                             errorLabel={
                                 error
-                                    ? "Error loading organizations. Please try again."
+                                    ? "Error loading pull requests. Please try again."
                                     : undefined
                             }
                             noContentLabel={
@@ -115,7 +115,7 @@ const Step3Page = () => {
                                 getKey={(item) => String(item.prNumber)}
                                 renderItem={(item) => (
                                     <div className="grid grid-cols-8 items-center flex-grow-1 text-sm">
-                                        <div className="col-span-8">
+                                        <div className="col-span-8 sm:hidden">
                                             <div className="flex gap-2">
                                                 <span className="truncate">
                                                     {item?.prTitle}

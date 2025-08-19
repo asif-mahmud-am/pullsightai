@@ -88,7 +88,7 @@ const Step2Page = () => {
                             isLoading={isFetching}
                             errorLabel={
                                 error
-                                    ? "Error loading organizations. Please try again."
+                                    ? "Error loading repositories. Please try again."
                                     : undefined
                             }
                             noContentLabel={
@@ -112,7 +112,7 @@ const Step2Page = () => {
                                     <div className="grid grid-cols-5 items-center gap-4 flex-grow-1 text-sm">
                                         <div className="col-span-5 sm:col-span-2">
                                             <h4>{item.name}</h4>
-                                            <div className="flex gap-2 text-muted">
+                                            <div className="flex gap-2 text-muted sm:hidden">
                                                 <span>created by:</span>
                                                 <span>
                                                     {item.author?.username}

@@ -247,7 +247,7 @@ const Step4Page = () => {
                                 </div>
 
                                 <div className="grid grid-cols-6 items-center py-3 bg-[var(--box-800)] rounded-lg">
-                                    <div className="col-span-6 px-3">
+                                    <div className="col-span-6 px-3 sm:hidden">
                                         <div className="flex gap-2">
                                             <span className="truncate">
                                                 {data?.pullRequest?.prTitle}

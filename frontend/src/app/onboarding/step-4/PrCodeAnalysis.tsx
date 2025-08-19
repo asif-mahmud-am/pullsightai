@@ -1,7 +1,5 @@
 import type React from "react";
 import { FC, useState } from "react";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -17,6 +15,7 @@ import { humanizeDate } from "@/lib/dayjs";
 import { Button } from "@/components/ui/button";
 import { PullRequest } from "@/types/pullRequest";
 import Avatar from "@/components/reusable/Avatar";
+import MdPreview from "@/components/reusable/MdPreview";
 
 interface Props {
     analysisData: PRAnalysisData;
@@ -126,9 +125,7 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                         </div>
 
                         <div className="text-gray-300 text-sm mb-3">
-                            <Markdown remarkPlugins={[remarkGfm]}>
-                                {analysis.summary}
-                            </Markdown>
+                            <MdPreview content={analysis.summary} />
                         </div>
 
                         <div className="flex items-center gap-4 text-xs text-gray-400">
@@ -197,9 +194,7 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                             </div>
 
                             <div className="text-gray-300 text-sm mb-3">
-                                <Markdown remarkPlugins={[remarkGfm]}>
-                                    {comment.content}
-                                </Markdown>
+                                <MdPreview content={comment.content} />
                             </div>
 
                             {comment.codeSnippet && (

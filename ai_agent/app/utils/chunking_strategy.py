@@ -1,6 +1,7 @@
 import logging
 from typing import List, Dict, Tuple
 from .token_counter import estimate_tokens_for_file, is_file_too_large
+from .filter_files import filter_pr_files
 
 logger = logging.getLogger(__name__)
 
@@ -51,11 +52,20 @@ def create_summary_chunks(files: List[Dict], max_chunk_tokens: int = 200000, max
             logger.warning(f"File {file_name} exceeds {max_file_tokens} tokens, ignoring for summary")
             ignored_files.append({
                 "fileName": file_name,
-                "reason": f"File exceeds {max_file_tokens} token limit",
-                "token_count": estimate_tokens_for_file(file_diff)
+                "reason": f"File exceeds {max_file_tokens} token limit"
+                # "token_count": estimate_tokens_for_file(file_diff)
             })
             continue
-        
+
+        if filter_pr_files(file_name):
+            logger.warning(f"File {file_name} is ignored, ignoring for summary")
+            ignored_files.append({
+                "fileName": file_name,
+                "reason": "File is ignored"
+                # "token_count": estimate_tokens_for_file(file_diff)
+            })
+            continue
+
         file_tokens = estimate_tokens_for_file(file_diff)
         logger.debug(f"Processing file {file_name} with {file_tokens} tokens")
         

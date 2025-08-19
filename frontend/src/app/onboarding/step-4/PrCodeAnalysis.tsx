@@ -1,6 +1,7 @@
 import type React from "react";
 import { FC, useState } from "react";
 import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -125,7 +126,7 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                         </div>
 
                         <div className="text-gray-300 text-sm mb-3">
-                            <Markdown remarkPlugins={[]}>
+                            <Markdown remarkPlugins={[remarkGfm]}>
                                 {analysis.summary}
                             </Markdown>
                         </div>
@@ -196,7 +197,9 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                             </div>
 
                             <div className="text-gray-300 text-sm mb-3">
-                                <Markdown>{comment.content}</Markdown>
+                                <Markdown remarkPlugins={[remarkGfm]}>
+                                    {comment.content}
+                                </Markdown>
                             </div>
 
                             {comment.codeSnippet && (

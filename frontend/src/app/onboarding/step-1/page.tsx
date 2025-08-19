@@ -96,7 +96,7 @@ const Step1Page = () => {
         <>
             <div className="grid grid-cols-12 gap-4 lg:gap-8">
                 {/* Left column */}
-                <div className="col-span-4 col-start-2 xl:pr-16">
+                <div className="col-span-12 xl:col-span-4 xl:col-start-2 xl:pr-16">
                     <h2 className="text-4xl font-medium text-[var(--title-50)] mb-4 leading-[45px]">
                         Connect Your Organization
                     </h2>
@@ -109,83 +109,75 @@ const Step1Page = () => {
                 </div>
 
                 {/* Right column */}
-                <div className="col-span-6">
-                    <div className="mb-4 bg-[var(--body-900)] p-4 rounded-xl">
-                        <ContentCard>
-                            <ContentCard.Header>
-                                <h3 className="text-[var(--title-50)] font-medium text-lg">
-                                    Organizations list
-                                </h3>
-                                {provider === "github" && (
-                                    <Button
-                                        variant="outline"
-                                        className=""
-                                        onClick={handleInstall}
-                                    >
-                                        <Plus className="inline mr-1" />
-                                        <span>Add New Organization</span>
-                                    </Button>
+                <div className="col-span-12 xl:col-span-6">
+                    <ContentCard>
+                        <ContentCard.Header className="flex-col md:flex-row gap-y-4">
+                            <h3 className="text-[var(--title-50)] font-medium text-lg">
+                                Organizations list
+                            </h3>
+                            {provider === "github" && (
+                                <Button
+                                    variant="outline"
+                                    className=""
+                                    onClick={handleInstall}
+                                >
+                                    <Plus className="inline mr-1" />
+                                    <span>Add New Organization</span>
+                                </Button>
+                            )}
+                        </ContentCard.Header>
+                        <ContentCard.Body
+                            hasError={!!error}
+                            isLoading={isLoading}
+                            errorLabel={
+                                error
+                                    ? "Error loading organizations. Please try again."
+                                    : undefined
+                            }
+                            noContentLabel={
+                                organizations && organizations?.length === 0
+                                    ? "No organizations found. Please add an organization to continue."
+                                    : undefined
+                            }
+                        >
+                            <SelectableList
+                                items={organizations || []}
+                                selectedId={selectedOrg?.id}
+                                onSelect={(id) =>
+                                    setSelectedOrg(
+                                        organizations?.find(
+                                            (org) => org.id === id
+                                        ) || null
+                                    )
+                                }
+                                getKey={(item) => String(item.id)}
+                                renderItem={(item) => (
+                                    <div className="grid grid-cols-5 items-center gap-4 flex-grow-1 text-sm">
+                                        <h4 className="col-span-2">
+                                            {item.name}
+                                        </h4>
+                                        <Avatar
+                                            className="col-span-2 hidden md:block"
+                                            src={item.avatarUrl || ""}
+                                            name={item.name}
+                                        />
+                                        <div className="col-span-1 text-right text-[var(--subtitle-500)] text-sm whitespace-nowrap hidden md:block">
+                                            {humanizeDate(item.createdAt || "")}
+                                        </div>
+                                    </div>
                                 )}
-                            </ContentCard.Header>
-                            <ContentCard.Body
-                                hasError={!!error}
-                                isLoading={isLoading}
-                                errorLabel={
-                                    error
-                                        ? "Error loading organizations. Please try again."
-                                        : undefined
-                                }
-                                noContentLabel={
-                                    organizations && organizations?.length === 0
-                                        ? "No organizations found. Please add an organization to continue."
-                                        : undefined
-                                }
-                            >
-                                <SelectableList
-                                    items={organizations || []}
-                                    selectedId={selectedOrg?.id}
-                                    onSelect={(id) =>
-                                        setSelectedOrg(
-                                            organizations?.find(
-                                                (org) => org.id === id
-                                            ) || null
-                                        )
-                                    }
-                                    getKey={(item) => String(item.id)}
-                                    renderItem={(item) => (
-                                        <div className="grid grid-cols-5 items-center gap-4 flex-grow-1 text-sm">
-                                            <h4 className="col-span-2">
-                                                {item.name}
-                                            </h4>
-                                            <Avatar
-                                                className="col-span-2"
-                                                src={item.avatarUrl || ""}
-                                                name={item.name}
-                                            />
-                                            <div className="col-span-1 text-right text-[var(--subtitle-500)] text-sm whitespace-nowrap">
-                                                {humanizeDate(
-                                                    item.createdAt || ""
-                                                )}
-                                            </div>
+                                renderHeader={() => (
+                                    <div className="ml-9 md:grid grid-cols-5 gap-4 py-2 px-4 text-[var(--subtitle-400)] text-xs hidden">
+                                        <div className="col-span-2">Title</div>
+                                        <div className="col-span-2">Author</div>
+                                        <div className="col-span-1 text-right">
+                                            Created at
                                         </div>
-                                    )}
-                                    renderHeader={() => (
-                                        <div className="ml-9 grid grid-cols-5 gap-4 py-2 px-4 text-[var(--subtitle-400)] text-xs">
-                                            <div className="col-span-2">
-                                                Title
-                                            </div>
-                                            <div className="col-span-2">
-                                                Author
-                                            </div>
-                                            <div className="col-span-1 text-right">
-                                                Created at
-                                            </div>
-                                        </div>
-                                    )}
-                                />
-                            </ContentCard.Body>
-                        </ContentCard>
-                    </div>
+                                    </div>
+                                )}
+                            />
+                        </ContentCard.Body>
+                    </ContentCard>
                 </div>
             </div>
 

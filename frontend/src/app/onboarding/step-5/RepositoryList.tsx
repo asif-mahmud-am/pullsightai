@@ -165,7 +165,7 @@ const RepositoryList = ({ onSelectionChange }: Props) => {
                     className="border rounded px-2 py-1 mb-2"
                 /> */}
             </ContentCard.Header>
-            <ContentCard.Body className="max-h-[calc(100vh-650px)]">
+            <ContentCard.Body className="xl:max-h-[calc(100vh-650px)]">
                 <DataTable<Repository>
                     className="min-w-full"
                     isLoading={isFetching}

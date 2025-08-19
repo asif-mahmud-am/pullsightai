@@ -47,7 +47,7 @@ const Step3Page = () => {
                 ? item.prTitle.toLowerCase().includes(search.toLowerCase())
                 : true,
         inputProps: {
-            className: "ml-auto",
+            className: "order-1 md:order-0 md:ml-auto w-full md:w-auto",
         },
     });
 
@@ -65,7 +65,7 @@ const Step3Page = () => {
         <>
             <div className="grid grid-cols-12 gap-4 lg:gap-8">
                 {/* Left column */}
-                <div className="col-span-4 xl:pr-16">
+                <div className="col-span-12 xl:col-span-4 xl:pr-16">
                     <h2 className="text-4xl font-medium text-[var(--title-50)] mb-4 leading-[45px]">
                         Let&apos;s See the AI in Action on Your Code
                     </h2>
@@ -77,9 +77,9 @@ const Step3Page = () => {
                 </div>
 
                 {/* Right column */}
-                <div className="col-span-8">
+                <div className="col-span-12 xl:col-span-8">
                     <ContentCard>
-                        <ContentCard.Header>
+                        <ContentCard.Header className="flex-wrap md:flex-nowrap gap-y-4 items-start md:items-center">
                             <h3 className="text-[var(--title-50)] font-medium text-lg">
                                 Repositories List
                             </h3>
@@ -87,14 +87,14 @@ const Step3Page = () => {
                             <Button
                                 variant="outline"
                                 size="icon"
-                                className=""
+                                className="ml-auto md:ml-0"
                                 onClick={() => refetchPullRequests()}
                             >
                                 <RefreshCw className="inline mr-1" />
                             </Button>
                         </ContentCard.Header>
                         <ContentCard.Body
-                            className="max-h-[calc(100vh-450px)]"
+                            className="xl:max-h-[calc(100vh-450px)]"
                             hasError={!!error}
                             isLoading={isFetching}
                             errorLabel={
@@ -115,15 +115,48 @@ const Step3Page = () => {
                                 getKey={(item) => String(item.prNumber)}
                                 renderItem={(item) => (
                                     <div className="grid grid-cols-8 items-center flex-grow-1 text-sm">
-                                        <h4 className="col-span-3">
+                                        <div className="col-span-8">
+                                            <div className="flex gap-2">
+                                                <span className="truncate">
+                                                    {item?.prTitle}
+                                                </span>
+                                                <Badge
+                                                    className="ml-auto"
+                                                    variant={
+                                                        item?.prState ===
+                                                            "merged" ||
+                                                        item?.prState ===
+                                                            "closed"
+                                                            ? "destructive"
+                                                            : "success"
+                                                    }
+                                                >
+                                                    {item.prState}
+                                                </Badge>
+                                            </div>
+                                            <div className="flex gap-1 text-muted mt-1">
+                                                <span className="">by:</span>
+                                                <span className="font-semibold truncate">
+                                                    {item?.prUser}
+                                                </span>
+                                                <span className="mx-1">|</span>
+                                                <span>at:</span>
+                                                <span className="">
+                                                    {formatDate(
+                                                        item.prCreatedAt || ""
+                                                    )}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <h4 className="col-span-3 hidden sm:block">
                                             {item?.prTitle}
                                         </h4>
                                         <Avatar
-                                            className="col-span-2"
+                                            className="col-span-2 hidden sm:flex"
                                             src={item?.prUserAvatar || ""}
                                             name={item?.prUser}
                                         />
-                                        <div className="col-span-1 text-center text-[var(--subtitle-500)] text-sm whitespace-nowrap">
+                                        <div className="col-span-1 text-center text-[var(--subtitle-500)] text-sm whitespace-nowrap hidden sm:block">
                                             <Badge
                                                 variant={
                                                     item?.prState ===
@@ -136,16 +169,16 @@ const Step3Page = () => {
                                                 {item.prState}
                                             </Badge>
                                         </div>
-                                        <div className="col-span-1 text-right text-[var(--subtitle-500)] text-sm whitespace-nowrap">
+                                        <div className="col-span-1 text-right text-[var(--subtitle-500)] text-sm whitespace-nowrap hidden sm:block">
                                             {formatDate(item.prCreatedAt || "")}
                                         </div>
-                                        <div className="col-span-1 text-right text-[var(--subtitle-500)] text-sm whitespace-nowrap">
+                                        <div className="col-span-1 text-right text-[var(--subtitle-500)] text-sm whitespace-nowrap hidden sm:block">
                                             {formatDate(item.prUpdatedAt || "")}
                                         </div>
                                     </div>
                                 )}
                                 renderHeader={() => (
-                                    <div className="ml-9 grid grid-cols-8 py-2 px-4 text-[var(--subtitle-400)] text-xs">
+                                    <div className="ml-9 md:grid grid-cols-8 py-2 px-4 text-[var(--subtitle-400)] text-xs hidden">
                                         <div className="col-span-3">Title</div>
                                         <div className="col-span-2">Author</div>
                                         <div className="col-span-1 text-center">

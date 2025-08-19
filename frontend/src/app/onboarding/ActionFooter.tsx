@@ -33,15 +33,17 @@ const ActionFooter: FC<ActionFooterProps> = ({
     const { mutateAsync: updateUser } = useUpdateUserMutation();
 
     return (
-        <div className="fixed left-0 right-0 bottom-14 w-full z-10">
+        <div className="fixed left-0 right-0 bottom-6 w-full z-10">
             <div className="container flex items-center">
                 {backButtonText && onBackClick && (
                     <button
-                        className="text-base pr-3 py-2.5 rounded-2xl flex items-center  text-[var(--subtitle-300)] hover:text-[var(--subtitle-100)] cursor-pointer"
+                        className="text-base pr-3 py-2.5 rounded-2xl flex items-center text-[var(--subtitle-300)] hover:text-[var(--subtitle-100)] cursor-pointer"
                         onClick={onBackClick}
                     >
                         <ArrowLeftIcon className="w-5 h-5 mr-2" />
-                        <span>{backButtonText}</span>
+                        <span className="hidden md:block">
+                            {backButtonText}
+                        </span>
                     </button>
                 )}
                 <div className="ml-auto gap-3 flex flex-col items-end">

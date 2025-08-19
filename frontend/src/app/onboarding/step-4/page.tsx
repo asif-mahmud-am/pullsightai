@@ -15,6 +15,8 @@ import PrCodeAnalysis from "./PrCodeAnalysis";
 import Image from "next/image";
 import { formatDate } from "@/lib/dayjs";
 import { PRAnalysisData } from "@/types/prAnalysis";
+import Avatar from "@/components/reusable/Avatar";
+import Badge from "@/components/reusable/Badge";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const data: any = {
@@ -208,7 +210,7 @@ const Step4Page = () => {
         <>
             <div className="grid grid-cols-12 gap-4 lg:gap-8">
                 {/* Left column */}
-                <div className="col-span-4 xl:pr-16">
+                <div className="col-span-12 xl:col-span-4 xl:pr-16">
                     <h2 className="text-4xl font-medium text-[var(--title-50)] mb-4 leading-[45px]">
                         Generate your first AI-powered review
                     </h2>
@@ -221,14 +223,14 @@ const Step4Page = () => {
                 </div>
 
                 {/* Right column */}
-                <div className="col-span-8">
+                <div className="col-span-12 xl:col-span-8">
                     <div className="mb-4 relative">
                         <h3 className="text-[var(--title-50)] font-medium mb-4 text-lg">
                             PR Summary
                         </h3>
                         {data && data?.pullRequest && (
                             <>
-                                <div className="grid grid-cols-6 py-3 text-[var(--subtitle-400)] text-sm font-medium">
+                                <div className="hidden md:grid grid-cols-6 py-3 text-[var(--subtitle-400)] text-sm font-medium">
                                     <div className="col-span-2 pl-3">Title</div>
                                     <div className="col-span-1 pl-1">
                                         Author
@@ -244,64 +246,80 @@ const Step4Page = () => {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-6 py-3 bg-[var(--box-800)] rounded-lg">
-                                    <div className="flex items-center col-span-2">
+                                <div className="grid grid-cols-6 items-center py-3 bg-[var(--box-800)] rounded-lg">
+                                    <div className="col-span-6 px-3">
+                                        <div className="flex gap-2">
+                                            <span className="truncate">
+                                                {data?.pullRequest?.prTitle}
+                                            </span>
+                                            <Badge
+                                                className="ml-auto"
+                                                variant={
+                                                    data?.pullRequest
+                                                        ?.prState ===
+                                                        "merged" ||
+                                                    data?.pullRequest
+                                                        ?.prState === "closed"
+                                                        ? "destructive"
+                                                        : "success"
+                                                }
+                                            >
+                                                {data?.pullRequest.prState}
+                                            </Badge>
+                                        </div>
+                                        <div className="flex gap-1 text-muted mt-1">
+                                            <span className="">by:</span>
+                                            <span className="font-semibold truncate">
+                                                {data?.pullRequest?.prUser}
+                                            </span>
+                                            <span className="mx-1">|</span>
+                                            <span>at:</span>
+                                            <span className="">
+                                                {formatDate(
+                                                    data?.pullRequest
+                                                        .prCreatedAt || ""
+                                                )}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="col-span-2 hidden sm:block">
                                         <span className="text-[var(--title-50)] text-base font-medium ml-3">
                                             {data?.pullRequest?.prTitle}
                                         </span>
                                     </div>
-                                    <div className="flex items-center col-span-1">
-                                        <div className="flex items-center">
-                                            <div className="w-8 h-8 rounded-full overflow-hidden bg-[var(--subtitle-500)] flex items-center justify-center mr-2 flex-shrink-0">
-                                                {data?.pullRequest
-                                                    ?.avatarUrl ? (
-                                                    <Image
-                                                        src={
-                                                            data.pullRequest
-                                                                .avatarUrl
-                                                        }
-                                                        alt={
-                                                            data.pullRequest
-                                                                .prUser || ""
-                                                        }
-                                                        className="w-full h-full object-cover"
-                                                        width={32}
-                                                        height={32}
-                                                    />
-                                                ) : (
-                                                    <span className="text-[var(--title-50)] text-sm">
-                                                        {data.pullRequest.prUser?.charAt(
-                                                            0
-                                                        ) || "?"}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="text-[var(--subtitle-500)] text-sm">
-                                                {data.pullRequest.prUser ||
-                                                    "Unknown"}
-                                            </p>
-                                        </div>
+                                    <div className="col-span-1 hidden sm:block">
+                                        <Avatar
+                                            className=""
+                                            src={
+                                                data?.pullRequest
+                                                    ?.prUserAvatar || ""
+                                            }
+                                            name={
+                                                data?.pullRequest?.prUser ||
+                                                "Unknown"
+                                            }
+                                        />
                                     </div>
-                                    <div className="col-span-1 text-center">
-                                        <span
-                                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                    <div className="col-span-1 text-center hidden sm:block">
+                                        <Badge
+                                            variant={
                                                 data?.pullRequest?.prState ===
                                                     "merged" ||
                                                 data?.pullRequest?.prState ===
                                                     "closed"
-                                                    ? "bg-red-500 text-white"
-                                                    : "bg-green-500 text-white"
-                                            }`}
+                                                    ? "destructive"
+                                                    : "success"
+                                            }
                                         >
                                             {data?.pullRequest?.prState}
-                                        </span>
+                                        </Badge>
                                     </div>
-                                    <div className="col-span-1 text-right text-sm">
+                                    <div className="col-span-1 text-right text-sm hidden sm:block">
                                         {formatDate(
                                             data?.pullRequest?.createdAt
                                         )}
                                     </div>
-                                    <div className="col-span-1 text-right text-sm pr-4">
+                                    <div className="col-span-1 text-right text-sm pr-4 hidden sm:block">
                                         {formatDate(
                                             data?.pullRequest?.updatedAt
                                         )}

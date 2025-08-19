@@ -96,7 +96,7 @@ const MemberList = ({ onSelectionChange }: Props) => {
                     <span className="text-muted">({members?.length})</span>
                 </h3>
             </ContentCard.Header>
-            <ContentCard.Body className="max-h-[calc(100vh-650px)]">
+            <ContentCard.Body className="xl:max-h-[calc(100vh-650px)]">
                 <DataTable<TeamMember>
                     className="min-w-full"
                     isLoading={isFetching}

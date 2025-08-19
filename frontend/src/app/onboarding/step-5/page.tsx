@@ -21,55 +21,61 @@ import { useUpdateUserMutation } from "@/api/queries/auth";
 const Step5Page = () => {
     const user = useAuthStore((state) => state.user);
     const [selectedMembers, setSelectedMembers] = useState<TeamMember[]>([]);
-    const [selectedRepositories, setSelectedRepositories] = useState<Repository[]>(
-        []
-    );
+    const [selectedRepositories, setSelectedRepositories] = useState<
+        Repository[]
+    >([]);
 
     const searchParams = useSearchParams();
 
     const repoId = searchParams.get("repoId") as string;
     const prId = searchParams.get("prId") as string;
 
-
-    const {mutateAsync:createSubscription, isPending: isCreatingSubscription} = useMakeSubscriptionMutation()
-        const { mutateAsync: updateUser, isPending: isUpdatingUser } = useUpdateUserMutation();
+    const {
+        mutateAsync: createSubscription,
+        isPending: isCreatingSubscription,
+    } = useMakeSubscriptionMutation();
+    const { mutateAsync: updateUser, isPending: isUpdatingUser } =
+        useUpdateUserMutation();
 
     const onStepComplete = () => {
-        if(!selectedMembers.length || !selectedRepositories.length) {
+        if (!selectedMembers.length || !selectedRepositories.length) {
             return;
         }
         const repositories = selectedRepositories.map((repo) => {
             return {
                 ...repo,
                 id: repo.id.toString(),
-            }
-        })
+            };
+        });
 
         createSubscription({
             members: selectedMembers,
             repositories,
-        }).then(() => {
-            updateUser({
-                onboardingStep: 0,
-                currentWorkspace:
-                    typeof user?.currentWorkspace === "object" && user?.currentWorkspace !== null
-                        ? user.currentWorkspace._id
-                        : typeof user?.currentWorkspace === "string"
-                        ? user.currentWorkspace
-                        : "",
-            }).then(() => {
-                redirect(ROUTE_CONSTANTS.DASHBOARD);
+        })
+            .then(() => {
+                updateUser({
+                    onboardingStep: 0,
+                    currentWorkspace:
+                        typeof user?.currentWorkspace === "object" &&
+                        user?.currentWorkspace !== null
+                            ? user.currentWorkspace._id
+                            : typeof user?.currentWorkspace === "string"
+                            ? user.currentWorkspace
+                            : "",
+                }).then(() => {
+                    redirect(ROUTE_CONSTANTS.DASHBOARD);
+                });
+            })
+            .catch((error) => {
+                console.error("Error creating subscription:", error);
             });
-        }).catch((error) => {
-            console.error("Error creating subscription:", error);
-        });
     };
 
     return (
         <>
             <div className="grid grid-cols-12 gap-4 lg:gap-8">
                 {/* Left column */}
-                <div className="col-span-12 flex items-center flex-col lg:flex-row lg:gap-x-10 divide-y lg:divide-y-0 lg:divide-x mb-4">
+                <div className="col-span-12 flex items-center flex-col lg:flex-row lg:gap-x-10 gap-y-10 divide-y lg:divide-y-0 lg:divide-x mb-4">
                     <div className="max-w-[690px] lg:pr-16">
                         <h2 className="text-4xl font-medium text-[var(--title-50)] mb-4 leading-[45px]">
                             Set Up Your Repositories & Team
@@ -111,7 +117,7 @@ const Step5Page = () => {
                 </div>
 
                 {/* left column */}
-                <div className="col-span-6">
+                <div className="col-span-12 xl:col-span-6">
                     <RepositoryList
                         onSelectionChange={(selectedRepos) =>
                             setSelectedRepositories(selectedRepos)
@@ -119,7 +125,7 @@ const Step5Page = () => {
                     />
                 </div>
                 {/* Right column */}
-                <div className="col-span-6">
+                <div className="col-span-12 xl:col-span-6">
                     <MemberList
                         onSelectionChange={(selectedMembers) =>
                             setSelectedMembers(selectedMembers)

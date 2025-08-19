@@ -6,9 +6,9 @@ import OauthButtons from "../OauthButtons";
 
 const LoginPage = () => {
     return (
-        <div className="min-h-screen py-12 flex flex-col">
+        <div className="min-h-screen py-5 md:py-12 flex flex-col">
             <div className="grid grid-cols-12 gap-4 lg:gap-8 flex-grow">
-                <div className="col-span-6 hidden lg:block">
+                <div className="col-span-12 lg:col-span-6 hidden lg:block">
                     <div
                         className="max-w-[772px] h-full py-[80px] px-[96px] bg-[var(--box-800)] rounded-[24px] flex flex-col gap-[100px] relative overflow-hidden"
                         style={{
@@ -51,7 +51,7 @@ const LoginPage = () => {
                     </div>
                 </div>
 
-                <div className="col-span-4 lg:col-start-9">
+                <div className="col-span-12 xl:col-span-4 xl:col-start-9 md:col-span-6">
                     <div className="flex flex-col gap-[40px] py-14">
                         <div className="flex flex-col gap-3">
                             <Image
@@ -78,7 +78,7 @@ const LoginPage = () => {
                             </p>
                         </div>
 
-                        <div className="flex flex-col gap-[32px] mt-10">
+                        <div className="flex flex-col gap-[32px] mt-5 md:mt-10">
                             <OauthButtons />
                             <Separator />
 
@@ -122,7 +122,7 @@ const LoginPage = () => {
 
                             <Separator />
 
-                            <div className="flex items-center gap-x-12">
+                            <div className="flex flex-col md:flex-row md:items-center gap-y-5 gap-x-12">
                                 <div className="flex items-center gap-2 text-xs text-[var(--title-50)]">
                                     <Image
                                         src="/images/soc.svg"
@@ -151,6 +151,7 @@ const LoginPage = () => {
                                         alt=""
                                         height={32}
                                         width={25}
+                                        className="mr-2 md:mr-0"
                                     />
                                     <span>
                                         SSL <br /> Encryption

@@ -38,7 +38,7 @@ const Step2Page = () => {
                 ? item.name.toLowerCase().includes(search.toLowerCase())
                 : true,
         inputProps: {
-            className: "ml-auto",
+            className: "order-1 md:order-0 md:ml-auto w-full md:w-auto",
         },
     });
 
@@ -53,7 +53,7 @@ const Step2Page = () => {
         <>
             <div className="grid grid-cols-12 gap-4 lg:gap-8">
                 {/* Left column */}
-                <div className="col-span-4 col-start-2 xl:pr-16">
+                <div className="col-span-12 xl:col-span-4 xl:col-start-2 xl:pr-16">
                     <h2 className="text-4xl font-medium text-[var(--title-50)] mb-4 leading-[45px]">
                         Select Repositories for AI Analysis
                     </h2>
@@ -66,9 +66,9 @@ const Step2Page = () => {
                 </div>
 
                 {/* Right column */}
-                <div className="col-span-6">
+                <div className="col-span-12 xl:col-span-6">
                     <ContentCard>
-                        <ContentCard.Header>
+                        <ContentCard.Header className="flex-wrap md:flex-nowrap gap-y-4 items-start md:items-center">
                             <h3 className="text-[var(--title-50)] font-medium text-lg">
                                 Repositories List
                             </h3>
@@ -76,14 +76,14 @@ const Step2Page = () => {
                             <Button
                                 variant="outline"
                                 size="icon"
-                                className=""
+                                className="ml-auto md:ml-0"
                                 onClick={() => refetchRepositories()}
                             >
                                 <RefreshCw className="inline mr-1" />
                             </Button>
                         </ContentCard.Header>
                         <ContentCard.Body
-                            className="max-h-[calc(100vh-450px)]"
+                            className="xl:max-h-[calc(100vh-450px)]"
                             hasError={!!error}
                             isLoading={isFetching}
                             errorLabel={
@@ -110,21 +110,27 @@ const Step2Page = () => {
                                 getKey={(item) => String(item.name)}
                                 renderItem={(item) => (
                                     <div className="grid grid-cols-5 items-center gap-4 flex-grow-1 text-sm">
-                                        <h4 className="col-span-2">
-                                            {item.name}
-                                        </h4>
+                                        <div className="col-span-5 sm:col-span-2">
+                                            <h4>{item.name}</h4>
+                                            <div className="flex gap-2 text-muted">
+                                                <span>created by:</span>
+                                                <span>
+                                                    {item.author?.username}
+                                                </span>
+                                            </div>
+                                        </div>
                                         <Avatar
-                                            className="col-span-2"
+                                            className="col-span-2 hidden sm:flex"
                                             src={item.author?.avatarUrl || ""}
-                                            name={item.name}
+                                            name={item.author?.username}
                                         />
-                                        <div className="col-span-1 text-right text-[var(--subtitle-500)] text-sm whitespace-nowrap">
+                                        <div className="col-span-1 text-right text-[var(--subtitle-500)] text-sm whitespace-nowrap  hidden sm:block">
                                             {formatDate(item.createdOn || "")}
                                         </div>
                                     </div>
                                 )}
                                 renderHeader={() => (
-                                    <div className="ml-9 grid grid-cols-5 gap-4 py-2 px-4 text-[var(--subtitle-400)] text-xs">
+                                    <div className="ml-9 md:grid grid-cols-5 gap-4 py-2 px-4 text-[var(--subtitle-400)] text-xs hidden">
                                         <div className="col-span-2">Title</div>
                                         <div className="col-span-2">Author</div>
                                         <div className="col-span-1 text-right">

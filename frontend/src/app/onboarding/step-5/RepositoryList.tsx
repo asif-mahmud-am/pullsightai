@@ -128,7 +128,7 @@ const RepositoryList = ({ onSelectionChange }: Props) => {
 
     return (
         <ContentCard className="mb-4 gap-2">
-            <ContentCard.Header>
+            <ContentCard.Header className="flex-wrap sm:flex-nowrap gap-y-4">
                 <h3 className="font-medium text-lg">
                     Repositories list{" "}
                     <span className="text-muted">({repositories?.length})</span>
@@ -151,7 +151,7 @@ const RepositoryList = ({ onSelectionChange }: Props) => {
                         });
                     }}
                     placeholder="Search repositories…"
-                    className="border rounded-md p-2 text-sm"
+                    className="w-full sm:w-auto border rounded-md p-2 text-sm"
                 />
             </ContentCard.Header>
             <ContentCard.Body

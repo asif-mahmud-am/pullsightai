@@ -85,7 +85,7 @@ const MemberList = ({ onSelectionChange }: Props) => {
 
     return (
         <ContentCard className="mb-4">
-            <ContentCard.Header>
+            <ContentCard.Header className="flex-wrap sm:flex-nowrap gap-y-4">
                 <h3 className="font-medium text-lg">
                     Team members list{" "}
                     <span className="text-muted">({members?.length})</span>
@@ -108,7 +108,7 @@ const MemberList = ({ onSelectionChange }: Props) => {
                         });
                     }}
                     placeholder="Search team members…"
-                    className="border rounded-md p-2 text-sm"
+                    className="w-full sm:w-auto border rounded-md p-2 text-sm"
                 />
             </ContentCard.Header>
             <ContentCard.Body

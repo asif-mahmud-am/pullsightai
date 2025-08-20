@@ -7,3 +7,4 @@ groq
 google-generativeai
 anthropic
 PyYAML
+tiktoken

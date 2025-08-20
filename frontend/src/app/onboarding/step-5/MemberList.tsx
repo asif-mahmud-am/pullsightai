@@ -1,4 +1,5 @@
 import { useOrganizationMembersQuery } from "@/api/queries/member";
+import Avatar from "@/components/reusable/Avatar";
 import ContentCard from "@/components/reusable/ContentCard";
 import DataTable from "@/components/reusable/DataTable";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -6,6 +7,7 @@ import { useAuthStore } from "@/store/authStore";
 import { TeamMember } from "@/types/user";
 import { ColumnDef } from "@tanstack/react-table";
 import Image from "next/image";
+import { useState } from "react";
 
 interface Props {
     onSelectionChange?: (selectedRepos: TeamMember[]) => void;
@@ -41,26 +43,11 @@ export const columns: ColumnDef<TeamMember>[] = [
         header: "Team member",
         cell: ({ row }) => {
             return (
-                <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-full overflow-hidden bg-[var(--subtitle-500)] flex items-center justify-center mr-2 flex-shrink-0">
-                        {row.original?.avatarUrl ? (
-                            <Image
-                                src={row.original?.avatarUrl}
-                                alt={row.original?.username || ""}
-                                className="w-full h-full object-cover"
-                                width={32}
-                                height={32}
-                            />
-                        ) : (
-                            <span className="text-[var(--title-50)] text-sm">
-                                {row.original?.username?.charAt(0) || "?"}
-                            </span>
-                        )}
-                    </div>{" "}
-                    <p className="text-[var(--subtitle-500)] text-sm">
-                        {row.original?.username || "Unknown"}
-                    </p>
-                </div>
+                <Avatar
+                    src={row.original?.avatarUrl}
+                    name={row.original?.username || "Unknown"}
+                    className=""
+                />
             );
         },
     },
@@ -72,6 +59,10 @@ export const columns: ColumnDef<TeamMember>[] = [
 ];
 
 const MemberList = ({ onSelectionChange }: Props) => {
+    const [columnFilters, setColumnFilters] = useState<
+        { id: string; value: unknown }[]
+    >([]);
+
     const user = useAuthStore((s) => s.user);
     const provider = user?.provider || "github";
     const {
@@ -84,7 +75,7 @@ const MemberList = ({ onSelectionChange }: Props) => {
 
     // Function to determine if a member should be initially selected
     const shouldSelectMember = (member: TeamMember) => {
-        return member.username === user?.username;
+        return member.providerId === user?.providerId;
     };
 
     const otherMembers = members?.filter(
@@ -99,6 +90,26 @@ const MemberList = ({ onSelectionChange }: Props) => {
                     Team members list{" "}
                     <span className="text-muted">({members?.length})</span>
                 </h3>
+                <input
+                    value={
+                        (columnFilters.find((f) => f.id === "name")
+                            ?.value as string) ?? ""
+                    }
+                    onChange={(e) => {
+                        const value = e.target.value;
+                        setColumnFilters((prev) => {
+                            // Remove the filter if value is empty, else update/add
+                            const otherFilters = prev.filter(
+                                (f) => f.id !== "name"
+                            );
+                            return value
+                                ? [...otherFilters, { id: "name", value }]
+                                : otherFilters;
+                        });
+                    }}
+                    placeholder="Search team members…"
+                    className="border rounded-md p-2 text-sm"
+                />
             </ContentCard.Header>
             <ContentCard.Body
                 className="xl:max-h-[calc(100vh-650px)]"
@@ -124,6 +135,8 @@ const MemberList = ({ onSelectionChange }: Props) => {
                     onSelectionChange={(selectedRows) =>
                         onSelectionChange?.(selectedRows)
                     }
+                    columnFilters={columnFilters}
+                    onColumnFiltersChange={setColumnFilters}
                 />
                 <div className="text-muted text-sm mt-3">
                     You can add or remove team members at any time

@@ -4,10 +4,11 @@ import {
     ColumnDef,
     flexRender,
     getCoreRowModel,
+    getFilteredRowModel,
     Row,
     useReactTable,
 } from "@tanstack/react-table";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
     Table,
@@ -36,13 +37,6 @@ interface DataTableProps<TData> {
     onColumnFiltersChange?: (filters: { id: string; value: unknown }[]) => void;
 }
 
-interface SearchInputProps {
-    value: string;
-    onChange: (value: string) => void;
-}
-
-// SearchInput removed; parent should render any search UI and control filtering logic
-
 const DataTable = <TData,>({
     className,
     isLoading,
@@ -54,31 +48,41 @@ const DataTable = <TData,>({
     columnFilters,
     onColumnFiltersChange,
 }: DataTableProps<TData>) => {
+    const [internalColumnFilters, setInternalColumnFilters] = useState<
+        { id: string; value: unknown }[]
+    >([]);
     const [rowSelection, setRowSelection] = useState({});
     const prevDataLength = useRef<number>(0);
+
+    const filters = columnFilters ?? internalColumnFilters;
 
     const table = useReactTable({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
         onRowSelectionChange: setRowSelection,
         state: {
             rowSelection,
-            columnFilters: columnFilters || [],
+            columnFilters: filters,
         },
-        onColumnFiltersChange: onColumnFiltersChange
-            ? (updaterOrValue) => {
-                  // updaterOrValue can be a value or a function
-                  const nextFilters =
-                      typeof updaterOrValue === "function"
-                          ? updaterOrValue(columnFilters || [])
-                          : updaterOrValue;
-                  // Always pass an array
-                  onColumnFiltersChange(
-                      Array.isArray(nextFilters) ? nextFilters : []
-                  );
-              }
-            : undefined,
+        onColumnFiltersChange: (updaterOrValue) => {
+            // updaterOrValue can be a value or a function
+            const nextFilters =
+                typeof updaterOrValue === "function"
+                    ? updaterOrValue(columnFilters || [])
+                    : updaterOrValue;
+            // Always pass an array
+            if (onColumnFiltersChange) {
+                onColumnFiltersChange(
+                    Array.isArray(nextFilters) ? nextFilters : []
+                );
+            } else {
+                setInternalColumnFilters(
+                    Array.isArray(nextFilters) ? nextFilters : []
+                );
+            }
+        },
         enableRowSelection: true,
         enableFilters: true,
     });
@@ -109,7 +113,7 @@ const DataTable = <TData,>({
                 .rows.map((row) => row.original);
             onSelectionChange(selectedRows);
         }
-    }, [rowSelection, table]);
+    }, [rowSelection]);
 
     return (
         <div

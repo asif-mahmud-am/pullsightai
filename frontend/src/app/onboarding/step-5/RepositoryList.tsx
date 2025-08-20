@@ -1,4 +1,5 @@
 import { useRepositoryQuery } from "@/api/queries/repository";
+import Avatar from "@/components/reusable/Avatar";
 import ContentCard from "@/components/reusable/ContentCard";
 import DataTable from "@/components/reusable/DataTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,26 +72,10 @@ export const columns: ColumnDef<Repository>[] = [
                     username?: string;
                 }) || {};
             return (
-                <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-full overflow-hidden bg-[var(--subtitle-500)] flex items-center justify-center mr-2 flex-shrink-0">
-                        {author?.avatarUrl ? (
-                            <Image
-                                src={author?.avatarUrl}
-                                alt={author.username || ""}
-                                className="w-full h-full object-cover"
-                                width={32}
-                                height={32}
-                            />
-                        ) : (
-                            <span className="text-[var(--title-50)] text-sm">
-                                {author.username?.charAt(0) || "?"}
-                            </span>
-                        )}
-                    </div>{" "}
-                    <p className="text-[var(--subtitle-500)] text-sm">
-                        {author.username || "Unknown"}
-                    </p>
-                </div>
+                <Avatar
+                    src={author?.avatarUrl || ""}
+                    name={author?.username || "Unknown"}
+                />
             );
         },
     },
@@ -148,7 +133,7 @@ const RepositoryList = ({ onSelectionChange }: Props) => {
                     Repositories list{" "}
                     <span className="text-muted">({repositories?.length})</span>
                 </h3>
-                {/* <input
+                <input
                     value={
                         (columnFilters.find((f) => f.id === "name")
                             ?.value as string) ?? ""
@@ -166,8 +151,8 @@ const RepositoryList = ({ onSelectionChange }: Props) => {
                         });
                     }}
                     placeholder="Search repositories…"
-                    className="border rounded px-2 py-1 mb-2"
-                /> */}
+                    className="border rounded-md p-2 text-sm"
+                />
             </ContentCard.Header>
             <ContentCard.Body
                 className="xl:max-h-[calc(100vh-650px)]"

@@ -52,6 +52,8 @@ const Step3Page = () => {
     });
 
     const onStepComplete = () => {
+        // if (pullRequests?.length === 0)
+        //     redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_5 + `?repoId=${repoId}`);
         if (!selectedPR) return;
         // You can add your API call or navigation logic here
 
@@ -81,7 +83,7 @@ const Step3Page = () => {
                     <ContentCard>
                         <ContentCard.Header className="flex-wrap md:flex-nowrap gap-y-4 items-start md:items-center">
                             <h3 className="text-[var(--title-50)] font-medium text-lg">
-                                Repositories List
+                                Pull Requests List
                             </h3>
                             {searchInput}
                             <Button
@@ -104,7 +106,7 @@ const Step3Page = () => {
                             }
                             noContentLabel={
                                 pullRequests && pullRequests?.length === 0
-                                    ? "No pull requests found. Please add a pull request to continue."
+                                    ? "No pull requests found. Please add a pull request to analyze."
                                     : undefined
                             }
                         >
@@ -201,7 +203,10 @@ const Step3Page = () => {
             {/* Footer with action button */}
             <ActionFooter
                 buttonText={false ? "Analyzing..." : "Analyze Pull Request"}
-                isEnabled={Boolean(selectedPR) && !isFetching}
+                isEnabled={
+                    // pullRequests?.length == 0 ||
+                    Boolean(selectedPR) && !isFetching
+                }
                 isLoading={isFetching}
                 onClick={onStepComplete}
                 onBackClick={() => redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_2)}

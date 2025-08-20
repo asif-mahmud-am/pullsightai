@@ -52,7 +52,9 @@ const Body: FC<BodyProps> = ({
         >
             {children}
             {noContentLabel && !hasError && !isLoading && (
-                <p className="text-[var(--subtitle-400)]">{noContentLabel}</p>
+                <p className="text-[var(--subtitle-400)] text-center p-5">
+                    {noContentLabel}
+                </p>
             )}
             {hasError && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center bg-dark/50 backdrop-blur-sm">

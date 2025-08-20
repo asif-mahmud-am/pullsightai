@@ -31,6 +31,9 @@ export class PRFile {
     @Prop({ nullable: true })
     prFileDiff: string
 
+    @Prop({ type: [String], nullable: true })
+    prFileDiffHunks: string[]
+
     @Prop({ nullable: true })
     prFileBlobUrl: string
 }

@@ -239,7 +239,6 @@ export class BitbucketApiService {
         })
 
         if (response.values && Array.isArray(response.values)) {
-            console.log('Fetched members:', response.values)
             response.values.forEach((member) => {
                 allMembers.push({
                     provider: 'bitbucket',

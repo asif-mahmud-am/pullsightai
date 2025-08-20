@@ -156,7 +156,7 @@ export class BitbucketService {
     async processBitbucketEvent(event: any, payload: any) {
         const isApplicable =
             await this.analysisService.checkApplicableForAnalysis(
-                payload.repository.name,
+                payload.repository.full_name.split('/')[1],
                 payload.repository.owner.username,
                 'bitbucket',
                 payload.actor.uuid

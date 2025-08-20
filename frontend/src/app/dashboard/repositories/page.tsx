@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { columns } from "@/components/dataTable/repositoriesDataTable";
-import { DataTable } from "@/components/reusable/DataTable";
+import DataTable from "@/components/reusable/DataTable";
 import { List, Grid, Info } from "lucide-react";
 
 /* eslint-disable  @typescript-eslint/no-explicit-any */
-const data:any = [
+const data: any = [
     {
         active: true,
         title: "shared-libs",
@@ -55,7 +55,7 @@ const RepositoriesPage = () => {
     const [tab, setTab] = useState<"all" | "active">("all");
 
     const filteredData =
-        tab === "active" ? data.filter((item:any) => item.active) : data;
+        tab === "active" ? data.filter((item: any) => item.active) : data;
 
     return (
         <div className="p-6 space-y-6 text-white">

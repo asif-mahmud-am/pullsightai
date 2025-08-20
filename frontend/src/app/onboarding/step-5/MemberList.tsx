@@ -1,6 +1,6 @@
 import { useOrganizationMembersQuery } from "@/api/queries/member";
-import { DataTable } from "@/components/reusable/DataTable";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import ContentCard from "@/components/reusable/ContentCard";
+import DataTable from "@/components/reusable/DataTable";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuthStore } from "@/store/authStore";
 import { TeamMember } from "@/types/user";
@@ -74,7 +74,11 @@ export const columns: ColumnDef<TeamMember>[] = [
 const MemberList = ({ onSelectionChange }: Props) => {
     const user = useAuthStore((s) => s.user);
     const provider = user?.provider || "github";
-    const { data: members = [], isFetching } = useOrganizationMembersQuery({
+    const {
+        data: members = [],
+        isFetching,
+        error,
+    } = useOrganizationMembersQuery({
         provider,
     });
 
@@ -83,20 +87,39 @@ const MemberList = ({ onSelectionChange }: Props) => {
         return member.username === user?.username;
     };
 
+    const otherMembers = members?.filter(
+        (member) => !shouldSelectMember(member)
+    );
+    const selectedMember = members.filter(shouldSelectMember);
+
     return (
-        <Card className="mb-4">
-            <CardHeader>
-                <CardTitle className="font-medium text-lg">
+        <ContentCard className="mb-4">
+            <ContentCard.Header>
+                <h3 className="font-medium text-lg">
                     Team members list{" "}
                     <span className="text-muted">({members?.length})</span>
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <DataTable
+                </h3>
+            </ContentCard.Header>
+            <ContentCard.Body
+                className="xl:max-h-[calc(100vh-650px)]"
+                hasError={!!error}
+                isLoading={isFetching}
+                errorLabel={
+                    error
+                        ? "Error loading team members. Please try again."
+                        : undefined
+                }
+                noContentLabel={
+                    members && members?.length === 0
+                        ? "No team members found. Please add a team member to continue."
+                        : undefined
+                }
+            >
+                <DataTable<TeamMember>
                     className="min-w-full"
                     isLoading={isFetching}
                     columns={columns}
-                    data={members}
+                    data={[...selectedMember, ...otherMembers]}
                     initialSelection={shouldSelectMember}
                     onSelectionChange={(selectedRows) =>
                         onSelectionChange?.(selectedRows)
@@ -105,8 +128,8 @@ const MemberList = ({ onSelectionChange }: Props) => {
                 <div className="text-muted text-sm mt-3">
                     You can add or remove team members at any time
                 </div>
-            </CardContent>
-        </Card>
+            </ContentCard.Body>
+        </ContentCard>
     );
 };
 

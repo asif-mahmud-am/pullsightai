@@ -43,5 +43,6 @@ export const useRepositoryQuery = ({
             return response.data;
         },
         enabled: isEnabled,
+        retry: 2,
     });
 };

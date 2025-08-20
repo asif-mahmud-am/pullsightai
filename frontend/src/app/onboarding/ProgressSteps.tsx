@@ -84,7 +84,7 @@ const ProgressSteps: FC<ProgressStepsProps> = ({ onStepClick }) => {
     };
 
     return (
-        <div className="flex items-start gap-5 mt-12 max-h-full overflow-hidden overflow-x-auto">
+        <div className="flex items-start gap-3 md:gap-5 mt-12 max-h-full overflow-hidden overflow-x-auto">
             {steps.map((step) => {
                 const { status, id, label } = step;
                 const isComplete = status === "complete";
@@ -121,12 +121,12 @@ const ProgressSteps: FC<ProgressStepsProps> = ({ onStepClick }) => {
                     >
                         {bar}
 
-                        <div className="flex mt-3 items-start">
+                        <div className="flex mt-3 justify-center lg:justify-start items-start">
                             <div className="rounded-full w-4 h-4 flex items-center justify-center mt-[1px]">
                                 {icon}
                             </div>
                             <div
-                                className={`ml-2 ${textColor} font-medium text-sm`}
+                                className={`ml-2 ${textColor} font-medium text-sm hidden md:block`}
                             >
                                 {label}
                             </div>

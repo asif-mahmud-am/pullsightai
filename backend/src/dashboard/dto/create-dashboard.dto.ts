@@ -8,9 +8,9 @@ export class PrAnalysisCardFilterDto {
     //2025-08-16T21:41:22.665Z
     @IsOptional()
     @IsDateString()
-    from: string
+    from: Date
 
     @IsOptional()
     @IsDateString()
-    to: string
+    to: Date
 }

@@ -44,12 +44,18 @@ export class DashboardService {
         if (prAnalysisCardFilterDto.repo) {
             match.repo = prAnalysisCardFilterDto.repo;
         }
+        if (prAnalysisCardFilterDto.from && prAnalysisCardFilterDto.to) {
+            match.createdAt = {
+                $gte: new Date(prAnalysisCardFilterDto.from),
+                $lte: new Date(prAnalysisCardFilterDto.to)
+            };
+        }
 
         const prAnalysis = await this.dataService.pullRequests.aggregate([
             { $match: match },
             { $group: { _id: '$prState', count: { $sum: 1 } } }
         ]);
-            // Transform aggregation result to required format
+        // Transform aggregation result to required format
         const result = {
             open: 0,
             merged: 0,

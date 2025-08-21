@@ -156,7 +156,7 @@ export class WorkspaceService {
                 ...query
             })
             .select(
-                'provider prUser prUserAvatar owner repo prNumber prUrl prId prCreatedAt prUpdatedAt  prMergedAt prState'
+                'provider prTitle prUser prUserAvatar owner repo prNumber prUrl prId prCreatedAt prUpdatedAt  prMergedAt prState'
             )
     }
 }

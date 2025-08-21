@@ -33,13 +33,18 @@ export default function AuthGuardClient({ children }: { children: ReactNode }) {
                 redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_4);
             } else if (onboardingStep === 5) {
                 redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_5);
-            }else{
+            } else {
                 redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_1);
             }
-        } else if(hydrated && user && (user.onboardingStep ?? 0) == 0 && (pathname.includes(ROUTE_CONSTANTS.ONBOARDING) || pathname.includes('auth'))) {
-            redirect(ROUTE_CONSTANTS.DASHBOARD);
+        } else if (
+            hydrated &&
+            user &&
+            (user.onboardingStep ?? 0) == 0 &&
+            (pathname.includes(ROUTE_CONSTANTS.ONBOARDING) ||
+                pathname.includes("auth"))
+        ) {
+            redirect(ROUTE_CONSTANTS.APP_DASHBOARD);
         }
-
     }, [user, hydrated]);
 
     if (!hydrated)
@@ -50,7 +55,8 @@ export default function AuthGuardClient({ children }: { children: ReactNode }) {
                     alt="pullsight logo"
                     width={99}
                     height={35}
-                    className=""
+                    className="w-auto h-auto"
+                    priority
                 />
             </div>
         );

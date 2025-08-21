@@ -3,20 +3,20 @@ import { Button } from "@/components/ui/button";
 import { LogOutIcon } from "lucide-react";
 import Image from "next/image";
 
-const DashboardNavbar = () => {
+const AppTopBar = () => {
     return (
-        <div className="h-[88px] flex items-center border-b-1 border-white gap-x-4 px-5">
+        <div className="h-[88px] flex items-center border-b gap-x-4 px-5">
             <Image
-                src="/images/logo.svg"
+                src="/images/logo-icon.svg"
                 alt="pull sight logo"
-                width={100}
+                width={23}
                 height={37}
-                className=""
+                className="h-auto w-auto"
             />
             <span className="text-base font-medium">
                 Welcome back, Ralph 👋
             </span>
-            
+
             <LogoutHandler asChild>
                 <Button
                     variant="outline"
@@ -30,4 +30,4 @@ const DashboardNavbar = () => {
     );
 };
 
-export default DashboardNavbar;
+export default AppTopBar;

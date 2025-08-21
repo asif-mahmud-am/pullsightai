@@ -4,11 +4,9 @@ import { useState } from "react";
 import { columns } from "@/components/dataTable/repositoriesDataTable";
 import DataTable from "@/components/reusable/DataTable";
 import { List, Grid, Info } from "lucide-react";
-import { PullRequest } from "@/types/pullRequest";
-import { Repository } from "@/types/repository";
 
 /* eslint-disable  @typescript-eslint/no-explicit-any */
-const data: any[] = [
+const data: any = [
     {
         active: true,
         title: "shared-libs",
@@ -53,17 +51,17 @@ const data: any[] = [
     },
 ];
 
-const PullRequestsPage = () => {
-    const [tab, setTab] = useState<"all" | "activePrs" | "myPrs" | "">("all");
+const RepositoriesPage = () => {
+    const [tab, setTab] = useState<"all" | "active">("all");
 
     const filteredData =
-        tab === "activePrs" ? data.filter((item) => item.active) : data;
+        tab === "active" ? data.filter((item: any) => item.active) : data;
 
     return (
-        <div className="p-6 space-y-6 text-white">
+        <div className="">
             {/* Header */}
             <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-semibold">Pull Requests</h2>
+                <h2 className="text-2xl font-semibold">Repositories</h2>
                 <Info size={18} className="text-gray-400" />
             </div>
 
@@ -71,7 +69,7 @@ const PullRequestsPage = () => {
             <div className="bg-[#1D1D20] p-4 space-y-4 rounded-lg border border-gray-800">
                 <div className="flex items-center gap-2">
                     <h2 className="text-sm  text-[#71717A] font-semibold">
-                        Pull Requests
+                        Repositories
                     </h2>
                     <Info size={18} className="text-gray-400" />
                 </div>
@@ -81,7 +79,7 @@ const PullRequestsPage = () => {
                     <div className="flex gap-2 border  border-white rounded-md overflow-hidden">
                         <button
                             onClick={() => setTab("all")}
-                            className={`px-3 py-2  rounded-md text-xs font-light ${
+                            className={`px-3 py-1 rounded-md text-sm font-medium ${
                                 tab === "all"
                                     ? "bg-gray-700 text-white"
                                     : "text-gray-400"
@@ -90,24 +88,14 @@ const PullRequestsPage = () => {
                             All
                         </button>
                         <button
-                            onClick={() => setTab("activePrs")}
-                            className={`px-3 py-2  rounded-md text-xs font-light ${
-                                tab === "activePrs"
+                            onClick={() => setTab("active")}
+                            className={`px-3 py-1 rounded-md text-sm font-medium ${
+                                tab === "active"
                                     ? "bg-gray-700 text-white"
                                     : "text-gray-400"
                             }`}
                         >
-                            Active PRs
-                        </button>
-                        <button
-                            onClick={() => setTab("myPrs")}
-                            className={`px-3 py-2  rounded-md text-xs font-light ${
-                                tab === "myPrs"
-                                    ? "bg-gray-700 text-white"
-                                    : "text-gray-400"
-                            }`}
-                        >
-                            My PRs
+                            Active
                         </button>
                     </div>
 
@@ -119,23 +107,12 @@ const PullRequestsPage = () => {
                             <option value="john">John Doe</option>
                         </select>
 
-                        {/* Repositories filter */}
+                        {/* Date filter */}
                         <select className="border text-gray-300 rounded-md px-3 py-2 text-sm ">
-                            <option value="all">Repositories: All</option>
-                        </select>
-
-                        {/* Authors: filter */}
-                        <select className="border text-gray-300 rounded-md px-3 py-2 text-sm ">
-                            <option value="all">Authors: All</option>
-                        </select>
-
-                        {/* PR Status:: filter */}
-                        <select className="border text-gray-300 rounded-md px-3 py-2 text-sm ">
-                            <option value="all">PR Status: All</option>
-                        </select>
-                        {/* Authors: filter */}
-                        <select className="border text-gray-300 rounded-md px-3 py-2 text-sm ">
-                            <option value="all">Period: Last 30 days</option>
+                            <option value="all">Date: All</option>
+                            <option value="today">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
                         </select>
 
                         {/* View toggle */}
@@ -154,5 +131,4 @@ const PullRequestsPage = () => {
         </div>
     );
 };
-
-export default PullRequestsPage;
+export default RepositoriesPage;

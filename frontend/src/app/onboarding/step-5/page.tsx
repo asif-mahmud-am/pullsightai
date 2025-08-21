@@ -63,7 +63,7 @@ const Step5Page = () => {
                             ? user.currentWorkspace
                             : "",
                 }).then(() => {
-                    redirect(ROUTE_CONSTANTS.DASHBOARD);
+                    redirect(ROUTE_CONSTANTS.APP_DASHBOARD);
                 });
             })
             .catch((error) => {

@@ -46,6 +46,9 @@ export class PullRequestAnalysis {
     @Prop({ type: String, enum: Status, default: Status.INPROGRESS })
     status: Status
 
+    @Prop({ type: String })
+    prState: string
+
     @Prop({ type: Date, default: null })
     startedAt: Date
 

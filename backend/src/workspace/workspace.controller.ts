@@ -1,17 +1,17 @@
 import {
     Body,
     Controller,
-    Delete,
     Get,
     Param,
     Patch,
     Post,
+    Query,
     Req,
     UseGuards
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { MakeSubscriptionDto } from 'src/workspace/dto/make-subscription.dto'
-import { UpdateWorkspaceDto } from './dto/update-workspace.dto'
+import { UpdateRepositoryDto } from 'src/workspace/dto/update-repository.dto'
 import { WorkspaceService } from './workspace.service'
 
 @Controller({
@@ -36,26 +36,36 @@ export class WorkspaceController {
         }
     }
 
-    @Get()
-    findAll() {
-        return this.workspaceService.findAll()
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('repositories')
+    async findAllRepositories(@Req() req: any, @Query() query: any) {
+        return {
+            message: 'Repositories fetched successfully',
+            result: await this.workspaceService.findAllRepositories(
+                req.user,
+                query
+            )
+        }
     }
 
-    @Get(':id')
-    findOne(@Param('id') id: string) {
-        return this.workspaceService.findOne(+id)
-    }
-
-    @Patch(':id')
-    update(
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Patch('repositories/:id')
+    async updateRepository(
         @Param('id') id: string,
-        @Body() updateWorkspaceDto: UpdateWorkspaceDto
+        @Body() body: UpdateRepositoryDto
     ) {
-        return this.workspaceService.update(+id, updateWorkspaceDto)
+        return {
+            message: 'Repository updated successfully',
+            result: await this.workspaceService.updateRepository(id, body)
+        }
     }
 
-    @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.workspaceService.remove(+id)
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('pr-list')
+    async findPRs(@Req() req: any, @Query() query: any) {
+        return {
+            message: 'Pull requests fetched successfully',
+            result: await this.workspaceService.findPRs(req.user, query)
+        }
     }
 }

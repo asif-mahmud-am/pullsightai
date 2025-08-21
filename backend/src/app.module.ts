@@ -13,6 +13,7 @@ import { GithubModule } from './github/github.module'
 import { GitlabModule } from './gitlab/gitlab.module';
 import { AnalysisModule } from './analysis/analysis.module';
 import { WorkspaceModule } from './workspace/workspace.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
     imports: [
@@ -26,7 +27,8 @@ import { WorkspaceModule } from './workspace/workspace.module';
         HttpModule,
         GitlabModule,
         AnalysisModule,
-        WorkspaceModule
+        WorkspaceModule,
+        DashboardModule
     ],
     controllers: [AppController],
     providers: [

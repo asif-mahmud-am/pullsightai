@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import {  PrAnalysisCardFilterDto } from './dto/create-dashboard.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -13,7 +13,7 @@ export class DashboardController {
 
   @UseGuards(AuthGuard('jwt-cookie'))
   @Get('pr-analysis-card')
-  async getPrAnalysisCard(@Req() req, @Body() prAnalysisCardFilterDto: PrAnalysisCardFilterDto) {
+  async getPrAnalysisCard(@Req() req, @Query() prAnalysisCardFilterDto: PrAnalysisCardFilterDto) {
     return {
       message: 'PR analysis card data fetched successfully',
       result: await this.dashboardService.getPrAnalysisCard(req.user, prAnalysisCardFilterDto)

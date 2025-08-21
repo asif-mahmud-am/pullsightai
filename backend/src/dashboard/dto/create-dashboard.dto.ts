@@ -1,4 +1,4 @@
-import { IsDateString, IsOptional } from "class-validator";
+import { IsDateString, IsOptional, IsIn } from "class-validator";
 
 export class PrAnalysisCardFilterDto {
 
@@ -8,9 +8,13 @@ export class PrAnalysisCardFilterDto {
     //2025-08-16T21:41:22.665Z
     @IsOptional()
     @IsDateString()
-    from: Date
+    from: string
 
     @IsOptional()
     @IsDateString()
-    to: Date
+    to: string
+
+    @IsOptional()
+    @IsIn(['day', 'month', 'year'])
+    breakdown?: 'day' | 'month' | 'year'
 }

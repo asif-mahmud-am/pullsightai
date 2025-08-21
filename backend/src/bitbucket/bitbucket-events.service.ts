@@ -64,8 +64,12 @@ export class BitbucketEventsService {
                 accessToken
             )
 
+            // Extract individual file diff from the full diff
+            const fileName = file.new?.path || file.old?.path;
+            const individualFileDiff = this.bitbucketApiService.extractFileDiff(fullDiff, fileName);
+
             prFiles.push({
-                prFileName: file.new?.path || file.old?.path,
+                prFileName: fileName,
                 prFileStatus: file.status,
                 prFileAdditions: file.lines_added || 0,
                 prFileDeletions: file.lines_removed || 0,
@@ -75,8 +79,8 @@ export class BitbucketEventsService {
                     contentBefore || 'File not found in destination branch',
                 prFileContentAfter:
                     contentAfter || 'File not found in source branch',
-                prFileDiff: fullDiff || '',
-                prFileDiffHunks: this.parseDiffHunks(fullDiff || ''),
+                prFileDiff: individualFileDiff,
+                prFileDiffHunks: this.parseDiffHunks(individualFileDiff),
                 prFileBlobUrl:
                     file.new?.links?.self?.href ||
                     file.old?.links?.self?.href ||

@@ -79,6 +79,7 @@ export class AnalysisService {
                 repositorySlug: savedPullRequestFormattedData.repo,
                 prNumber: savedPullRequestFormattedData.prNumber,
                 installationId: savedPullRequestFormattedData.installationId,
+                prState: savedPullRequestFormattedData.prState,
                 status: Status.INPROGRESS,
                 startedAt: new Date(),
                 pullRequest: savedPullRequestFormattedData._id

@@ -15,7 +15,7 @@ import {
 
 const AppSideBar = () => {
     return (
-        <header className="w-[260px] p-5">
+        <header className="w-[260px] p-5 fixed h-[calc(100vh-88px)] left-0 bottom-0 top-[88px]">
             <SidebarMenu>
                 <SidebarMenuItem>
                     <NavLink

@@ -93,7 +93,7 @@
     --subtitle-100: #f4f4f5;
 
     /* tailwind variables */
-    --background: oklch(0.205 0 0);
+    --background: var(--body-900);
     --foreground: oklch(0.985 0 0);
     --card: var(--box-800);
     --card-foreground: oklch(0.985 0 0);

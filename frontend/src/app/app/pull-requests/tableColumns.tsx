@@ -41,8 +41,10 @@ export const columns: ColumnDef<PullRequest>[] = [
                 <Badge
                     variant={
                         status === "merged" || status === "closed"
+                            ? "success"
+                            : status === "rejected"
                             ? "destructive"
-                            : "success"
+                            : "default"
                     }
                     type="faded"
                 >

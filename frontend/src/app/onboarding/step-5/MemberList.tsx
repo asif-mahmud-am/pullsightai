@@ -92,7 +92,7 @@ const MemberList = ({ onSelectionChange }: Props) => {
                 </h3>
                 <input
                     value={
-                        (columnFilters.find((f) => f.id === "name")
+                        (columnFilters.find((f) => f.id === "username")
                             ?.value as string) ?? ""
                     }
                     onChange={(e) => {
@@ -100,10 +100,10 @@ const MemberList = ({ onSelectionChange }: Props) => {
                         setColumnFilters((prev) => {
                             // Remove the filter if value is empty, else update/add
                             const otherFilters = prev.filter(
-                                (f) => f.id !== "name"
+                                (f) => f.id !== "username"
                             );
                             return value
-                                ? [...otherFilters, { id: "name", value }]
+                                ? [...otherFilters, { id: "username", value }]
                                 : otherFilters;
                         });
                     }}

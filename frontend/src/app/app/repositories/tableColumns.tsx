@@ -39,6 +39,7 @@ export const columns: ColumnDef<Repository>[] = [
                 <Avatar
                     src={author?.avatarUrl || ""}
                     name={author?.username || "Unknown"}
+                    size="sm"
                 />
             );
         },

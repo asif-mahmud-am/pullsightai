@@ -11,7 +11,7 @@ import { useGetPullRequestsQuery } from "@/api/queries/workspace";
 const PullRequestsPage = () => {
     const [tab, setTab] = useState<"all" | "activePrs" | "myPrs" | "">("all");
 
-    const { data } = useGetPullRequestsQuery();
+    const { data, isFetching } = useGetPullRequestsQuery();
 
     return (
         <div className="">
@@ -102,7 +102,11 @@ const PullRequestsPage = () => {
                         </div>
                     </div>
                 </div>
-                <DataTable columns={columns} data={data?.data || []} />
+                <DataTable
+                    columns={columns}
+                    data={data?.data || []}
+                    isLoading={isFetching}
+                />
             </div>
         </div>
     );

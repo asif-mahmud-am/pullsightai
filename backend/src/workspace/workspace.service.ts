@@ -6,7 +6,7 @@ import { DatabaseService } from 'src/database/database.service'
 import { MemberRole } from 'src/database/schemas/workspace-members.schema'
 import { GitlabService } from 'src/gitlab/gitlab.service'
 import { MakeSubscriptionDto } from 'src/workspace/dto/make-subscription.dto'
-import { UpdateWorkspaceDto } from './dto/update-workspace.dto'
+import { UpdateRepositoryDto } from 'src/workspace/dto/update-repository.dto'
 
 @Injectable()
 export class WorkspaceService {
@@ -122,19 +122,41 @@ export class WorkspaceService {
         return {}
     }
 
-    findAll() {
-        return `This action returns all workspace`
+    async findAllRepositories(user: any, query: any) {
+        const userData =
+            await this.analysisService.getUserDataWithWorkspace(user)
+        return this.dataService.repositories.find({
+            workspace: userData?.currentWorkspace!._id,
+            ...query
+        })
     }
 
-    findOne(id: number) {
-        return `This action returns a #${id} workspace`
+    async updateRepository(id: string, body: UpdateRepositoryDto) {
+        await this.dataService.repositories.updateOne(
+            { _id: id },
+            { $set: { ...body } }
+        )
+        return await this.dataService.repositories.findOne({ _id: id })
     }
 
-    update(id: number, updateWorkspaceDto: UpdateWorkspaceDto) {
-        return `This action updates a #${id} workspace`
-    }
+    async findPRs(user: any, query: any) {
+        const userData =
+            await this.analysisService.getUserDataWithWorkspace(user)
 
-    remove(id: number) {
-        return `This action removes a #${id} workspace`
+        // Calculate date 30 days ago
+        const thirtyDaysAgo = new Date()
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+        return this.dataService.pullRequests
+            .find({
+                owner: userData?.currentWorkspace!['slug'],
+                createdAt: {
+                    $gte: thirtyDaysAgo
+                },
+                ...query
+            })
+            .select(
+                'provider prUser prUserAvatar owner repo prNumber prUrl prId prCreatedAt prUpdatedAt  prMergedAt prState'
+            )
     }
 }

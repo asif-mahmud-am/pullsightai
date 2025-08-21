@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { workspaceEndpoints } from "../endpoints/workspace";
 
 export const useMakeSubscriptionMutation = () => {
@@ -10,4 +10,18 @@ export const useMakeSubscriptionMutation = () => {
             queryClient.invalidateQueries({ queryKey: ["user"] });
         },
     });
-}
+};
+
+export const useGetRepositoriesQuery = () => {
+    return useQuery({
+        queryKey: ["repositories"],
+        queryFn: workspaceEndpoints.getRepositories,
+    });
+};
+
+export const useGetPullRequestsQuery = () => {
+    return useQuery({
+        queryKey: ["pullRequests"],
+        queryFn: workspaceEndpoints.getPullRequests,
+    });
+};

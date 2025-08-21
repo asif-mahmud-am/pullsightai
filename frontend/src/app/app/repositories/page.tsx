@@ -1,68 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { columns } from "@/components/dataTable/repositoriesDataTable";
+import { columns } from "./tableColumns";
 import DataTable from "@/components/reusable/DataTable";
 import { List, Grid, Info } from "lucide-react";
-
-/* eslint-disable  @typescript-eslint/no-explicit-any */
-const data: any = [
-    {
-        active: true,
-        title: "shared-libs",
-        author: { name: "Noelle Ruiz", avatar: "/avatars/noelle.png" },
-        updated: "2 hours ago",
-    },
-    {
-        active: true,
-        title: "frontend-dashboard",
-        author: { name: "Noelle Ruiz", avatar: "/avatars/noelle.png" },
-        updated: "5 hours ago",
-    },
-    {
-        active: true,
-        title: "backend-api-service",
-        author: { name: "Noelle Ruiz", avatar: "/avatars/noelle.png" },
-        updated: "Yesterday",
-    },
-    {
-        active: true,
-        title: "my-frontend-app",
-        author: { name: "Noelle Ruiz", avatar: "/avatars/noelle.png" },
-        updated: "Dec 15, 2024",
-    },
-    {
-        active: true,
-        title: "legacy-archive-do-not-touch",
-        author: { name: "Noelle Ruiz", avatar: "/avatars/noelle.png" },
-        updated: "Dec 13, 2024",
-    },
-    {
-        active: false,
-        title: "mobile-app-ios",
-    },
-    {
-        active: false,
-        title: "data-analytics-pipeline",
-    },
-    {
-        active: false,
-        title: "ml-recommendation-engine",
-    },
-];
+import { useGetRepositoriesQuery } from "@/api/queries/workspace";
 
 const RepositoriesPage = () => {
     const [tab, setTab] = useState<"all" | "active">("all");
 
-    const filteredData =
-        tab === "active" ? data.filter((item: any) => item.active) : data;
+    const { data, isFetching } = useGetRepositoriesQuery();
 
     return (
         <div className="">
             {/* Header */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-3">
                 <h2 className="text-2xl font-semibold">Repositories</h2>
-                <Info size={18} className="text-gray-400" />
             </div>
 
             {/* Table */}
@@ -71,12 +24,11 @@ const RepositoriesPage = () => {
                     <h2 className="text-sm  text-[#71717A] font-semibold">
                         Repositories
                     </h2>
-                    <Info size={18} className="text-gray-400" />
                 </div>
                 {/* Filters Row */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between ">
                     {/* Tabs */}
-                    <div className="flex gap-2 border  border-white rounded-md overflow-hidden">
+                    <div className="flex gap-2 border  rounded-md overflow-hidden">
                         <button
                             onClick={() => setTab("all")}
                             className={`px-3 py-1 rounded-md text-sm font-medium ${
@@ -126,7 +78,11 @@ const RepositoriesPage = () => {
                         </div>
                     </div>
                 </div>
-                <DataTable columns={columns} data={filteredData} />
+                <DataTable
+                    columns={columns}
+                    isLoading={isFetching}
+                    data={data?.data || []}
+                />
             </div>
         </div>
     );

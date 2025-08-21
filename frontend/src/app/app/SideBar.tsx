@@ -12,14 +12,10 @@ import {
     Plus,
     Settings,
 } from "lucide-react";
-import Link, { useLinkStatus } from "next/link";
 
 const AppSideBar = () => {
-    const { pending } = useLinkStatus();
-    console.log(pending);
     return (
         <header className="w-[260px] p-5">
-            <div>{pending && <span>Loading...</span>}</div>
             <SidebarMenu>
                 <SidebarMenuItem>
                     <NavLink

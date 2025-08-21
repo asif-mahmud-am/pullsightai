@@ -55,7 +55,7 @@ export default function AuthGuardClient({ children }: { children: ReactNode }) {
                     alt="pullsight logo"
                     width={99}
                     height={35}
-                    className="w-auto h-auto"
+                    className=""
                     priority
                 />
             </div>

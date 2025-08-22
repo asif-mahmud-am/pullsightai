@@ -154,6 +154,15 @@ export class BitbucketService {
     }
 
     async processBitbucketEvent(event: any, payload: any) {
+        await this.dataService.eventLogs.create({
+            eventName: event,
+            provider: 'bitbucket',
+            eventPayload: {
+                prTitle: payload.pullrequest.title,
+                prNumber: payload.pullrequest.id,
+                prState: payload.pullrequest.state
+            }
+        })
         const isApplicable =
             await this.analysisService.checkApplicableForAnalysis(
                 payload.repository.full_name.split('/')[1],
@@ -164,11 +173,6 @@ export class BitbucketService {
         if (!isApplicable) {
             return {}
         }
-        // await this.dataService.eventLogs.create({
-        //     eventName: event,
-        //     provider: 'bitbucket',
-        //     eventPayload: payload
-        // })
         let pullRequestFormattedData: StructuredPRData | boolean
         switch (event) {
             case 'pullrequest:created':

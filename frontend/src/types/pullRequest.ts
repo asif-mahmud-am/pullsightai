@@ -10,5 +10,6 @@ export interface PullRequest {
     prUpdatedAt: string;
     prClosedAt: string | null;
     prMergedAt: string | null;
+    repo?: string;
     prUrl: string;
 }

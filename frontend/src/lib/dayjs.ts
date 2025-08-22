@@ -18,3 +18,12 @@ export const humanizeDate = (dateLike: string | number | Date): string => {
     const newDate = new Date(dateLike);
     return dayjs(newDate).fromNow();
 };
+
+export const subtractDays = (
+    dateLike: string | number | Date,
+    days: number
+): Date => {
+    const newDate = new Date(dateLike);
+    newDate.setDate(newDate.getDate() - days);
+    return newDate;
+};

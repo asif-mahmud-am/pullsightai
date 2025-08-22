@@ -6,6 +6,7 @@ interface Props {
     src: string;
     className?: string;
     name?: string;
+    size?: "sm" | "md" | "lg";
     description?: string;
     hideDetails?: boolean;
 }
@@ -14,6 +15,7 @@ const Avatar: FC<Props> = ({
     src,
     className,
     name,
+    size = "md",
     description,
     hideDetails = false,
 }) => {
@@ -31,6 +33,29 @@ const Avatar: FC<Props> = ({
         }[random];
     }, [random]);
 
+    const sizeClass = useMemo(() => {
+        return {
+            sm: "w-8 h-8 text-sm",
+            md: "w-9 h-9 text-base",
+            lg: "w-10 h-10 text-lg",
+        }[size];
+    }, [size]);
+    const sizeNum = useMemo(() => {
+        return {
+            sm: 32,
+            md: 36,
+            lg: 40,
+        }[size];
+    }, [size]);
+
+    const fontSizeClass = useMemo(() => {
+        return {
+            sm: "text-[12px]",
+            md: "text-[14px]",
+            lg: "text-lg",
+        }[size];
+    }, [size]);
+
     return (
         <div className={cn("flex items-center gap-2", className)}>
             {src && !hasError ? (
@@ -38,13 +63,17 @@ const Avatar: FC<Props> = ({
                     src={src}
                     alt=""
                     className={`border rounded-full`}
-                    height={36}
-                    width={36}
+                    height={sizeNum}
+                    width={sizeNum}
                     onError={() => setHasError(true)}
                 />
             ) : (
                 <div
-                    className={`w-9 h-9 flex items-center justify-center rounded-full ${bgClass}`}
+                    className={cn(
+                        `flex items-center justify-center rounded-full`,
+                        bgClass,
+                        sizeClass
+                    )}
                 >
                     <div className="font-medium capitalize">
                         {name?.charAt(0)}
@@ -53,7 +82,9 @@ const Avatar: FC<Props> = ({
             )}
             {!hideDetails && (
                 <div>
-                    <div className="font-medium">{name}</div>
+                    <div className={cn("text-gray-300", fontSizeClass)}>
+                        {name}
+                    </div>
                     <div className="text-[12px] text-slate-400">
                         {description}
                     </div>

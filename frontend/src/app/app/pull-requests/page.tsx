@@ -1,70 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { columns } from "@/components/dataTable/repositoriesDataTable";
+import { columns } from "./tableColumns";
 import DataTable from "@/components/reusable/DataTable";
 import { List, Grid, Info } from "lucide-react";
 import { PullRequest } from "@/types/pullRequest";
 import { Repository } from "@/types/repository";
-
-/* eslint-disable  @typescript-eslint/no-explicit-any */
-const data: any[] = [
-    {
-        active: true,
-        title: "shared-libs",
-        author: { name: "Noelle Ruiz", avatar: "/avatars/noelle.png" },
-        updated: "2 hours ago",
-    },
-    {
-        active: true,
-        title: "frontend-dashboard",
-        author: { name: "Noelle Ruiz", avatar: "/avatars/noelle.png" },
-        updated: "5 hours ago",
-    },
-    {
-        active: true,
-        title: "backend-api-service",
-        author: { name: "Noelle Ruiz", avatar: "/avatars/noelle.png" },
-        updated: "Yesterday",
-    },
-    {
-        active: true,
-        title: "my-frontend-app",
-        author: { name: "Noelle Ruiz", avatar: "/avatars/noelle.png" },
-        updated: "Dec 15, 2024",
-    },
-    {
-        active: true,
-        title: "legacy-archive-do-not-touch",
-        author: { name: "Noelle Ruiz", avatar: "/avatars/noelle.png" },
-        updated: "Dec 13, 2024",
-    },
-    {
-        active: false,
-        title: "mobile-app-ios",
-    },
-    {
-        active: false,
-        title: "data-analytics-pipeline",
-    },
-    {
-        active: false,
-        title: "ml-recommendation-engine",
-    },
-];
+import { useGetPullRequestsQuery } from "@/api/queries/workspace";
 
 const PullRequestsPage = () => {
     const [tab, setTab] = useState<"all" | "activePrs" | "myPrs" | "">("all");
 
-    const filteredData =
-        tab === "activePrs" ? data.filter((item) => item.active) : data;
+    const { data, isFetching } = useGetPullRequestsQuery();
 
     return (
-        <div className="p-6 space-y-6 text-white">
+        <div className="">
             {/* Header */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-3">
                 <h2 className="text-2xl font-semibold">Pull Requests</h2>
-                <Info size={18} className="text-gray-400" />
             </div>
 
             {/* Table */}
@@ -78,7 +31,7 @@ const PullRequestsPage = () => {
                 {/* Filters Row */}
                 <div className="flex items-center justify-between">
                     {/* Tabs */}
-                    <div className="flex gap-2 border  border-white rounded-md overflow-hidden">
+                    <div className="flex gap-2 border rounded-md overflow-hidden">
                         <button
                             onClick={() => setTab("all")}
                             className={`px-3 py-2  rounded-md text-xs font-light ${
@@ -149,7 +102,11 @@ const PullRequestsPage = () => {
                         </div>
                     </div>
                 </div>
-                <DataTable columns={columns} data={filteredData} />
+                <DataTable
+                    columns={columns}
+                    data={data?.data || []}
+                    isLoading={isFetching}
+                />
             </div>
         </div>
     );

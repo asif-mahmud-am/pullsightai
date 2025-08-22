@@ -21,17 +21,15 @@ const DashboardPage = () => {
                 <div className="ml-auto flex gap-3">
                     <select className="border text-gray-300 rounded-md px-3 py-2 text-sm ">
                         <option value="all">Repositories: All</option>
-                        <option value="repo1">Repo 1</option>
                     </select>
                     <select className="border text-gray-300 rounded-md px-3 py-2 text-sm ">
                         <option value="all">Period: Last 7 Days</option>
-                        <option value="repo1">Repo 1</option>
                     </select>
                     <select className="border text-gray-300 rounded-md px-3 py-2 text-sm ">
                         <option value="all">Breakdown: Days</option>
-                        <option value="days">Days</option>
+                        {/* <option value="days">Days</option>
                         <option value="weeks">Weeks</option>
-                        <option value="months">Months</option>
+                        <option value="months">Months</option> */}
                     </select>
                 </div>
             </div>

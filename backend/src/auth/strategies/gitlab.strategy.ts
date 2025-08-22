@@ -14,7 +14,7 @@ export class GitlabStrategy extends PassportStrategy(Strategy, 'gitlab') {
             clientID: configService.get('GITLAB_CLIENT_ID'),
             clientSecret: configService.get('GITLAB_CLIENT_SECRET'),
             callbackURL: `${configService.get('BASE_URL')}/v1/auth/gitlab/callback`,
-            scope: ['read_user', 'api', 'email']
+            scope: ['read_user' 'api' 'email']
         })
     }
 

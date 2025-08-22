@@ -14,8 +14,10 @@ export const columns: ColumnDef<PullRequest>[] = [
         header: "PR Title",
         cell: ({ row }) => (
             <div>
-                <span className="text-white">{row.getValue("prTitle")}</span>
-                <div>{row.original?.repo}</div>
+                <span className="text-white mb-1 text-base">
+                    {row.getValue("prTitle")}
+                </span>
+                <div className="opacity-50">{row.original?.repo}</div>
             </div>
         ),
     },

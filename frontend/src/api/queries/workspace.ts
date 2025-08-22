@@ -19,6 +19,17 @@ export const useGetRepositoriesQuery = () => {
     });
 };
 
+export const useUpdateRepositoryMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: workspaceEndpoints.updateRepository,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["repositories"] });
+        },
+    });
+};
+
 export const useGetPullRequestsQuery = () => {
     return useQuery({
         queryKey: ["pullRequests"],

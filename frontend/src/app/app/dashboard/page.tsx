@@ -2,10 +2,16 @@
 
 import ContentCard from "@/components/reusable/ContentCard";
 import { useState } from "react";
+import PrAnalysisCard from "./prAnalysisCars";
+import { subtractDays } from "@/lib/dayjs";
 
 const DashboardPage = () => {
-    const [fromDate, setFromDate] = useState<string | null>(null);
-    const [toDate, setToDate] = useState<string | null>(null);
+    const [fromDate, setFromDate] = useState<string | null>(
+        subtractDays(new Date(), 6).toISOString()
+    );
+    const [toDate, setToDate] = useState<string | null>(
+        new Date().toISOString()
+    );
 
     return (
         <div>
@@ -30,43 +36,59 @@ const DashboardPage = () => {
                 </div>
             </div>
             <div className="grid grid-cols-12 gap-5">
+                <PrAnalysisCard
+                    className="col-span-4"
+                    fromDate={fromDate}
+                    toDate={toDate}
+                />
                 <ContentCard className="col-span-4">
                     <ContentCard.Header className="flex-wrap sm:flex-nowrap gap-y-4">
-                        <h3 className="text-muted font-semibold">PRs</h3>
+                        <h3 className="text-muted font-semibold">Issues</h3>
                     </ContentCard.Header>
                     <ContentCard.Body>
-                        <div className="flex">
-                            <div className="flex-1">
-                                <div className="opacity-50 text-xs">Opened</div>
-                                <div className="">0</div>
+                        <div className="flex divide-x gap-9 pt-5">
+                            <div className="pr-9">
+                                <div className="opacity-50 text-xs mb-1">
+                                    Total
+                                </div>
+                                <div className="text-3xl">0</div>
+                            </div>
+                            <div className="pr-9">
+                                <div className="opacity-50 text-xs mb-1">
+                                    Completion Rate
+                                </div>
+                                <div className="text-3xl">0%</div>
                             </div>
                         </div>
                     </ContentCard.Body>
                 </ContentCard>
                 <ContentCard className="col-span-4">
                     <ContentCard.Header className="flex-wrap sm:flex-nowrap gap-y-4">
-                        <h3 className="font-medium text-lg">
-                            Pull Requests Overview
+                        <h3 className="text-muted font-semibold">
+                            Time & Money Saved
                         </h3>
                     </ContentCard.Header>
                     <ContentCard.Body>
-                        <p className="text-gray-500">
-                            Overview of pull requests in the selected
-                            repositories and time period.
-                        </p>
-                    </ContentCard.Body>
-                </ContentCard>
-                <ContentCard className="col-span-4">
-                    <ContentCard.Header className="flex-wrap sm:flex-nowrap gap-y-4">
-                        <h3 className="font-medium text-lg">
-                            Pull Requests Overview
-                        </h3>
-                    </ContentCard.Header>
-                    <ContentCard.Body>
-                        <p className="text-gray-500">
-                            Overview of pull requests in the selected
-                            repositories and time period.
-                        </p>
+                        <div className="flex divide-x gap-9 pt-5">
+                            <div className="pr-9">
+                                <div className="opacity-50 text-xs mb-1">
+                                    Hours
+                                </div>
+                                <div className="text-3xl">0</div>
+                            </div>
+                            <div className="pr-9">
+                                <div className="opacity-50 text-xs mb-1">
+                                    Money Saved
+                                </div>
+                                <div className="text-3xl">$500</div>
+                            </div>
+                            <div className="pr-9">
+                                <div className="opacity-50 text-xs mb-1">
+                                    ROI
+                                </div>
+                                <div className="text-3xl">3.2x</div>
+                            </div>
+                        </div>
                     </ContentCard.Body>
                 </ContentCard>
             </div>

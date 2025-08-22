@@ -9,6 +9,7 @@ type NavLinkProps = {
     exact?: boolean;
     activeClassName?: string;
     className?: string;
+    prefetch?: boolean; // optional prop to control prefetching
 };
 
 export function NavLink({
@@ -17,6 +18,7 @@ export function NavLink({
     exact = false,
     activeClassName = "",
     className,
+    prefetch = false,
 }: NavLinkProps) {
     const pathname = usePathname();
 
@@ -27,6 +29,7 @@ export function NavLink({
             href={href}
             className={cn(className, isActive && activeClassName)}
             aria-current={isActive ? "page" : undefined}
+            prefetch={prefetch}
         >
             {children}
         </Link>

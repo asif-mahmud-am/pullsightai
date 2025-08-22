@@ -10,6 +10,11 @@ export const workspaceEndpoints = {
     getRepositories: () =>
         apiClient.get("/workspace/repositories").then((res) => res.data),
 
+    updateRepository: (payload: { id: string; data: unknown }) =>
+        apiClient
+            .patch(`/workspace/repositories/${payload.id}`, payload.data)
+            .then((res) => res.data),
+
     getPullRequests: () =>
         apiClient.get("/workspace/pr-list").then((res) => res.data),
 };

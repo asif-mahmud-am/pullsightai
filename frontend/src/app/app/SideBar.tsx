@@ -32,6 +32,7 @@ const AppSideBar = () => {
                         className="inline-flex items-center font-medium gap-3 pl-3 pr-4 py-3.5 rounded-xl"
                         activeClassName="bg-white text-gray-800"
                         href={ROUTE_CONSTANTS.APP_REPOSITORIES}
+                        prefetch
                     >
                         <Layers className="h-4 w-4" />
                         <span className="text-base">Repositories</span>
@@ -42,6 +43,7 @@ const AppSideBar = () => {
                         className="inline-flex items-center font-medium gap-3 pl-3 pr-4 py-3.5 rounded-xl"
                         activeClassName="bg-white text-gray-800"
                         href={ROUTE_CONSTANTS.APP_PULL_REQUESTS}
+                        prefetch
                     >
                         <GitPullRequestArrow className="h-4 w-4" />
                         <span className="text-base">Pull requests</span>
@@ -52,6 +54,7 @@ const AppSideBar = () => {
                         className="inline-flex items-center font-medium gap-3 pl-3 pr-4 py-3.5 rounded-xl"
                         activeClassName="bg-white text-gray-800"
                         href={ROUTE_CONSTANTS.APP_TEAM_ACTIVITY}
+                        prefetch
                     >
                         <ChartLine className="h-4 w-4" />
                         <span className="text-base">Team activity</span>
@@ -62,6 +65,7 @@ const AppSideBar = () => {
                         className="inline-flex items-center font-medium gap-3 pl-3 pr-4 py-3.5 rounded-xl"
                         activeClassName="bg-white text-gray-800"
                         href={ROUTE_CONSTANTS.APP_SETTINGS}
+                        prefetch
                     >
                         <Settings className="h-4 w-4" />
                         <span className="text-base">Settings</span>

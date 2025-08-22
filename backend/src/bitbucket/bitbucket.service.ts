@@ -154,14 +154,19 @@ export class BitbucketService {
     }
 
     async processBitbucketEvent(event: any, payload: any) {
+        const eventPayload = {
+            prTitle: payload.pullrequest.title,
+            prNumber: payload.pullrequest.id,
+            prState: payload.pullrequest.state
+        }
+        console.log(
+            `Processing Bitbucket event: ${event} ------->>`,
+            eventPayload
+        )
         await this.dataService.eventLogs.create({
             eventName: event,
             provider: 'bitbucket',
-            eventPayload: {
-                prTitle: payload.pullrequest.title,
-                prNumber: payload.pullrequest.id,
-                prState: payload.pullrequest.state
-            }
+            eventPayload
         })
         const isApplicable =
             await this.analysisService.checkApplicableForAnalysis(

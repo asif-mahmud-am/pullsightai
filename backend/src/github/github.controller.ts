@@ -102,9 +102,10 @@ export class GithubController {
     @Post('events')
     async githubEvents(@Body() body: any, @Req() req) {
         const event = req.headers['x-github-event']
+        this.githubService.processGithubEvent(event, body)
         return {
             message: 'GitHub events processed successfully',
-            result: await this.githubService.processGithubEvent(event, body)
+            result: {}
         }
     }
 

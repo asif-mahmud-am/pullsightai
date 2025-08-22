@@ -38,6 +38,7 @@ export const useUpdateUserMutation = () => {
         mutationFn: authEndpoints.updateUser,
         onSuccess: (data) => {
             setUser({ ...user, ...data.data });
+            // console.log("User updated successfully", user, data.data);
             queryClient.invalidateQueries({ queryKey: ["user", "repos"] });
         },
     });

@@ -11,7 +11,7 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
                 <AppTopBar />
                 <div className="flex min-h-[calc(100vh-88px)] pt-[88px] pl-[260px]">
                     <AppSideBar />
-                    <main className="flex-1 py-5 px-6">{children}</main>
+                    <main className="flex-1 py-5 px-5">{children}</main>
                 </div>
             </AuthGuardClient>
         </AuthGuardServer>

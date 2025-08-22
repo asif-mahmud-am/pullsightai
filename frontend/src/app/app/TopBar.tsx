@@ -4,7 +4,7 @@ import LogoutHandler from "@/components/auth/LogoutHandler";
 import Dropdown from "@/components/reusable/Dropdown";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
-import { ChevronDown, LogOutIcon } from "lucide-react";
+import { ChevronDown, LogOutIcon, Plus } from "lucide-react";
 import Image from "next/image";
 import { use } from "react";
 
@@ -36,7 +36,7 @@ const AppTopBar = () => {
                 <Dropdown.Trigger>
                     <Button
                         variant="ghost"
-                        className="ml-auto bg-[var(--box-800)] flex items-center !h-auto !px-4 rounded-2xl gap-5"
+                        className="justify-between ml-auto bg-[var(--box-800)] flex items-center !h-auto !px-3 rounded-2xl gap-5 w-[214px]"
                     >
                         <div className="text-left">
                             <div>
@@ -44,14 +44,14 @@ const AppTopBar = () => {
                                     typeof user.currentWorkspace !== "string" &&
                                     user.currentWorkspace.name}
                             </div>
-                            <div className="opacity-60 text-sm">
+                            <div className="opacity-60 text-xs truncate">
                                 {user?.email || "n/a"}
                             </div>
                         </div>
                         <ChevronDown />
                     </Button>
                 </Dropdown.Trigger>
-                <Dropdown.Content className="py-3 px-2">
+                <Dropdown.Content className="py-3 px-1 w-[214px] flex flex-col">
                     <div className="text-xs uppercase text-muted px-2">
                         Switch Organization
                     </div>
@@ -62,22 +62,24 @@ const AppTopBar = () => {
                                 ? user.currentWorkspace.name
                                 : null}
                         </div>
+                        <div className="py-3 px-2">Gethookd</div>
                     </div>
-                    <div>
+                    <div className="text-center">
                         <Button
                             variant="outline"
-                            className=""
-                            size="sm"
+                            className="!border-primary text-primary"
+                            size="xs"
                             onClick={handleInstall}
                         >
+                            <Plus />
                             Add new organization
                         </Button>
                     </div>
-                    <hr className="my-3" />
+                    <hr className="my-4 mx-2" />
                     <LogoutHandler asChild>
                         <Button
                             variant="outline"
-                            className="text-white text-sm border-0 cursor-pointer hover:underline underline-offset-4 w-full"
+                            className="mx-2 text-white text-sm border-0 cursor-pointer hover:underline underline-offset-4 "
                         >
                             <LogOutIcon />
                             Logout

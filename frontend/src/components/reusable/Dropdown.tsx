@@ -57,6 +57,7 @@ const Dropdown: FC<DropDownProps> & {
                 <DropdownMenuContent
                     align={align}
                     side={position}
+                    sideOffset={0}
                     className={cn("rounded-xl", content?.props.className)}
                 >
                     {content?.props.children}

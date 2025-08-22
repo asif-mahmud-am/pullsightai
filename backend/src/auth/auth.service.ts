@@ -78,12 +78,20 @@ export class AuthService {
         if (!updateProfileDto.currentWorkspace) {
             delete updateProfileDto.currentWorkspace
         }
-        return await this.dataService.users.findByIdAndUpdate(
+        await this.dataService.users.updateOne(
             {
                 _id: user.sub
             },
             { ...updateProfileDto },
             { new: true }
         )
+        return await this.dataService.users
+            .findOne(
+                {
+                    _id: user.sub
+                },
+                'providerId provider username displayName email avatarUrl onboardingStep'
+            )
+            .populate('currentWorkspace')
     }
 }

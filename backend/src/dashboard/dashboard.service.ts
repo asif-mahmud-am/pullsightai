@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { DatabaseService } from 'src/database/database.service'
-import { PrAnalysisCardFilterDto } from './dto/create-dashboard.dto'
+import { IssueAnalysisCardFilterDto, PrAnalysisCardFilterDto, TimeAndMoneySaveCardFilterDto } from './dto/dashboardFilter.dto'
+import { Types } from 'mongoose'
 
 @Injectable()
 export class DashboardService {
@@ -17,13 +18,11 @@ export class DashboardService {
 
         if (!findUser || !findUser.currentWorkspace) {
             return {
-                data: {
-                    graphChart: [],
-                    opened: 0,
-                    merged: 0,
-                    declined: 0,
-                    total: 0
-                }
+                graphChart: [],
+                opened: 0,
+                merged: 0,
+                declined: 0,
+                total: 0
             }
         }
 
@@ -34,13 +33,11 @@ export class DashboardService {
 
         if (!findWorkspace) {
             return {
-                data: {
-                    graphChart: [],
-                    opened: 0,
-                    merged: 0,
-                    declined: 0,
-                    total: 0
-                }
+                graphChart: [],
+                opened: 0,
+                merged: 0,
+                declined: 0,
+                total: 0
             }
         }
 
@@ -99,10 +96,225 @@ export class DashboardService {
         const graphChart = await this.getTimeSeriesData(match, fromDate, toDate, breakdown)
 
         return {
-            data: {
-                graphChart,
-                ...totals
+            graphChart,
+            ...totals
+        }
+    }
+
+
+    async getIssueAnalysisCard(
+        user: any,
+        issueAnalysisCardFilterDto: IssueAnalysisCardFilterDto
+    ) {
+        const findUser = await this.dataService.users.findOne(
+            { _id: user.sub, provider: user.provider },
+            'currentWorkspace'
+        )
+        if (!findUser || !findUser.currentWorkspace) {
+            return {
+                pieChart: [],
+                completeRate: 0,
+                total: 0
             }
+        }
+
+        const findWorkspace = await this.dataService.workspaces.findOne(
+            { _id: findUser.currentWorkspace },
+            'slug'
+        )
+
+        if (!findWorkspace) {
+            return {
+                pieChart: [],
+                completeRate: 0,
+                total: 0
+            }
+        }
+
+        const pullRequestAnalysisId = await this.dataService.pullRequestAnalysis.findOne(
+            { workspaceSlug: findWorkspace.slug },
+            '_id'
+        )
+
+        if (!pullRequestAnalysisId) {
+            return {
+                pieChart: [],
+                completeRate: 0,
+                total: 0
+            }
+        }
+
+
+        // Set default date range if not provided (last 30 days)
+        const toDate = issueAnalysisCardFilterDto.to 
+            ? new Date(issueAnalysisCardFilterDto.to) 
+            : new Date()
+        const fromDate = issueAnalysisCardFilterDto.from 
+            ? new Date(issueAnalysisCardFilterDto.from) 
+            : new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+
+        const match: any = {
+            pullRequestAnalysisId: pullRequestAnalysisId._id,
+            createdAt: {
+                $gte: fromDate,
+                $lte: toDate
+            }
+        }
+
+        if (issueAnalysisCardFilterDto.repo) {
+            match.repo = issueAnalysisCardFilterDto.repo
+        }
+        // Get overall totals
+        const prAnalysisReviewSeveritys = await this.dataService.pullRequestAnalysisComments.aggregate([
+            { $match: match },
+            { $group: { _id: '$severity', count: { $sum: 1 } } }
+        ])
+
+        // Transform aggregation result to required format
+        const totals = {
+            critical: 0,
+            warning: 0,
+            info: 0,
+            total: 0
+        }
+
+        prAnalysisReviewSeveritys.forEach((item) => {
+            const state = item._id?.toLowerCase()
+            if (state === 'Critical' || state === 'critical') {
+                totals.critical = item.count
+            } else if (state === 'Warning' || state === 'warning') {
+                totals.warning = item.count
+            } else if (state === 'Info' || state === 'info') {
+                totals.info = item.count
+            }
+            totals.total += item.count
+        })
+
+
+        return {
+            ...totals
+        }
+    }
+
+    async getTimeAndMoneySaveCard(
+        user: any,
+        timeAndMoneySaveCardFilterDto: TimeAndMoneySaveCardFilterDto
+    ) {
+        const findUser = await this.dataService.users.findOne(
+            { _id: user.sub, provider: user.provider },
+            'currentWorkspace'
+        )
+
+        if (!findUser || !findUser.currentWorkspace) {
+            return {
+                graphChart: [],
+                totalTimeSaved: 0,
+                totalMoneySaved: 0,
+                hourlyRate: 50,
+                averageTimePerPR: 0
+            }
+        }
+
+        const findWorkspace = await this.dataService.workspaces.findOne(
+            { _id: findUser.currentWorkspace },
+            'slug workSpaceSetting prFiles'
+        )
+
+        if (!findWorkspace) {
+            return {
+                graphChart: [],
+                totalTimeSaved: 0,
+                totalMoneySaved: 0,
+                hourlyRate: 50,
+                averageTimePerPR: 0
+            }
+        }
+
+        // Get hourly rate from workspace prFiles (default to 50 if not set)
+        const hourlyRate = findWorkspace.workSpaceSetting?.hourlyRate || 50
+
+        // Set default date range if not provided (last 30 days)
+        const toDate = timeAndMoneySaveCardFilterDto.to 
+            ? new Date(timeAndMoneySaveCardFilterDto.to) 
+            : new Date()
+        const fromDate = timeAndMoneySaveCardFilterDto.from 
+            ? new Date(timeAndMoneySaveCardFilterDto.from) 
+            : new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+
+        // Build match criteria for pull request analysis
+        const analysisMatch: any = {
+            workspaceSlug: findWorkspace.slug,
+            createdAt: {
+                $gte: fromDate,
+                $lte: toDate
+            }
+        }
+
+        if (timeAndMoneySaveCardFilterDto.repo) {
+            analysisMatch.repositorySlug = timeAndMoneySaveCardFilterDto.repo
+        }
+
+        // Get all PR analyses with populated pull request data
+        const prAnalyses = await this.dataService.pullRequestAnalysis.find(analysisMatch)
+            .populate({
+                path: 'pullRequest',
+                populate: {
+                    path: 'prFiles'
+                }
+            })
+            .exec()
+
+        let totalTimeSaved = 0
+        let totalLinesReviewed = 0
+        const timeSeriesData: Map<string, number> = new Map()
+
+        // Calculate time saved based on file diffs
+        for (const analysis of prAnalyses) {
+            if (analysis.pullRequest && (analysis.pullRequest as any).prFiles) {
+                let prTimeSaved = 0
+                
+                // Iterate through each file's diff to calculate time saved
+                for (const file of (analysis.pullRequest as any).prFiles) {
+                    // Calculate time saved based on file changes
+                    const linesChanged = (file.prFileAdditions || 0) + (file.prFileDeletions || 0)
+                    totalLinesReviewed += linesChanged
+                    
+                    // Estimate: 1 minute per 10 lines of code (6 lines per minute)
+                    // This is configurable based on your business logic
+                    const timeForManualReview = linesChanged / 6 // minutes
+                    const timeWithAI = timeForManualReview * 0.2 // AI saves 80% of time
+                    const timeSaved = timeForManualReview - timeWithAI
+                    
+                    prTimeSaved += timeSaved
+                }
+
+                totalTimeSaved += prTimeSaved
+
+                // Group by time period for chart data
+                const breakdown = timeAndMoneySaveCardFilterDto.breakdown || 'day'
+                const dateKey = this.formatDateByBreakdown((analysis as any).createdAt, breakdown)
+                
+                timeSeriesData.set(dateKey, (timeSeriesData.get(dateKey) || 0) + prTimeSaved)
+            }
+        }
+
+        // Convert minutes to hours
+        const totalTimeSavedHours = totalTimeSaved / 60
+        const totalMoneySaved = totalTimeSavedHours * hourlyRate
+        const averageTimePerPR = prAnalyses.length > 0 ? totalTimeSaved / prAnalyses.length : 0
+
+        // Generate time series chart data
+        const breakdown = timeAndMoneySaveCardFilterDto.breakdown || 'day'
+        const graphChart = this.generateTimeSeriesChart(timeSeriesData, fromDate, toDate, breakdown)
+
+        return {
+            graphChart,
+            totalTimeSaved: Math.round(totalTimeSavedHours * 100) / 100, // Hours, rounded to 2 decimal places
+            totalMoneySaved: Math.round(totalMoneySaved * 100) / 100, // Currency, rounded to 2 decimal places
+            hourlyRate,
+            averageTimePerPR: Math.round(averageTimePerPR * 100) / 100, // Minutes, rounded to 2 decimal places
+            totalLinesReviewed,
+            totalPRsAnalyzed: prAnalyses.length
         }
     }
 
@@ -254,5 +466,39 @@ export class DashboardService {
                 date.setDate(date.getDate() + 1)
                 break
         }
+    }
+
+    private generateTimeSeriesChart(
+        timeSeriesData: Map<string, number>,
+        fromDate: Date,
+        toDate: Date,
+        breakdown: 'day' | 'month' | 'year'
+    ): Array<{ date: string; timeSaved: number }> {
+        const result: Array<{ date: string; timeSaved: number }> = []
+        const current = new Date(fromDate)
+        const end = new Date(toDate)
+
+        while (current <= end) {
+            const dateStr = this.formatDateByBreakdown(current, breakdown)
+            const timeSaved = timeSeriesData.get(dateStr) || 0
+
+            result.push({
+                date: dateStr,
+                timeSaved: Math.round((timeSaved / 60) * 100) / 100 // Convert to hours and round
+            })
+
+            this.incrementDate(current, breakdown)
+        }
+
+        return result
+    }
+
+    private countChangedLines(diff: string): number {
+        return diff
+        .split("\n")
+        .filter(line => line.startsWith("+") || line.startsWith("-"))
+        // ignore diff headers like '--- a/...' or '+++ b/...'
+        .filter(line => !line.startsWith("+++") && !line.startsWith("---"))
+        .length;
     }
 }

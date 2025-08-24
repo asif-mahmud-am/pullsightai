@@ -66,14 +66,85 @@ export class AnalysisService {
         })
     }
 
+    async getAndSavePullRequestFormattedData(
+        pullRequestFormattedData: StructuredPRData,
+        event: PREvent
+    ) {
+        if (event == PREvent.UPDATED) {
+            const newPR = pullRequestFormattedData.pullRequest
+            const existingPR = await this.dataService.pullRequests.findOne({
+                provider: newPR.provider,
+                prNumber: newPR.prNumber,
+                owner: newPR.owner,
+                repo: newPR.repo
+            })
+            const prFiles = newPR.prFiles
+                .map((file) => {
+                    if (!existingPR?.prFiles) return file // If no existing files, include all new files
+
+                    // Check if file doesn't exist in existing PR
+                    const existingFile = existingPR.prFiles.find(
+                        (f) => f.prFileName === file.prFileName
+                    )
+
+                    if (!existingFile) return file // New file - return with all hunks
+
+                    // Compare prFileDiffHunks and filter only changed/added hunks
+                    const existingHunks = existingFile.prFileDiffHunks || []
+                    const newHunks = file.prFileDiffHunks || []
+
+                    // Find hunks that are new or changed
+                    const changedHunks = newHunks.filter(
+                        (newHunk) => !existingHunks.includes(newHunk)
+                    )
+
+                    // If there are changed hunks, return file with only changed hunks
+                    if (changedHunks.length > 0) {
+                        return {
+                            ...file,
+                            prFileDiffHunks: changedHunks
+                        }
+                    }
+
+                    // No changes in hunks, exclude this file
+                    return null
+                })
+                .filter((file) => file !== null) // Remove null entries
+            const savedPullRequestFormattedData =
+                await this.dataService.pullRequests.findOneAndUpdate(
+                    {
+                        provider: newPR.provider,
+                        prNumber: newPR.prNumber,
+                        owner: newPR.owner,
+                        repo: newPR.repo
+                    },
+                    {
+                        $set: {
+                            ...newPR
+                        }
+                    },
+                    { new: true }
+                )
+
+            return {
+                ...savedPullRequestFormattedData,
+                prFiles: prFiles
+            }
+        }
+        return await this.dataService.pullRequests.create({
+            ...pullRequestFormattedData.pullRequest
+        })
+    }
+
     async makeAnalysis(
         pullRequestFormattedData: StructuredPRData,
         event: PREvent
     ) {
         const savedPullRequestFormattedData =
-            await this.dataService.pullRequests.create({
-                ...pullRequestFormattedData.pullRequest
-            })
+            await this.getAndSavePullRequestFormattedData(
+                pullRequestFormattedData,
+                event
+            )
         const pullRequestAnalysis =
             await this.dataService.pullRequestAnalysis.create({
                 prId: savedPullRequestFormattedData.prId,

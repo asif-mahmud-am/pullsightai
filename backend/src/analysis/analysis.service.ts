@@ -4,6 +4,7 @@ import { Types } from 'mongoose'
 import { PullRequestAnalysisCommentsDto } from 'src/analysis/dto/post-analysis-comments.dto'
 import { PullRequestAnalysisDto } from 'src/analysis/dto/post-analysis.dto'
 import { BitbucketEventsService } from 'src/bitbucket/bitbucket-events.service'
+import { PREvent } from 'src/common/enums/pr.enum'
 import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { DatabaseService } from 'src/database/database.service'
@@ -65,7 +66,10 @@ export class AnalysisService {
         })
     }
 
-    async makeAnalysis(pullRequestFormattedData: StructuredPRData) {
+    async makeAnalysis(
+        pullRequestFormattedData: StructuredPRData,
+        event: PREvent
+    ) {
         const savedPullRequestFormattedData =
             await this.dataService.pullRequests.create({
                 ...pullRequestFormattedData.pullRequest

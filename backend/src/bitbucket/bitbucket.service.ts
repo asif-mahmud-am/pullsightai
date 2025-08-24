@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config'
 import { AnalysisService } from 'src/analysis/analysis.service'
 import { BitbucketEventsService } from 'src/bitbucket/bitbucket-events.service'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
+import { PREvent } from 'src/common/enums/pr.enum'
 import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { Repository } from 'src/common/interfaces/repository.interface'
@@ -172,17 +173,22 @@ export class BitbucketService {
         }
 
         let pullRequestFormattedData: StructuredPRData | boolean
+        let prEvent
         switch (event) {
             case 'pullrequest:created':
+                prEvent = PREvent.CREATED
                 pullRequestFormattedData =
                     await this.bitbucketEventsService.handleBitbucketPullRequest(
-                        payload
+                        payload,
+                        prEvent
                     )
                 break
             case 'pullrequest:updated':
+                prEvent = PREvent.UPDATED
                 pullRequestFormattedData =
                     await this.bitbucketEventsService.handleBitbucketPullRequest(
-                        payload
+                        payload,
+                        prEvent
                     )
                 break
             default:
@@ -190,7 +196,7 @@ export class BitbucketService {
         }
 
         if (pullRequestFormattedData) {
-            this.analysisService.makeAnalysis(pullRequestFormattedData)
+            this.analysisService.makeAnalysis(pullRequestFormattedData, prEvent)
         }
         return {}
     }
@@ -221,7 +227,8 @@ export class BitbucketService {
         )
         const pullRequestFormattedData =
             await this.bitbucketEventsService.handleBitbucketPullRequest(
-                PrAndRepo
+                PrAndRepo,
+                PREvent.CREATED
             )
 
         if (!pullRequestFormattedData) {
@@ -229,7 +236,10 @@ export class BitbucketService {
                 'Failed to fetch pull request data'
             )
         }
-        return await this.analysisService.makeAnalysis(pullRequestFormattedData)
+        return await this.analysisService.makeAnalysis(
+            pullRequestFormattedData,
+            PREvent.CREATED
+        )
     }
 
     async getOrgMembers(user: any) {

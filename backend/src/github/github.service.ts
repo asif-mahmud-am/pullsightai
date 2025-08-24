@@ -2,6 +2,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Octokit } from '@octokit/rest'
 import { AnalysisService } from 'src/analysis/analysis.service'
+import { PREvent } from 'src/common/enums/pr.enum'
 import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
 import {
@@ -314,7 +315,8 @@ export class GithubService {
                 userData.currentWorkspace['name'],
                 prReviewDto.repo,
                 +prReviewDto.prNumber,
-                userData.currentWorkspace['installationId']
+                userData.currentWorkspace['installationId'],
+                PREvent.CREATED
             )
 
         if (!pullRequestFormattedData) {
@@ -322,7 +324,10 @@ export class GithubService {
                 'Failed to fetch pull request data'
             )
         }
-        return await this.analysisService.makeAnalysis(pullRequestFormattedData)
+        return await this.analysisService.makeAnalysis(
+            pullRequestFormattedData,
+            PREvent.CREATED
+        )
     }
 
     async getOrgMembers(user: any) {
@@ -380,12 +385,24 @@ export class GithubService {
         //     eventPayload: payload
         // })
         let pullRequestFormattedData: StructuredPRData | boolean
+        let prEvent
         switch (event) {
             case 'pull_request':
-                pullRequestFormattedData =
-                    await this.githubEventService.handleGitHubPullRequest(
-                        payload
-                    )
+                if (
+                    ['opened', 'synchronize', 'edited'].includes(payload.action)
+                ) {
+                    prEvent =
+                        payload.action == 'opened'
+                            ? PREvent.CREATED
+                            : PREvent.UPDATED
+                    pullRequestFormattedData =
+                        await this.githubEventService.handleGitHubPullRequest(
+                            payload,
+                            prEvent
+                        )
+                } else {
+                    pullRequestFormattedData = false
+                }
                 break
             case 'installation':
                 await this.githubEventService.handleGitHubInstallation(payload)
@@ -393,7 +410,7 @@ export class GithubService {
                 pullRequestFormattedData = false
         }
         if (pullRequestFormattedData) {
-            this.analysisService.makeAnalysis(pullRequestFormattedData)
+            this.analysisService.makeAnalysis(pullRequestFormattedData, prEvent)
         }
         return {}
     }

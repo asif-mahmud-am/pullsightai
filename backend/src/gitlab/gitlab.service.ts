@@ -6,6 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { AnalysisService } from 'src/analysis/analysis.service'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
+import { PREvent } from 'src/common/enums/pr.enum'
 import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
 import {
@@ -214,19 +215,31 @@ export class GitlabService {
         //     provider: 'gitlab',
         //     eventPayload: payload
         // })
-        let pullRequestFormattedData: StructuredPRData | boolean
+        let pullRequestFormattedData: StructuredPRData | boolean = false
+        let prEvent
         switch (event) {
             case 'Merge Request Hook':
-                pullRequestFormattedData =
-                    await this.gitlabEventsService.handleGitlabMergeRequest(
-                        payload
+                if (
+                    ['open', 'update'].includes(
+                        payload.object_attributes.action
                     )
+                ) {
+                    prEvent =
+                        payload.object_attributes.action == 'open'
+                            ? PREvent.CREATED
+                            : PREvent.UPDATED
+                    pullRequestFormattedData =
+                        await this.gitlabEventsService.handleGitlabMergeRequest(
+                            payload,
+                            prEvent
+                        )
+                }
                 break
             default:
                 pullRequestFormattedData = false
         }
         if (pullRequestFormattedData) {
-            this.analysisService.makeAnalysis(pullRequestFormattedData)
+            this.analysisService.makeAnalysis(pullRequestFormattedData, prEvent)
         }
         return {}
     }
@@ -256,14 +269,20 @@ export class GitlabService {
             +prReviewDto.prNumber
         )
         const pullRequestFormattedData: StructuredPRData =
-            await this.gitlabEventsService.handleGitlabMergeRequest(PrAndRepo)
+            await this.gitlabEventsService.handleGitlabMergeRequest(
+                PrAndRepo,
+                PREvent.CREATED
+            )
 
         if (!pullRequestFormattedData) {
             throw new InternalServerErrorException(
                 'Failed to fetch pull request data'
             )
         }
-        return await this.analysisService.makeAnalysis(pullRequestFormattedData)
+        return await this.analysisService.makeAnalysis(
+            pullRequestFormattedData,
+            PREvent.CREATED
+        )
     }
 
     async getOrgMembers(user: any) {

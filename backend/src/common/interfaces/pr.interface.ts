@@ -34,6 +34,8 @@ export interface PullRequestData {
     prHeadSha: string
     prBaseSha: string
     prFilesChanged: number
+    prTotalLineAddition: number
+    prTotalLineDeletion: number
     prFiles: PRFile[]
 }
 

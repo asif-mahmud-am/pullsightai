@@ -106,6 +106,12 @@ export class PullRequest {
     @Prop({ default: 0 })
     prFilesChanged: number
 
+    @Prop({ default: 0 })
+    prTotalLineAddition: number
+
+    @Prop({ default: 0 })
+    prTotalLineDeletion: number
+
     @Prop({ type: [PRFile], default: [] })
     prFiles: PRFile[]
 }

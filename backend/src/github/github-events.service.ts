@@ -130,7 +130,8 @@ export class GithubEventService {
         )
 
         const prFiles: PRFile[] = []
-
+        const totalPrLineAdditions = files.reduce((sum, file) => sum + (file.additions || 0), 0);
+        const totalPrLineDeletion = files.reduce((sum, file) => sum + (file.deletions || 0), 0);
         // Process each file to get before/after content
         for (let i = 0; i < files.length; i++) {
             const file = files[i]
@@ -151,7 +152,6 @@ export class GithubEventService {
                 prData.head.sha,
                 installationId
             )
-
             prFiles.push({
                 prFileName: file.filename,
                 prFileStatus: file.status,
@@ -193,6 +193,8 @@ export class GithubEventService {
                 prHeadSha: prData.head.sha,
                 prBaseSha: prData.base.sha,
                 prFilesChanged: files.length,
+                prTotalLineAddition: totalPrLineAdditions,
+                prTotalLineDeletion: totalPrLineDeletion,
                 prFiles: prFiles
             }
         }

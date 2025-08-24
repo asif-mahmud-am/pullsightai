@@ -5,6 +5,7 @@ from app.api.review import generate_review_response
 from app.services.claude_service import ClaudeService
 from app.utils.chunking_strategy import create_summary_chunks, prepare_chunk_for_summary
 from app.utils.summary_aggregator import aggregate_chunk_summaries
+from app.utils.line_perser import extract_review_info
 import httpx
 import os
 import json
@@ -148,6 +149,9 @@ async def process_pr_review_background(extracted_data: dict):
         
         # Generate summaries for each chunk
         chunk_summaries = []
+        total_time_estimation = 0
+        total_issue_count = 0
+        review_info = {}
         for chunk in chunks:
             logger.info(f"Generating summary for chunk {chunk['chunk_index'] + 1}/{len(chunks)} with {len(chunk['files'])} files")
             
@@ -157,17 +161,28 @@ async def process_pr_review_background(extracted_data: dict):
             try:
                 chunk_summary = await generate_summary_response(chunk_variables, llm_service)
                 chunk_summaries.append(chunk_summary.pr_summary)
+                review_info = extract_review_info(chunk_summary.pr_summary)
+                logger.info(f"Review info: {review_info}")
+                total_time_estimation += review_info["estimated_code_review_effort"]
+                total_issue_count += review_info["potential_issue_count"]
                 logger.info(f"Successfully generated summary for chunk {chunk['chunk_index'] + 1}")
             except Exception as e:
                 logger.error(f"Failed to generate summary for chunk {chunk['chunk_index'] + 1}: {str(e)}")
                 # Continue with other chunks
                 continue
+        review_info = {
+            "estimated_code_review_effort": total_time_estimation,
+            "potential_issue_count": total_issue_count
+        }
         
         # Aggregate chunk summaries if multiple chunks
         if len(chunk_summaries) > 1:
             logger.info(f"Aggregating {len(chunk_summaries)} chunk summaries")
             try:
-                final_summary = await aggregate_chunk_summaries(chunk_summaries, extracted_data, llm_service)
+                
+                final_summary = await aggregate_chunk_summaries(chunk_summaries, extracted_data, llm_service, review_info)
+                review_info = extract_review_info(final_summary)
+                logger.info(f"Review info: {review_info}")
                 summary = type('Summary', (), {'pr_summary': final_summary})()
                 logger.info("Successfully aggregated chunk summaries")
             except Exception as e:
@@ -206,7 +221,8 @@ async def process_pr_review_background(extracted_data: dict):
             "pullRequestAnalysisId": extracted_data["pullRequestAnalysisId"],
             "summary": summary.pr_summary,
             "modelInfo": {},
-            "usageInfo": {}
+            "usageInfo": {},
+            "reviewInfo": review_info
         }
 
         try:

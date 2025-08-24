@@ -3,7 +3,7 @@ from typing import List, Dict, Any
 
 logger = logging.getLogger(__name__)
 
-async def aggregate_chunk_summaries(chunk_summaries: List[str], pr_metadata: Dict, llm_service: Any) -> str:
+async def aggregate_chunk_summaries(chunk_summaries: List[str], pr_metadata: Dict, llm_service: Any, review_info: Dict) -> str:
     """
     Aggregate multiple chunk summaries into a single comprehensive summary.
     
@@ -11,7 +11,7 @@ async def aggregate_chunk_summaries(chunk_summaries: List[str], pr_metadata: Dic
         chunk_summaries (List[str]): List of summaries from different chunks
         pr_metadata (Dict): PR metadata for context
         llm_service (ClaudeService): LLM service for aggregation
-    
+        review_info (Dict): Review info for context
     Returns:
         str: Aggregated summary
     """
@@ -26,7 +26,7 @@ async def aggregate_chunk_summaries(chunk_summaries: List[str], pr_metadata: Dic
     logger.info(f"Aggregating {len(chunk_summaries)} chunk summaries")
     
     # Create aggregation prompt
-    aggregation_prompt = create_aggregation_prompt(chunk_summaries, pr_metadata)
+    aggregation_prompt = create_aggregation_prompt(chunk_summaries, pr_metadata, review_info)
     
     try:
         # Use LLM to aggregate summaries
@@ -39,14 +39,14 @@ async def aggregate_chunk_summaries(chunk_summaries: List[str], pr_metadata: Dic
         logger.info("Falling back to simple concatenation")
         return fallback_aggregation(chunk_summaries)
 
-def create_aggregation_prompt(chunk_summaries: List[str], pr_metadata: Dict) -> str:
+def create_aggregation_prompt(chunk_summaries: List[str], pr_metadata: Dict, review_info: Dict) -> str:
     """
     Create a prompt for aggregating multiple chunk summaries.
     
     Args:
         chunk_summaries (List[str]): List of chunk summaries
         pr_metadata (Dict): PR metadata
-    
+        review_info (Dict): Review info for context
     Returns:
         str: Aggregation prompt
     """
@@ -69,6 +69,8 @@ The PR has been analyzed in {len(chunk_summaries)} chunks due to size constraint
 2. Maintains the same format and structure as the original summaries
 3. Eliminates redundancy while preserving all important details
 4. Provides a cohesive overview of the entire pull request
+5. Includes the review info provided below exactly the same format and structure as the original summaries but with the total values:
+{review_info}
 
 Aggregated Summary:"""
     

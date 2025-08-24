@@ -163,7 +163,7 @@ async def process_pr_review_background(extracted_data: dict):
                 chunk_summaries.append(chunk_summary.pr_summary)
                 review_info = extract_review_info(chunk_summary.pr_summary)
                 logger.info(f"Review info: {review_info}")
-                total_time_estimation += review_info["estimated_code_review_effort"]
+                total_time_estimation += review_info["estimated_code_review_time"]
                 total_issue_count += review_info["potential_issue_count"]
                 logger.info(f"Successfully generated summary for chunk {chunk['chunk_index'] + 1}")
             except Exception as e:
@@ -171,7 +171,7 @@ async def process_pr_review_background(extracted_data: dict):
                 # Continue with other chunks
                 continue
         review_info = {
-            "estimated_code_review_effort": total_time_estimation,
+            "estimated_code_review_time": total_time_estimation,
             "potential_issue_count": total_issue_count
         }
         

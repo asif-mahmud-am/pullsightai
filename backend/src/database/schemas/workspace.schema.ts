@@ -78,9 +78,8 @@ export class Workspace {
     })
     team?: Types.ObjectId
 
-
     @Prop({ type: WorkspaceSetting, nullable: true })
-    workSpaceSetting: WorkspaceSetting
+    workSpaceSetting?: WorkspaceSetting
 }
 
 const schema = SchemaFactory.createForClass(Workspace)

@@ -5,6 +5,16 @@ import * as uniqueValidator from 'mongoose-unique-validator'
 
 export type WorkspaceDocument = Workspace & Document
 
+
+@Schema({ timestamps: false, versionKey: false, id: false })
+export class WorkspaceSetting {
+    @Prop({ default: true })
+    anthropicApiKey: string
+
+    @Prop({ type : 'number' , default: 50 })
+    hourlyRate: number
+}
+
 @Schema({ timestamps: true, versionKey: false })
 export class Workspace {
     @Prop({ required: true, trim: true })
@@ -67,6 +77,9 @@ export class Workspace {
                 : Types.ObjectId.createFromHexString(value)
     })
     team?: Types.ObjectId
+
+    @Prop({ type: WorkspaceSetting, nullable: true })
+    workSpaceSetting?: WorkspaceSetting
 }
 
 const schema = SchemaFactory.createForClass(Workspace)

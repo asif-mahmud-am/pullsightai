@@ -37,6 +37,10 @@ export class GitlabEventsService {
 
         const prFiles: PRFile[] = []
 
+        // Calculate total lines added and deleted across all files
+        let totalPrLineAdditions = 0;
+        let totalPrLineDeletion = 0;
+
         // Process each file to get before/after content
         for (let i = 0; i < files.length; i++) {
             const file = files[i]
@@ -55,6 +59,11 @@ export class GitlabEventsService {
                 accessToken
             )
 
+            // Parse diff to count additions and deletions
+            const { additions, deletions } = this.countLinesFromDiff(file.diff || '');
+            totalPrLineAdditions += additions;
+            totalPrLineDeletion += deletions;
+
             prFiles.push({
                 prFileName: file.new_path,
                 prFileStatus: file.new_file
@@ -62,9 +71,9 @@ export class GitlabEventsService {
                     : file.deleted_file
                       ? 'removed'
                       : 'modified',
-                prFileAdditions: 0, // GitLab doesn't provide this in webhook
-                prFileDeletions: 0, // GitLab doesn't provide this in webhook
-                prFileChanges: 0, // GitLab doesn't provide this in webhook
+                prFileAdditions: additions,
+                prFileDeletions: deletions,
+                prFileChanges: additions + deletions,
                 prFileContentBefore:
                     contentBefore || 'File not found in target branch',
                 prFileContentAfter:
@@ -101,6 +110,8 @@ export class GitlabEventsService {
                 prHeadSha: mergeRequest.last_commit?.id || 'unknown',
                 prBaseSha: 'unknown', // Not provided in webhook
                 prFilesChanged: files.length,
+                prTotalLineAddition: totalPrLineAdditions,
+                prTotalLineDeletion: totalPrLineDeletion,
                 prFiles: prFiles
             }
         }
@@ -430,5 +441,23 @@ export class GitlabEventsService {
         }
 
         return hunks
+    }
+
+    private countLinesFromDiff(diff: string): { additions: number; deletions: number } {
+        if (!diff) return { additions: 0, deletions: 0 };
+        
+        const lines = diff.split('\n');
+        let additions = 0;
+        let deletions = 0;
+        
+        for (const line of lines) {
+            if (line.startsWith('+') && !line.startsWith('+++')) {
+                additions++;
+            } else if (line.startsWith('-') && !line.startsWith('---')) {
+                deletions++;
+            }
+        }
+        
+        return { additions, deletions };
     }
 }

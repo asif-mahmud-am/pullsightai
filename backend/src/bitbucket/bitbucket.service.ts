@@ -170,6 +170,7 @@ export class BitbucketService {
         if (!isApplicable) {
             return {}
         }
+
         let pullRequestFormattedData: StructuredPRData | boolean
         switch (event) {
             case 'pullrequest:created':
@@ -187,6 +188,7 @@ export class BitbucketService {
             default:
                 pullRequestFormattedData = false
         }
+
         if (pullRequestFormattedData) {
             this.analysisService.makeAnalysis(pullRequestFormattedData)
         }

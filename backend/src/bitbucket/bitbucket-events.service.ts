@@ -46,6 +46,10 @@ export class BitbucketEventsService {
             accessToken
         )
 
+        // Calculate total lines added and deleted across all files
+        const totalPrLineAdditions = files.reduce((sum, file) => sum + (file.lines_added || 0), 0);
+        const totalPrLineDeletion = files.reduce((sum, file) => sum + (file.lines_removed || 0), 0);
+
         // Process each file to get before/after content
         for (let i = 0; i < files.length; i++) {
             const file = files[i]
@@ -113,6 +117,8 @@ export class BitbucketEventsService {
                 prHeadSha: pullRequest.source?.commit?.hash || 'unknown',
                 prBaseSha: pullRequest.destination?.commit?.hash || 'unknown',
                 prFilesChanged: files.length,
+                prTotalLineAddition: totalPrLineAdditions,
+                prTotalLineDeletion: totalPrLineDeletion,
                 prFiles: prFiles
             }
         }

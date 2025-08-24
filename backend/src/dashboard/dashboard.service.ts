@@ -268,39 +268,31 @@ export class DashboardService {
         let totalLinesReviewed = 0
         const timeSeriesData: Map<string, number> = new Map()
 
-        // Calculate time saved based on file diffs
         for (const analysis of prAnalyses) {
-            if (analysis.pullRequest && (analysis.pullRequest as any).prFiles) {
-                let prTimeSaved = 0
+            if (analysis.pullRequest) {
+                const pullRequest = analysis.pullRequest as any;
                 
-                // Iterate through each file's diff to calculate time saved
-                for (const file of (analysis.pullRequest as any).prFiles) {
-                    // Calculate time saved based on file changes
-                    const linesChanged = (file.prFileAdditions || 0) + (file.prFileDeletions || 0)
-                    totalLinesReviewed += linesChanged
-                    
-                    // Estimate: 1 minute per 10 lines of code (6 lines per minute)
-                    // This is configurable based on your business logic
-                    const timeForManualReview = linesChanged / 6 // minutes
-                    const timeWithAI = timeForManualReview * 0.2 // AI saves 80% of time
-                    const timeSaved = timeForManualReview - timeWithAI
-                    
-                    prTimeSaved += timeSaved
-                }
-
-                totalTimeSaved += prTimeSaved
+                // Use total line counts from PR schema
+                const prTotalLineAddition = pullRequest.prTotalLineAddition || 0;
+                const prTotalLineDeletion = pullRequest.prTotalLineDeletion || 0;
+                
+                const timeInSecondToReviewPrLine = 30;
+                const totalPrReviewTimeInSeconds = (prTotalLineAddition + prTotalLineDeletion) * timeInSecondToReviewPrLine;
+                const totalPrReviewTimeInHour = totalPrReviewTimeInSeconds / 3600;
+                
+                totalTimeSaved += totalPrReviewTimeInHour;
+                totalLinesReviewed += (prTotalLineAddition + prTotalLineDeletion);
 
                 // Group by time period for chart data
                 const breakdown = timeAndMoneySaveCardFilterDto.breakdown || 'day'
                 const dateKey = this.formatDateByBreakdown((analysis as any).createdAt, breakdown)
                 
-                timeSeriesData.set(dateKey, (timeSeriesData.get(dateKey) || 0) + prTimeSaved)
+                timeSeriesData.set(dateKey, (timeSeriesData.get(dateKey) || 0) + totalPrReviewTimeInHour)
             }
         }
 
-        // Convert minutes to hours
-        const totalTimeSavedHours = totalTimeSaved / 60
-        const totalMoneySaved = totalTimeSavedHours * hourlyRate
+        // Calculate money saved
+        const totalMoneySaved = totalTimeSaved * hourlyRate
         const averageTimePerPR = prAnalyses.length > 0 ? totalTimeSaved / prAnalyses.length : 0
 
         // Generate time series chart data
@@ -309,10 +301,9 @@ export class DashboardService {
 
         return {
             graphChart,
-            totalTimeSaved: Math.round(totalTimeSavedHours * 100) / 100, // Hours, rounded to 2 decimal places
+            totalTimeSaved: Math.round(totalTimeSaved * 100) / 100, // Hours, rounded to 2 decimal places
             totalMoneySaved: Math.round(totalMoneySaved * 100) / 100, // Currency, rounded to 2 decimal places
-            hourlyRate,
-            averageTimePerPR: Math.round(averageTimePerPR * 100) / 100, // Minutes, rounded to 2 decimal places
+            averageTimePerPR: Math.round(averageTimePerPR * 100) / 100, // Hours, rounded to 2 decimal places
             totalLinesReviewed,
             totalPRsAnalyzed: prAnalyses.length
         }

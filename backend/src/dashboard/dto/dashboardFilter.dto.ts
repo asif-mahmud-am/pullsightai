@@ -1,11 +1,9 @@
 import { IsDateString, IsOptional, IsIn } from "class-validator";
 
-export class PrAnalysisCardFilterDto {
-
+export class DashboardFilterDto {
     @IsOptional()
     repo: string;
 
-    //2025-08-16T21:41:22.665Z
     @IsOptional()
     @IsDateString()
     from: string
@@ -18,3 +16,9 @@ export class PrAnalysisCardFilterDto {
     @IsIn(['day', 'month', 'year'])
     breakdown?: 'day' | 'month' | 'year'
 }
+
+export class PrAnalysisCardFilterDto extends DashboardFilterDto {}
+
+export class IssueAnalysisCardFilterDto extends DashboardFilterDto {}
+
+export class TimeAndMoneySaveCardFilterDto extends DashboardFilterDto {}

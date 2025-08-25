@@ -21,4 +21,7 @@ export class PullRequestAnalysisDto {
     @IsOptional()
     @IsObject()
     usageInfo?: any
+
+    @IsOptional()
+    reviewInfo: any
 }

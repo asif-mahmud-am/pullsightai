@@ -58,9 +58,11 @@ const Avatar: FC<Props> = ({
 
     return (
         <div className={cn("flex items-center gap-2", className)}>
-            {src && !hasError ? (
+            {true ? (
                 <Image
-                    src={src}
+                    src={
+                        src && !hasError ? src : "/images/user_placeholder.png"
+                    }
                     alt=""
                     className={`border rounded-full`}
                     height={sizeNum}

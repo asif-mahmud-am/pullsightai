@@ -18,7 +18,6 @@ import { PRAnalysisData } from "@/types/prAnalysis";
 import Avatar from "@/components/reusable/Avatar";
 import Badge from "@/components/reusable/Badge";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const data: any = {
     pullRequest: {
         provider: "github",
@@ -355,7 +354,7 @@ const Step4Page = () => {
 
             {/* Footer with action button */}
             <ActionFooter
-                buttonText="Final set up"
+                buttonText="Set up"
                 isEnabled={!isLoading && analysisData?.status === "completed"}
                 isLoading={isLoading}
                 onClick={onStepComplete}

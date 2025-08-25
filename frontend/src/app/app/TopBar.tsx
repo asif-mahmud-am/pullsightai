@@ -29,7 +29,7 @@ const AppTopBar = () => {
                 className="h-auto w-auto"
             />
             <span className="text-base font-medium">
-                Welcome back, Ralph 👋
+                Welcome back, {user?.displayName} 👋
             </span>
 
             <Dropdown>

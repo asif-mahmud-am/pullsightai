@@ -1,7 +1,7 @@
 const TeamActivityPage = () => {
     return (
         <>
-            <h1 className="text-2xl font-bold">Team Activity</h1>
+            <h1 className="text-2xl font-bold">Team Members</h1>
         </>
     );
 };

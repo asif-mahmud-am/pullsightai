@@ -7,7 +7,7 @@ const Home = async () => {
     if (!token) {
         redirect(ROUTE_CONSTANTS.LOGIN);
     } else {
-        redirect(ROUTE_CONSTANTS.DASHBOARD);
+        redirect(ROUTE_CONSTANTS.APP_DASHBOARD);
     }
 };
 

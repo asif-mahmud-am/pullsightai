@@ -18,6 +18,9 @@ export const ROUTE_CONSTANTS = {
     ONBOARDING_STEP_6: "/onboarding/step-6",
 
     // Dashboard routes
-    DASHBOARD: "/dashboard",
-    DASHBOARD_SETTINGS: "/dashboard/settings",
+    APP_DASHBOARD: "/app/dashboard",
+    APP_REPOSITORIES: "/app/repositories",
+    APP_PULL_REQUESTS: "/app/pull-requests",
+    APP_TEAM_ACTIVITY: "/app/team-activity",
+    APP_SETTINGS: "/app/settings",
 };

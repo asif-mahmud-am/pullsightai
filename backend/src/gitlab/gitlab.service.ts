@@ -6,6 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { AnalysisService } from 'src/analysis/analysis.service'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
+import { PREvent } from 'src/common/enums/pr.enum'
 import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
 import {
@@ -130,10 +131,7 @@ export class GitlabService {
         )
     }
 
-    async addWebhook(
-        userData: any,
-        repositories: RepositoryDto[]
-    ): Promise<any> {
+    async addWebhook(userData: any, repository: RepositoryDto): Promise<any> {
         const webhookUrl = `${this.configService.get('BASE_URL')}/v1/gitlab/events`
         const events = [
             'push',
@@ -148,19 +146,16 @@ export class GitlabService {
             'release'
         ]
 
-        const webhookPromises = repositories.map(async (repository) => {
-            const webhook = await this.gitlabApiService.addWebhook(
-                userData?.accessToken,
-                repository.slug,
-                webhookUrl,
-                events
-            )
-            return {
-                ...repository,
-                webhookToken: webhook.id
-            }
-        })
-        return await Promise.all(webhookPromises)
+        const webhook = await this.gitlabApiService.addWebhook(
+            userData?.accessToken,
+            repository.slug,
+            webhookUrl,
+            events
+        )
+        return {
+            ...repository,
+            webhookToken: webhook.id
+        }
     }
 
     async handleOAuthCallback(code: string): Promise<any> {
@@ -200,14 +195,8 @@ export class GitlabService {
     }
 
     async processGitlabEvent(event: any, payload: any) {
-        console.log('Processing GitLab event:====1', event, payload)
-        console.log('Processing GitLab event:====2', event, payload.user_id)
-        console.log('Processing GitLab event:====3', payload.object_attributes)
-        console.log('payload.project:====4', payload.project)
         const providerId =
             payload.user_id || payload.object_attributes.author_id
-
-        console.log('Processing GitLab event:====4', providerId)
 
         const isApplicable =
             await this.analysisService.checkApplicableForAnalysis(
@@ -220,26 +209,37 @@ export class GitlabService {
         if (!isApplicable) {
             return {}
         }
-        console.log('isApplicable', isApplicable)
 
-        await this.dataService.eventLogs.create({
-            eventName: event,
-            provider: 'gitlab',
-            eventPayload: payload
-        })
-        let pullRequestFormattedData: StructuredPRData | boolean
+        // await this.dataService.eventLogs.create({
+        //     eventName: event,
+        //     provider: 'gitlab',
+        //     eventPayload: payload
+        // })
+        let pullRequestFormattedData: StructuredPRData | boolean = false
+        let prEvent
         switch (event) {
             case 'Merge Request Hook':
-                pullRequestFormattedData =
-                    await this.gitlabEventsService.handleGitlabMergeRequest(
-                        payload
+                if (
+                    ['open', 'update'].includes(
+                        payload.object_attributes.action
                     )
+                ) {
+                    prEvent =
+                        payload.object_attributes.action == 'open'
+                            ? PREvent.CREATED
+                            : PREvent.UPDATED
+                    pullRequestFormattedData =
+                        await this.gitlabEventsService.handleGitlabMergeRequest(
+                            payload,
+                            prEvent
+                        )
+                }
                 break
             default:
                 pullRequestFormattedData = false
         }
         if (pullRequestFormattedData) {
-            this.analysisService.makeAnalysis(pullRequestFormattedData)
+            this.analysisService.makeAnalysis(pullRequestFormattedData, prEvent)
         }
         return {}
     }
@@ -269,14 +269,20 @@ export class GitlabService {
             +prReviewDto.prNumber
         )
         const pullRequestFormattedData: StructuredPRData =
-            await this.gitlabEventsService.handleGitlabMergeRequest(PrAndRepo)
+            await this.gitlabEventsService.handleGitlabMergeRequest(
+                PrAndRepo,
+                PREvent.CREATED
+            )
 
         if (!pullRequestFormattedData) {
             throw new InternalServerErrorException(
                 'Failed to fetch pull request data'
             )
         }
-        return await this.analysisService.makeAnalysis(pullRequestFormattedData)
+        return await this.analysisService.makeAnalysis(
+            pullRequestFormattedData,
+            PREvent.CREATED
+        )
     }
 
     async getOrgMembers(user: any) {

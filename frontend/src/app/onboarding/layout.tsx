@@ -12,7 +12,7 @@ const OnboardingLayout = ({ children }: { children: ReactNode }) => {
         <AuthGuardServer>
             <AuthGuardClient>
                 <div
-                    className="py-12 min-h-screen bg-no-repeat bg-cover bg-center"
+                    className="pt-8 pb-20 md:py-14 min-h-screen bg-no-repeat bg-cover bg-center max-w-screen overflow-hidden"
                     style={{
                         backgroundImage: "url('/images/gradient-bg.svg')",
                     }}
@@ -40,7 +40,7 @@ const OnboardingLayout = ({ children }: { children: ReactNode }) => {
 
                             {!false && <ProgressSteps />}
                         </div>
-                        <div className="flex flex-col gap-5 mx-auto justify-between mt-[64px] min-h-[calc(100vh-300px)]">
+                        <div className="flex flex-col gap-5 mx-auto justify-between mt-[64px]">
                             {children}
                         </div>
                     </div>

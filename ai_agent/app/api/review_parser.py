@@ -82,10 +82,19 @@ def parse_review_response(review_text: str, file_name: str):
                 line_end = None
 
         # Build content combining issue and suggestion when available
+        if severity=="Critical":
+            severity_text = "🛑 **Critical Error** "
+        elif severity=="Warning":
+            severity_text = "⚠️ **Warning** "
+        elif severity=="Info":
+            severity_text = "ℹ️ **Info** "
+        else:
+            severity_text = ""
+
         issue_text = item.get("issue", "")
         suggestion_text = item.get("suggestion", "")
         if issue_text or suggestion_text:
-            content = f"**Issue**: {issue_text}\n\n**Suggestion**: {suggestion_text}".strip()
+            content = f"{severity_text}\n\n\n**Issue**: {issue_text}\n\n**Suggestion**: {suggestion_text}".strip()
         else:
             # Fallback: stringify the whole item
             content = json.dumps(item, ensure_ascii=False)

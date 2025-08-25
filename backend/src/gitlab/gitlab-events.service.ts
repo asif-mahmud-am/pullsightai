@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { mapPREventToState, PREvent } from 'src/common/enums/pr.enum'
 import { HttpService } from 'src/common/http/http.service'
 import { PRFile, StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { DatabaseService } from 'src/database/database.service'
@@ -17,7 +18,10 @@ export class GitlabEventsService {
         private readonly gitlabApiService: GitlabApiService
     ) {}
 
-    async handleGitlabMergeRequest(payload: any): Promise<StructuredPRData> {
+    async handleGitlabMergeRequest(
+        payload: any,
+        event: PREvent
+    ): Promise<StructuredPRData> {
         const mergeRequest = payload.object_attributes
         const project = payload.project
 
@@ -37,6 +41,10 @@ export class GitlabEventsService {
 
         const prFiles: PRFile[] = []
 
+        // Calculate total lines added and deleted across all files
+        let totalPrLineAdditions = 0
+        let totalPrLineDeletion = 0
+
         // Process each file to get before/after content
         for (let i = 0; i < files.length; i++) {
             const file = files[i]
@@ -55,6 +63,13 @@ export class GitlabEventsService {
                 accessToken
             )
 
+            // Parse diff to count additions and deletions
+            const { additions, deletions } = this.countLinesFromDiff(
+                file.diff || ''
+            )
+            totalPrLineAdditions += additions
+            totalPrLineDeletion += deletions
+
             prFiles.push({
                 prFileName: file.new_path,
                 prFileStatus: file.new_file
@@ -62,9 +77,9 @@ export class GitlabEventsService {
                     : file.deleted_file
                       ? 'removed'
                       : 'modified',
-                prFileAdditions: 0, // GitLab doesn't provide this in webhook
-                prFileDeletions: 0, // GitLab doesn't provide this in webhook
-                prFileChanges: 0, // GitLab doesn't provide this in webhook
+                prFileAdditions: additions,
+                prFileDeletions: deletions,
+                prFileChanges: additions + deletions,
                 prFileContentBefore:
                     contentBefore || 'File not found in target branch',
                 prFileContentAfter:
@@ -80,11 +95,9 @@ export class GitlabEventsService {
             pullRequest: {
                 provider: 'gitlab',
                 prId: mergeRequest.id.toString(),
-                prUser:
-                    mergeRequest.author?.username ||
-                    payload.user?.username ||
-                    'unknown',
-                prUserAvatar: mergeRequest.author?.avatar_url || '',
+                prUser: mergeRequest.author?.username || payload.user?.username,
+                prUserAvatar:
+                    payload.user?.avatar_url || mergeRequest.author?.avatar_url,
                 prUrl: mergeRequest.web_url || mergeRequest.target.url,
                 owner: workspace,
                 repo: project.path_with_namespace,
@@ -93,7 +106,7 @@ export class GitlabEventsService {
                 prRepoName: project.path_with_namespace,
                 prTitle: mergeRequest.title,
                 prBody: mergeRequest.description || '',
-                prState: mergeRequest.state,
+                prState: mapPREventToState(event),
                 prCreatedAt: mergeRequest.created_at,
                 prUpdatedAt: mergeRequest.updated_at,
                 prClosedAt: mergeRequest.closed_at || '',
@@ -103,6 +116,8 @@ export class GitlabEventsService {
                 prHeadSha: mergeRequest.last_commit?.id || 'unknown',
                 prBaseSha: 'unknown', // Not provided in webhook
                 prFilesChanged: files.length,
+                prTotalLineAddition: totalPrLineAdditions,
+                prTotalLineDeletion: totalPrLineDeletion,
                 prFiles: prFiles
             }
         }
@@ -248,7 +263,7 @@ export class GitlabEventsService {
                     }
                 }
             )
-            return response
+            return String(response)
         } catch (error) {
             return null
         }
@@ -432,5 +447,26 @@ export class GitlabEventsService {
         }
 
         return hunks
+    }
+
+    private countLinesFromDiff(diff: string): {
+        additions: number
+        deletions: number
+    } {
+        if (!diff) return { additions: 0, deletions: 0 }
+
+        const lines = diff.split('\n')
+        let additions = 0
+        let deletions = 0
+
+        for (const line of lines) {
+            if (line.startsWith('+') && !line.startsWith('+++')) {
+                additions++
+            } else if (line.startsWith('-') && !line.startsWith('---')) {
+                deletions++
+            }
+        }
+
+        return { additions, deletions }
     }
 }

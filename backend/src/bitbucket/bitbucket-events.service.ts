@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { mapPREventToState, PREvent } from 'src/common/enums/pr.enum'
 import { HttpService } from 'src/common/http/http.service'
 import { PRFile, StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { DatabaseService } from 'src/database/database.service'
@@ -17,7 +18,10 @@ export class BitbucketEventsService {
         private readonly bitbucketApiService: BitbucketApiService
     ) {}
 
-    async handleBitbucketPullRequest(payload: any): Promise<StructuredPRData> {
+    async handleBitbucketPullRequest(
+        payload: any,
+        event: PREvent
+    ): Promise<StructuredPRData> {
         const pullRequest = payload.pullrequest
         const repository = payload.repository
 
@@ -46,6 +50,16 @@ export class BitbucketEventsService {
             accessToken
         )
 
+        // Calculate total lines added and deleted across all files
+        const totalPrLineAdditions = files.reduce(
+            (sum, file) => sum + (file.lines_added || 0),
+            0
+        )
+        const totalPrLineDeletion = files.reduce(
+            (sum, file) => sum + (file.lines_removed || 0),
+            0
+        )
+
         // Process each file to get before/after content
         for (let i = 0; i < files.length; i++) {
             const file = files[i]
@@ -63,10 +77,16 @@ export class BitbucketEventsService {
                 pullRequest.source?.branch?.name,
                 accessToken
             )
-            console.log('Content After:========')
+
+            // Extract individual file diff from the full diff
+            const fileName = file.new?.path || file.old?.path
+            const individualFileDiff = this.bitbucketApiService.extractFileDiff(
+                fullDiff,
+                fileName
+            )
 
             prFiles.push({
-                prFileName: file.new?.path || file.old?.path,
+                prFileName: fileName,
                 prFileStatus: file.status,
                 prFileAdditions: file.lines_added || 0,
                 prFileDeletions: file.lines_removed || 0,
@@ -76,8 +96,8 @@ export class BitbucketEventsService {
                     contentBefore || 'File not found in destination branch',
                 prFileContentAfter:
                     contentAfter || 'File not found in source branch',
-                prFileDiff: fullDiff || '',
-                prFileDiffHunks: this.parseDiffHunks(fullDiff || ''),
+                prFileDiff: individualFileDiff,
+                prFileDiffHunks: this.parseDiffHunks(individualFileDiff),
                 prFileBlobUrl:
                     file.new?.links?.self?.href ||
                     file.old?.links?.self?.href ||
@@ -89,17 +109,17 @@ export class BitbucketEventsService {
             pullRequest: {
                 provider: 'bitbucket',
                 prId: pullRequest.id.toString(),
-                prUser: pullRequest.author?.username || 'unknown',
+                prUser: pullRequest.author?.nickname,
                 prUserAvatar: pullRequest.author?.links?.avatar?.href || '',
-                owner: repository.owner?.username || 'unknown',
-                repo: repository.name,
+                owner: workspace || 'unknown',
+                repo: repository.name || repository.slug,
                 prNumber: pullRequest.id.toString(),
                 installationId: 'bitbucket_integration', // Bitbucket doesn't have installation concept
                 prRepoName: repository.full_name,
                 prTitle: pullRequest.title,
                 prBody: pullRequest.description || '',
                 prUrl: pullRequest.links?.html?.href || '',
-                prState: pullRequest.state,
+                prState: mapPREventToState(event),
                 prCreatedAt: pullRequest.created_on,
                 prUpdatedAt: pullRequest.updated_on,
                 prClosedAt: pullRequest.closed_on || '',
@@ -110,6 +130,8 @@ export class BitbucketEventsService {
                 prHeadSha: pullRequest.source?.commit?.hash || 'unknown',
                 prBaseSha: pullRequest.destination?.commit?.hash || 'unknown',
                 prFilesChanged: files.length,
+                prTotalLineAddition: totalPrLineAdditions,
+                prTotalLineDeletion: totalPrLineDeletion,
                 prFiles: prFiles
             }
         }
@@ -258,13 +280,13 @@ export class BitbucketEventsService {
             }
 
             const apiUrl = `${bitbucketApiUrl}/repositories/${workspace}/${repository}/src/${commitSha}/${filePath}`
-            console.log('Fetching file content from:', apiUrl)
-            return this.httpService.getWithHandleCatch(apiUrl, {
+            const response = await this.httpService.getWithHandleCatch(apiUrl, {
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
                     Accept: 'text/plain'
                 }
             })
+            return String(response)
         } catch (error) {
             return null
         }

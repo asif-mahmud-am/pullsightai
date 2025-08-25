@@ -68,9 +68,10 @@ export class GitlabController {
     @Post('events')
     async gitlabEvents(@Body() body: any, @Req() req) {
         const event = req.headers['x-gitlab-event']
+        this.gitlabService.processGitlabEvent(event, body)
         return {
             message: 'GitLab events processed successfully',
-            result: await this.gitlabService.processGitlabEvent(event, body)
+            result: {}
         }
     }
 

@@ -6,7 +6,7 @@ import { DatabaseService } from 'src/database/database.service'
 import { MemberRole } from 'src/database/schemas/workspace-members.schema'
 import { GitlabService } from 'src/gitlab/gitlab.service'
 import { MakeSubscriptionDto } from 'src/workspace/dto/make-subscription.dto'
-import { UpdateWorkspaceDto } from './dto/update-workspace.dto'
+import { UpdateRepositoryDto } from 'src/workspace/dto/update-repository.dto'
 
 @Injectable()
 export class WorkspaceService {
@@ -18,6 +18,29 @@ export class WorkspaceService {
         private readonly bitbucketService: BitbucketService
     ) {}
 
+    async setWebhook(userData, repository) {
+        let repositoryData
+        switch (userData?.provider) {
+            case 'github':
+                repositoryData = repository
+                break
+            case 'gitlab':
+                repositoryData = await this.gitlabService.addWebhook(
+                    userData,
+                    repository
+                )
+                break
+            case 'bitbucket':
+                repositoryData = await this.bitbucketService.addWebhook(
+                    userData,
+                    repository
+                )
+                break
+            default:
+                throw new Error('Unsupported provider')
+        }
+        return repositoryData
+    }
     async makeSubscription(
         makeSubscriptionDto: MakeSubscriptionDto,
         user: any
@@ -25,25 +48,7 @@ export class WorkspaceService {
         const userData =
             await this.analysisService.getUserDataWithWorkspace(user)
         let repositories = makeSubscriptionDto.repositories
-        switch (userData?.provider) {
-            case 'github':
-                repositories = makeSubscriptionDto.repositories
-                break
-            case 'gitlab':
-                repositories = await this.gitlabService.addWebhook(
-                    userData,
-                    makeSubscriptionDto.repositories
-                )
-                break
-            case 'bitbucket':
-                repositories = await this.bitbucketService.addWebhook(
-                    userData,
-                    makeSubscriptionDto.repositories
-                )
-                break
-            default:
-                throw new Error('Unsupported provider')
-        }
+
         Promise.all(
             repositories.map(async (repository) => {
                 let repositoryData =
@@ -53,22 +58,22 @@ export class WorkspaceService {
                         workspace: userData?.currentWorkspace!._id
                     })
                 if (!repositoryData) {
-                    repositoryData = await this.dataService.repositories.create(
-                        {
-                            ...repository,
-                            provider: userData.provider,
-                            workspace: userData?.currentWorkspace!._id,
-                            isActive: true
-                        }
-                    )
+                    repository = await this.setWebhook(userData, repository)
+                    await this.dataService.repositories.create({
+                        ...repository,
+                        provider: userData.provider,
+                        workspace: userData?.currentWorkspace!._id,
+                        isActive: true
+                    })
                 } else {
+                    if (!repositoryData.webhookToken) {
+                        repository = await this.setWebhook(userData, repository)
+                    }
                     await this.dataService.repositories.updateOne(
-                        { _id: user._id },
+                        { _id: repositoryData['_id'] },
                         {
                             $set: {
                                 ...repository,
-                                provider: userData.provider,
-                                workspace: userData?.currentWorkspace!._id,
                                 isActive: true
                             }
                         }
@@ -117,19 +122,41 @@ export class WorkspaceService {
         return {}
     }
 
-    findAll() {
-        return `This action returns all workspace`
+    async findAllRepositories(user: any, query: any) {
+        const userData =
+            await this.analysisService.getUserDataWithWorkspace(user)
+        return this.dataService.repositories.find({
+            workspace: userData?.currentWorkspace!._id,
+            ...query
+        })
     }
 
-    findOne(id: number) {
-        return `This action returns a #${id} workspace`
+    async updateRepository(id: string, body: UpdateRepositoryDto) {
+        await this.dataService.repositories.updateOne(
+            { _id: id },
+            { $set: { ...body } }
+        )
+        return await this.dataService.repositories.findOne({ _id: id })
     }
 
-    update(id: number, updateWorkspaceDto: UpdateWorkspaceDto) {
-        return `This action updates a #${id} workspace`
-    }
+    async findPRs(user: any, query: any) {
+        const userData =
+            await this.analysisService.getUserDataWithWorkspace(user)
 
-    remove(id: number) {
-        return `This action removes a #${id} workspace`
+        // Calculate date 30 days ago
+        const thirtyDaysAgo = new Date()
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+        return this.dataService.pullRequests
+            .find({
+                owner: userData?.currentWorkspace!['slug'],
+                createdAt: {
+                    $gte: thirtyDaysAgo
+                },
+                ...query
+            })
+            .select(
+                'provider prTitle prUser prUserAvatar owner repo prNumber prUrl prId prCreatedAt prUpdatedAt  prMergedAt prState'
+            )
     }
 }

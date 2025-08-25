@@ -6,10 +6,10 @@ import { FC } from "react";
 
 const OauthButtons: FC = () => {
     return (
-        <div className="flex gap-x-4 w-full">
+        <div className="flex flex-col md:flex-row gap-4 w-full">
             <Button
                 asChild
-                className="flex-1 !bg-white !text-black hover:!bg-gray-200 text-base"
+                className="flex-grow-1 !bg-white !text-black hover:!bg-gray-200 text-base"
                 size={"xl"}
             >
                 <Link
@@ -21,7 +21,7 @@ const OauthButtons: FC = () => {
             </Button>
             <Button
                 asChild
-                className="flex-1 !bg-white !text-black hover:!bg-gray-200 text-base"
+                className="flex-grow-1 !bg-white !text-black hover:!bg-gray-200 text-base"
                 size={"xl"}
             >
                 <a
@@ -33,7 +33,7 @@ const OauthButtons: FC = () => {
             </Button>
             <Button
                 asChild
-                className="flex-1 !bg-white !text-black hover:!bg-gray-200 text-base"
+                className="flex-grow-1 !bg-white !text-black hover:!bg-gray-200 text-base"
                 size={"xl"}
             >
                 <a

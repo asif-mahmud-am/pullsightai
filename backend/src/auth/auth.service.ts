@@ -75,12 +75,23 @@ export class AuthService {
     }
 
     async updateProfile(user: any, updateProfileDto: UpdateOnboardingStepDto) {
-        return await this.dataService.users.findByIdAndUpdate(
+        if (!updateProfileDto.currentWorkspace) {
+            delete updateProfileDto.currentWorkspace
+        }
+        await this.dataService.users.updateOne(
             {
                 _id: user.sub
             },
             { ...updateProfileDto },
             { new: true }
         )
+        return await this.dataService.users
+            .findOne(
+                {
+                    _id: user.sub
+                },
+                'providerId provider username displayName email avatarUrl onboardingStep'
+            )
+            .populate('currentWorkspace')
     }
 }

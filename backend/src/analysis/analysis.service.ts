@@ -4,6 +4,7 @@ import { Types } from 'mongoose'
 import { PullRequestAnalysisCommentsDto } from 'src/analysis/dto/post-analysis-comments.dto'
 import { PullRequestAnalysisDto } from 'src/analysis/dto/post-analysis.dto'
 import { BitbucketEventsService } from 'src/bitbucket/bitbucket-events.service'
+import { PREvent } from 'src/common/enums/pr.enum'
 import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { DatabaseService } from 'src/database/database.service'
@@ -39,19 +40,23 @@ export class AnalysisService {
         provider: string,
         providerId: string
     ) {
-        console.log('Checking applicability for analysis:', {
+        console.log(
+            'Checking if analysis is applicable for repository:',
             repositorySlug,
+            'in workspace:',
             workspaceSlug,
+            'with provider:',
             provider,
+            'and providerId:',
             providerId
-        })
+        )
         const repository = await this.dataService.repositories.findOne({
             slug: repositorySlug,
             'author.username': workspaceSlug,
             provider: provider
         })
-        console.log('repository', repository)
         if (!repository) {
+            console.log('Repository not found or does not match the criteria')
             return false
         }
         return await this.dataService.workspaceMembers.countDocuments({
@@ -61,11 +66,85 @@ export class AnalysisService {
         })
     }
 
-    async makeAnalysis(pullRequestFormattedData: StructuredPRData) {
-        const savedPullRequestFormattedData =
-            await this.dataService.pullRequests.create({
-                ...pullRequestFormattedData.pullRequest
+    async getAndSavePullRequestFormattedData(
+        pullRequestFormattedData: StructuredPRData,
+        event: PREvent
+    ) {
+        if (event == PREvent.UPDATED) {
+            const newPR = pullRequestFormattedData.pullRequest
+            const existingPR = await this.dataService.pullRequests.findOne({
+                provider: newPR.provider,
+                prNumber: newPR.prNumber,
+                owner: newPR.owner,
+                repo: newPR.repo
             })
+            const prFiles = newPR.prFiles
+                .map((file) => {
+                    if (!existingPR?.prFiles) return file // If no existing files, include all new files
+
+                    // Check if file doesn't exist in existing PR
+                    const existingFile = existingPR.prFiles.find(
+                        (f) => f.prFileName === file.prFileName
+                    )
+
+                    if (!existingFile) return file // New file - return with all hunks
+
+                    // Compare prFileDiffHunks and filter only changed/added hunks
+                    const existingHunks = existingFile.prFileDiffHunks || []
+                    const newHunks = file.prFileDiffHunks || []
+
+                    // Find hunks that are new or changed
+                    const changedHunks = newHunks.filter(
+                        (newHunk) => !existingHunks.includes(newHunk)
+                    )
+
+                    // If there are changed hunks, return file with only changed hunks
+                    if (changedHunks.length > 0) {
+                        return {
+                            ...file,
+                            prFileDiffHunks: changedHunks
+                        }
+                    }
+
+                    // No changes in hunks, exclude this file
+                    return null
+                })
+                .filter((file) => file !== null) // Remove null entries
+            const savedPullRequestFormattedData =
+                await this.dataService.pullRequests.findOneAndUpdate(
+                    {
+                        provider: newPR.provider,
+                        prNumber: newPR.prNumber,
+                        owner: newPR.owner,
+                        repo: newPR.repo
+                    },
+                    {
+                        $set: {
+                            ...newPR
+                        }
+                    },
+                    { new: true }
+                )
+
+            return {
+                ...savedPullRequestFormattedData,
+                prFiles: prFiles
+            }
+        }
+        return await this.dataService.pullRequests.create({
+            ...pullRequestFormattedData.pullRequest
+        })
+    }
+
+    async makeAnalysis(
+        pullRequestFormattedData: StructuredPRData,
+        event: PREvent
+    ) {
+        const savedPullRequestFormattedData =
+            await this.getAndSavePullRequestFormattedData(
+                pullRequestFormattedData,
+                event
+            )
         const pullRequestAnalysis =
             await this.dataService.pullRequestAnalysis.create({
                 prId: savedPullRequestFormattedData.prId,
@@ -75,19 +154,27 @@ export class AnalysisService {
                 repositorySlug: savedPullRequestFormattedData.repo,
                 prNumber: savedPullRequestFormattedData.prNumber,
                 installationId: savedPullRequestFormattedData.installationId,
+                prState: savedPullRequestFormattedData.prState,
                 status: Status.INPROGRESS,
                 startedAt: new Date(),
                 pullRequest: savedPullRequestFormattedData._id
             })
-        this.httpService.post(
-            this.configService.get('AI_AGENT_PR_POST_URL') as string,
-            {
-                pullRequest: {
-                    ...pullRequestFormattedData.pullRequest,
-                    pullRequestAnalysisId: pullRequestAnalysis['_id']
+        try {
+            await this.httpService.post(
+                this.configService.get('AI_AGENT_PR_POST_URL') as string,
+                {
+                    pullRequest: {
+                        ...pullRequestFormattedData.pullRequest,
+                        pullRequestAnalysisId: pullRequestAnalysis['_id']
+                    }
+                },
+                {
+                    timeout: 1000 // 1 second timeout
                 }
-            }
-        )
+            )
+        } catch (error) {
+            console.error('Error sending data to AI agent:', error.message)
+        }
         return {
             pullRequestAnalysisId: pullRequestAnalysis['_id'],
             pullRequest: savedPullRequestFormattedData
@@ -95,10 +182,6 @@ export class AnalysisService {
     }
 
     async addPRReviewComments(postReviewDto: PullRequestAnalysisCommentsDto) {
-        console.log(
-            '=========Adding PR review comments:===========',
-            postReviewDto
-        )
         let analysis
         if (postReviewDto.completed) {
             analysis =

@@ -13,7 +13,7 @@ const PublicGuardClient = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         if (user && hydrated) {
-            redirect(ROUTE_CONSTANTS.DASHBOARD);
+            redirect(ROUTE_CONSTANTS.APP_DASHBOARD);
         }
     }, [user, hydrated]);
 

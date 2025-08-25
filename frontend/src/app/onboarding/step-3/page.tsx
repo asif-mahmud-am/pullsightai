@@ -11,6 +11,11 @@ import { useAuthStore } from "@/store/authStore";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
+import ContentCard from "@/components/reusable/ContentCard";
+import Avatar from "@/components/reusable/Avatar";
+import { formatDate, humanizeDate } from "@/lib/dayjs";
+import Badge from "@/components/reusable/Badge";
+import { useSearchable } from "@/hooks/use-searchable";
 
 const Step3Page = () => {
     const router = useRouter();
@@ -35,8 +40,20 @@ const Step3Page = () => {
         provider: user?.provider || "github", // Default to GitHub if not set
         repoId,
     });
+    const { searchInput, filteredData } = useSearchable({
+        data: pullRequests || [],
+        searchFn: (item, search) =>
+            search.trim()
+                ? item.prTitle.toLowerCase().includes(search.toLowerCase())
+                : true,
+        inputProps: {
+            className: "order-1 md:order-0 md:ml-auto w-full md:w-auto",
+        },
+    });
 
     const onStepComplete = () => {
+        // if (pullRequests?.length === 0)
+        //     redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_5 + `?repoId=${repoId}`);
         if (!selectedPR) return;
         // You can add your API call or navigation logic here
 
@@ -50,7 +67,7 @@ const Step3Page = () => {
         <>
             <div className="grid grid-cols-12 gap-4 lg:gap-8">
                 {/* Left column */}
-                <div className="col-span-4 xl:pr-16">
+                <div className="col-span-12 xl:col-span-4 xl:pr-16">
                     <h2 className="text-4xl font-medium text-[var(--title-50)] mb-4 leading-[45px]">
                         Let&apos;s See the AI in Action on Your Code
                     </h2>
@@ -62,76 +79,134 @@ const Step3Page = () => {
                 </div>
 
                 {/* Right column */}
-                <div className="col-span-8">
-                    <div className="mb-4">
-                        <div className="flex justify-between items-center mb-4">
+                <div className="col-span-12 xl:col-span-8">
+                    <ContentCard>
+                        <ContentCard.Header className="flex-wrap md:flex-nowrap gap-y-4 items-start md:items-center">
                             <h3 className="text-[var(--title-50)] font-medium text-lg">
-                                PRs list
+                                Pull Requests List
                             </h3>
-                            {/* add another organization button here */}
+                            {searchInput}
                             <Button
                                 variant="outline"
                                 size="icon"
-                                className=""
+                                className="ml-auto md:ml-0"
                                 onClick={() => refetchPullRequests()}
                             >
                                 <RefreshCw className="inline mr-1" />
                             </Button>
-                        </div>
-                        {isFetching && (
-                            <p className="text-[var(--subtitle-400)]">
-                                Loading pull requests...
-                            </p>
-                        )}
-                        {error && (
-                            <p className="text-[var(--subtitle-400)]">
-                                Error loading pull requests. Please try again.
-                            </p>
-                        )}
-
-                        {!isFetching &&
-                            pullRequests &&
-                            pullRequests?.length > 0 && (
-                                <SelectableList
-                                    items={
-                                        pullRequests?.map((pr) => ({
-                                            id: String(pr.prNumber),
-                                            title: pr.prTitle,
-                                            avatar:
-                                                pr.prUserAvatar || '',
-                                            subtitle:
-                                                pr.prUser || '',
-                                            status: {
-                                                label: pr.prState,
-                                                colorClass:
-                                                    pr.prState === "closed" ||
-                                                    pr.prState === "merged"
-                                                        ? "bg-red-500 text-white"
-                                                        : "bg-green-500 text-white",
-                                            },
-                                            timestamp: pr.prCreatedAt,
-                                            updatedAt: pr.prUpdatedAt,
-                                        })) || []
-                                    }
-                                    selectedId={selectedPR}
-                                    onSelect={(id) => setSelectedPR(id)}
-                                />
-                            )}
-                        {!isFetching &&
-                            pullRequests &&
-                            pullRequests?.length === 0 && (
-                                <p className="text-[var(--subtitle-400)]">
-                                    No pull requests found for this repository.
-                                </p>
-                            )}
-                    </div>
+                        </ContentCard.Header>
+                        <ContentCard.Body
+                            className="xl:max-h-[calc(100vh-450px)]"
+                            hasError={!!error}
+                            isLoading={isFetching}
+                            errorLabel={
+                                error
+                                    ? "Error loading pull requests. Please try again."
+                                    : undefined
+                            }
+                            noContentLabel={
+                                pullRequests && pullRequests?.length === 0
+                                    ? "No pull requests found. Please add a pull request to analyze."
+                                    : undefined
+                            }
+                        >
+                            <SelectableList
+                                items={filteredData || []}
+                                selectedId={selectedPR}
+                                onSelect={(prNumber) => setSelectedPR(prNumber)}
+                                getKey={(item) => String(item.prNumber)}
+                                renderItem={(item) => (
+                                    <div className="grid grid-cols-8 items-center flex-grow-1 text-sm">
+                                        <div className="col-span-8 sm:hidden">
+                                            <div className="flex gap-2">
+                                                <span className="truncate">
+                                                    {item?.prTitle}
+                                                </span>
+                                                <Badge
+                                                    className="ml-auto"
+                                                    variant={
+                                                        item?.prState ===
+                                                            "merged" ||
+                                                        item?.prState ===
+                                                            "closed"
+                                                            ? "destructive"
+                                                            : "success"
+                                                    }
+                                                >
+                                                    {item.prState}
+                                                </Badge>
+                                            </div>
+                                            <div className="flex gap-1 text-muted mt-1">
+                                                <span className="">by:</span>
+                                                <span className="font-semibold truncate">
+                                                    {item?.prUser}
+                                                </span>
+                                                <span className="mx-1">|</span>
+                                                <span>at:</span>
+                                                <span className="">
+                                                    {formatDate(
+                                                        item.prCreatedAt || ""
+                                                    )}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <h4 className="col-span-3 hidden sm:block">
+                                            {item?.prTitle}
+                                        </h4>
+                                        <Avatar
+                                            className="col-span-2 hidden sm:flex"
+                                            src={item?.prUserAvatar || ""}
+                                            name={item?.prUser}
+                                        />
+                                        <div className="col-span-1 text-center text-[var(--subtitle-500)] text-sm whitespace-nowrap hidden sm:block">
+                                            <Badge
+                                                variant={
+                                                    item?.prState ===
+                                                        "merged" ||
+                                                    item?.prState === "closed"
+                                                        ? "destructive"
+                                                        : "success"
+                                                }
+                                            >
+                                                {item.prState}
+                                            </Badge>
+                                        </div>
+                                        <div className="col-span-1 text-right text-[var(--subtitle-500)] text-sm whitespace-nowrap hidden sm:block">
+                                            {formatDate(item.prCreatedAt || "")}
+                                        </div>
+                                        <div className="col-span-1 text-right text-[var(--subtitle-500)] text-sm whitespace-nowrap hidden sm:block">
+                                            {formatDate(item.prUpdatedAt || "")}
+                                        </div>
+                                    </div>
+                                )}
+                                renderHeader={() => (
+                                    <div className="ml-9 md:grid grid-cols-8 py-2 px-4 text-[var(--subtitle-400)] text-xs hidden">
+                                        <div className="col-span-3">Title</div>
+                                        <div className="col-span-2">Author</div>
+                                        <div className="col-span-1 text-center">
+                                            Status
+                                        </div>
+                                        <div className="col-span-1 text-right">
+                                            Created At
+                                        </div>
+                                        <div className="col-span-1 text-right">
+                                            Updated at
+                                        </div>
+                                    </div>
+                                )}
+                            />
+                        </ContentCard.Body>
+                    </ContentCard>
                 </div>
             </div>
 
             {/* Footer with action button */}
             <ActionFooter
                 buttonText={false ? "Analyzing..." : "Analyze Pull Request"}
-                isEnabled={Boolean(selectedPR) && !isFetching}
+                isEnabled={
+                    // pullRequests?.length == 0 ||
+                    Boolean(selectedPR) && !isFetching
+                }
                 isLoading={isFetching}
                 onClick={onStepComplete}
                 onBackClick={() => redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_2)}

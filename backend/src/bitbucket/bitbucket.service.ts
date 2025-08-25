@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config'
 import { AnalysisService } from 'src/analysis/analysis.service'
 import { BitbucketEventsService } from 'src/bitbucket/bitbucket-events.service'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
+import { PREvent } from 'src/common/enums/pr.enum'
 import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { Repository } from 'src/common/interfaces/repository.interface'
@@ -107,10 +108,7 @@ export class BitbucketService {
         )
     }
 
-    async addWebhook(
-        userData: any,
-        repositories: RepositoryDto[]
-    ): Promise<any> {
+    async addWebhook(userData: any, repository: RepositoryDto): Promise<any> {
         const webhookUrl = `${this.configService.get('BASE_URL')}/v1/bitbucket/events`
         const events = [
             'repo:push',
@@ -124,20 +122,17 @@ export class BitbucketService {
             'issue:updated',
             'issue:comment_created'
         ]
-        const webhookPromises = repositories.map(async (repository) => {
-            const webhook = await this.bitbucketApiService.addWebhook(
-                userData?.accessToken as string,
-                userData?.currentWorkspace['slug'] as string,
-                repository.slug,
-                webhookUrl,
-                events
-            )
-            return {
-                ...repository,
-                webhookToken: webhook.id
-            }
-        })
-        return await Promise.all(webhookPromises)
+        const response = await this.bitbucketApiService.addWebhook(
+            userData?.accessToken as string,
+            userData?.currentWorkspace['slug'] as string,
+            repository.slug,
+            webhookUrl,
+            events
+        )
+        return {
+            ...repository,
+            webhookToken: response.webhook.id
+        }
     }
 
     async getPullRequests(user: any, getPRDto: GetPRDto) {
@@ -160,9 +155,15 @@ export class BitbucketService {
     }
 
     async processBitbucketEvent(event: any, payload: any) {
+        console.log(`Processing Bitbucket event: ${event} ------->>`, payload)
+        // await this.dataService.eventLogs.create({
+        //     eventName: event,
+        //     provider: 'bitbucket',
+        //     eventPayload: event
+        // })
         const isApplicable =
             await this.analysisService.checkApplicableForAnalysis(
-                payload.repository.name,
+                payload.repository.full_name.split('/')[1],
                 payload.repository.owner.username,
                 'bitbucket',
                 payload.actor.uuid
@@ -170,31 +171,32 @@ export class BitbucketService {
         if (!isApplicable) {
             return {}
         }
-        // console.log('isApplicable===', isApplicable)
-        await this.dataService.eventLogs.create({
-            eventName: event,
-            provider: 'bitbucket',
-            eventPayload: payload
-        })
+
         let pullRequestFormattedData: StructuredPRData | boolean
+        let prEvent
         switch (event) {
             case 'pullrequest:created':
+                prEvent = PREvent.CREATED
                 pullRequestFormattedData =
                     await this.bitbucketEventsService.handleBitbucketPullRequest(
-                        payload
+                        payload,
+                        prEvent
                     )
                 break
             case 'pullrequest:updated':
+                prEvent = PREvent.UPDATED
                 pullRequestFormattedData =
                     await this.bitbucketEventsService.handleBitbucketPullRequest(
-                        payload
+                        payload,
+                        prEvent
                     )
                 break
             default:
                 pullRequestFormattedData = false
         }
+
         if (pullRequestFormattedData) {
-            this.analysisService.makeAnalysis(pullRequestFormattedData)
+            this.analysisService.makeAnalysis(pullRequestFormattedData, prEvent)
         }
         return {}
     }
@@ -225,7 +227,8 @@ export class BitbucketService {
         )
         const pullRequestFormattedData =
             await this.bitbucketEventsService.handleBitbucketPullRequest(
-                PrAndRepo
+                PrAndRepo,
+                PREvent.CREATED
             )
 
         if (!pullRequestFormattedData) {
@@ -233,7 +236,10 @@ export class BitbucketService {
                 'Failed to fetch pull request data'
             )
         }
-        return await this.analysisService.makeAnalysis(pullRequestFormattedData)
+        return await this.analysisService.makeAnalysis(
+            pullRequestFormattedData,
+            PREvent.CREATED
+        )
     }
 
     async getOrgMembers(user: any) {

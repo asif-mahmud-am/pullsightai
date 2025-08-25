@@ -65,6 +65,12 @@ export class PullRequestAnalysis {
                 : Types.ObjectId.createFromHexString(value)
     })
     pullRequest: Types.ObjectId
+
+    @Prop({ type: Number, default: null })
+    estimatedCodeReviewEffort: number
+
+    @Prop({ type: Number, default: null })
+    potentialIssueCount: number
 }
 
 const schema = SchemaFactory.createForClass(PullRequestAnalysis)

@@ -2,7 +2,7 @@
 
 import ContentCard from "@/components/reusable/ContentCard";
 import { useState } from "react";
-import PrAnalysisCard from "./prAnalysisCars";
+import PrAnalysisCard from "./prAnalysisCard";
 import { subtractDays } from "@/lib/dayjs";
 
 const DashboardPage = () => {

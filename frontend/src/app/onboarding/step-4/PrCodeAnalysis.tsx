@@ -1,7 +1,6 @@
 import type React from "react";
 import { FC, useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import {
     AlertTriangle,
     Info,
@@ -16,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { PullRequest } from "@/types/pullRequest";
 import Avatar from "@/components/reusable/Avatar";
 import MdPreview from "@/components/reusable/MdPreview";
+import Image from "next/image";
+import Badge from "@/components/reusable/Badge";
 
 interface Props {
     analysisData: PRAnalysisData;
@@ -33,16 +34,16 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
         ? analysis.comments.filter(Boolean)
         : [];
 
-    const getSeverityColor = (severity: string) => {
+    const getSeverityVariant = (severity: string) => {
         switch (severity) {
             case "critical":
-                return "bg-red-900/30 text-red-300 border-red-700";
+                return "destructive";
             case "warning":
-                return "bg-yellow-900/30 text-yellow-300 border-yellow-700";
+                return "warning";
             case "info":
-                return "bg-blue-900/30 text-blue-300 border-blue-700";
+                return "info";
             default:
-                return "bg-gray-900/30 text-gray-300 border-gray-700";
+                return "default";
         }
     };
 
@@ -51,9 +52,9 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
         : validComments.slice(0, 3);
 
     return (
-        <div className="bg-[var(--body-900)] rounded-xl text-gray-100 font-sans">
+        <div className="bg-[var(--body-900)] rounded-xl text-gray-100 font-sans space-y-3">
             {/* PR Header */}
-            <div className="border-b border-gray-700 p-4">
+            <div className="bg-[var(--box-800)] rounded-xl p-4">
                 <div className="flex items-start gap-3">
                     <Avatar
                         src={pr?.prUserAvatar || ""}
@@ -108,10 +109,16 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
             </div>
 
             {/* AI Analysis Summary */}
-            <div className="border-b border-gray-700 p-4">
+            <div className="bg-[var(--box-800)] rounded-xl p-4">
                 <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 flex-shrink-0 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
-                        <span className="text-white text-sm font-bold">AI</span>
+                    <div className="w-12 h-12 flex-shrink-0 rounded-full  flex items-center justify-center">
+                        <Image
+                            src="/images/logo-icon.svg"
+                            alt="pull sight logo"
+                            width={26}
+                            height={42}
+                            className="flex-shrink-0"
+                        />
                     </div>
 
                     <div className="flex-1">
@@ -170,81 +177,88 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
             {/* AI Comments */}
 
             {displayedComments.map((comment, index) => (
-                <div key={index} className="border-b border-gray-700 p-4">
-                    <div className="flex items-start gap-3">
-                        <div className="flex-1 max-w-full">
-                            <div className="flex flex-wrap items-center gap-2 mb-2">
-                                <span className="font-semibold text-gray-200 text-sm">
-                                    PullSight AI
+                <div key={index} className="bg-[var(--box-800)] rounded-xl p-4">
+                    <div className="flex flex-wrap items-center gap-4 mb-4">
+                        <Image
+                            src="/images/logo-icon.svg"
+                            alt="pull sight logo"
+                            width={26}
+                            height={42}
+                            className="flex-shrink-0"
+                        />
+                        <div className="flex-1">
+                            <Badge
+                                variant={getSeverityVariant(
+                                    comment.severity?.toLowerCase()
+                                )}
+                                type="faded"
+                                className="mr-2"
+                            >
+                                Severity:{" "}
+                                <span className="capitalize">
+                                    {comment.severity}
                                 </span>
-                                <Badge
-                                    className={`text-xs ${getSeverityColor(
-                                        comment.severity?.toLowerCase()
-                                    )}`}
-                                >
-                                    Severity:{" "}
-                                    {comment.severity.charAt(0).toUpperCase() +
-                                        comment.severity.slice(1)}{" "}
-                                </Badge>
-                                <span className="text-gray-500 text-xs">
-                                    {comment.filePath}:{comment.lineStart}
-                                    {comment.lineEnd !== comment.lineStart &&
-                                        `-${comment.lineEnd}`}
-                                </span>
+                            </Badge>
+                            <span className="text-gray-400 text-sm">
+                                {comment.filePath}:{comment.lineStart}
+                                {comment.lineEnd !== comment.lineStart &&
+                                    `-${comment.lineEnd}`}
+                            </span>
+                            <div className="font-medium">
+                                {comment.category}
                             </div>
+                        </div>
+                    </div>
 
-                            <div className="text-gray-300 text-sm mb-3">
-                                <MdPreview content={comment.content} />
-                            </div>
+                    <div className="border rounded-xl p-4 border-gray-700">
+                        {comment.codeSnippet && (
+                            <div className="bg-gray-950 rounded border border-gray-700 p-3 mb-3">
+                                <pre className="text-xs overflow-x-auto">
+                                    {comment.codeSnippet
+                                        .trim()
+                                        .split("\n")
+                                        .map((line, index) => {
+                                            const lineNumber =
+                                                (comment.codeSnippetLineStart ??
+                                                    comment.lineStart) + index;
+                                            const isHighlighted =
+                                                lineNumber >=
+                                                    comment.lineStart &&
+                                                lineNumber <= comment.lineEnd;
 
-                            {comment.codeSnippet && (
-                                <div className="bg-gray-950 rounded border border-gray-700 p-3 mb-3">
-                                    <pre className="text-xs overflow-x-auto">
-                                        {comment.codeSnippet
-                                            .trim()
-                                            .split("\n")
-                                            .map((line, index) => {
-                                                const lineNumber =
-                                                    (comment.codeSnippetLineStart ??
-                                                        comment.lineStart) +
-                                                    index;
-                                                const isHighlighted =
-                                                    lineNumber >=
-                                                        comment.lineStart &&
-                                                    lineNumber <=
-                                                        comment.lineEnd;
-
-                                                return (
-                                                    <div
-                                                        key={index}
-                                                        className="flex"
+                                            return (
+                                                <div
+                                                    key={index}
+                                                    className="flex"
+                                                >
+                                                    <span className="text-gray-500 w-8 text-right pr-2 select-none font-mono">
+                                                        {lineNumber > 0
+                                                            ? lineNumber
+                                                            : ""}
+                                                    </span>
+                                                    <code
+                                                        className={`flex-1 px-2 ${
+                                                            isHighlighted
+                                                                ? comment.severity ===
+                                                                  "critical"
+                                                                    ? "bg-red-900/40 text-red-200 border-l-2 border-red-500"
+                                                                    : comment.severity ===
+                                                                      "warning"
+                                                                    ? "bg-yellow-900/40 text-yellow-200 border-l-2 border-yellow-500"
+                                                                    : "bg-blue-900/40 text-blue-200 border-l-2 border-blue-500"
+                                                                : "text-gray-300"
+                                                        }`}
                                                     >
-                                                        <span className="text-gray-500 w-8 text-right pr-2 select-none font-mono">
-                                                            {lineNumber > 0
-                                                                ? lineNumber
-                                                                : ""}
-                                                        </span>
-                                                        <code
-                                                            className={`flex-1 px-2 ${
-                                                                isHighlighted
-                                                                    ? comment.severity ===
-                                                                      "critical"
-                                                                        ? "bg-red-900/40 text-red-200 border-l-2 border-red-500"
-                                                                        : comment.severity ===
-                                                                          "warning"
-                                                                        ? "bg-yellow-900/40 text-yellow-200 border-l-2 border-yellow-500"
-                                                                        : "bg-blue-900/40 text-blue-200 border-l-2 border-blue-500"
-                                                                    : "text-gray-300"
-                                                            }`}
-                                                        >
-                                                            {line}
-                                                        </code>
-                                                    </div>
-                                                );
-                                            })}
-                                    </pre>
-                                </div>
-                            )}
+                                                        {line}
+                                                    </code>
+                                                </div>
+                                            );
+                                        })}
+                                </pre>
+                            </div>
+                        )}
+                        <div className="text-gray-300 text-sm mb-3">
+                            <MdPreview content={comment.content} />
                         </div>
                     </div>
                 </div>

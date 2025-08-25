@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { mapPREventToState, PREvent } from 'src/common/enums/pr.enum'
 import { HttpService } from 'src/common/http/http.service'
 import { PRFile, StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { DatabaseService } from 'src/database/database.service'
@@ -17,7 +18,10 @@ export class BitbucketEventsService {
         private readonly bitbucketApiService: BitbucketApiService
     ) {}
 
-    async handleBitbucketPullRequest(payload: any): Promise<StructuredPRData> {
+    async handleBitbucketPullRequest(
+        payload: any,
+        event: PREvent
+    ): Promise<StructuredPRData> {
         const pullRequest = payload.pullrequest
         const repository = payload.repository
 
@@ -47,8 +51,14 @@ export class BitbucketEventsService {
         )
 
         // Calculate total lines added and deleted across all files
-        const totalPrLineAdditions = files.reduce((sum, file) => sum + (file.lines_added || 0), 0);
-        const totalPrLineDeletion = files.reduce((sum, file) => sum + (file.lines_removed || 0), 0);
+        const totalPrLineAdditions = files.reduce(
+            (sum, file) => sum + (file.lines_added || 0),
+            0
+        )
+        const totalPrLineDeletion = files.reduce(
+            (sum, file) => sum + (file.lines_removed || 0),
+            0
+        )
 
         // Process each file to get before/after content
         for (let i = 0; i < files.length; i++) {
@@ -69,8 +79,11 @@ export class BitbucketEventsService {
             )
 
             // Extract individual file diff from the full diff
-            const fileName = file.new?.path || file.old?.path;
-            const individualFileDiff = this.bitbucketApiService.extractFileDiff(fullDiff, fileName);
+            const fileName = file.new?.path || file.old?.path
+            const individualFileDiff = this.bitbucketApiService.extractFileDiff(
+                fullDiff,
+                fileName
+            )
 
             prFiles.push({
                 prFileName: fileName,
@@ -106,7 +119,7 @@ export class BitbucketEventsService {
                 prTitle: pullRequest.title,
                 prBody: pullRequest.description || '',
                 prUrl: pullRequest.links?.html?.href || '',
-                prState: pullRequest.state,
+                prState: mapPREventToState(event),
                 prCreatedAt: pullRequest.created_on,
                 prUpdatedAt: pullRequest.updated_on,
                 prClosedAt: pullRequest.closed_on || '',

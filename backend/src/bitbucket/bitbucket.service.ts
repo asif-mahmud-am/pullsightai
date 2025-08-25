@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config'
 import { AnalysisService } from 'src/analysis/analysis.service'
 import { BitbucketEventsService } from 'src/bitbucket/bitbucket-events.service'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
+import { PREvent } from 'src/common/enums/pr.enum'
 import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { Repository } from 'src/common/interfaces/repository.interface'
@@ -154,38 +155,12 @@ export class BitbucketService {
     }
 
     async processBitbucketEvent(event: any, payload: any) {
-        // Early validation of required fields
-        if (!payload?.pullrequest) {
-            console.warn(`Bitbucket event ${event} received without pullrequest data:`, payload);
-            return {};
-        }
-
-        const eventPayload = {
-            prTitle: payload?.pullrequest?.title || 'No title',
-            prNumber: payload?.pullrequest?.id || 'No ID',
-            prState: payload?.pullrequest?.state || 'No state'
-        }
-        console.log(
-            `Processing Bitbucket event: ${event} ------->>`,
-            eventPayload
-        )
-        
-        await this.dataService.eventLogs.create({
-            eventName: event,
-            provider: 'bitbucket',
-            eventPayload
-        })
-
-        // Additional validation for repository data
-        if (!payload?.repository?.full_name || !payload?.repository?.owner?.username || !payload?.actor?.uuid) {
-            console.warn(`Bitbucket event ${event} missing required repository/actor data:`, {
-                repository: payload?.repository?.full_name,
-                owner: payload?.repository?.owner?.username,
-                actor: payload?.actor?.uuid
-            });
-            return {};
-        }
-
+        console.log(`Processing Bitbucket event: ${event} ------->>`, payload)
+        // await this.dataService.eventLogs.create({
+        //     eventName: event,
+        //     provider: 'bitbucket',
+        //     eventPayload: event
+        // })
         const isApplicable =
             await this.analysisService.checkApplicableForAnalysis(
                 payload.repository.full_name.split('/')[1],
@@ -196,36 +171,32 @@ export class BitbucketService {
         if (!isApplicable) {
             return {}
         }
-        
+
         let pullRequestFormattedData: StructuredPRData | boolean
-        try {
-            switch (event) {
-                case 'pullrequest:created':
-                    pullRequestFormattedData =
-                        await this.bitbucketEventsService.handleBitbucketPullRequest(
-                            payload
-                        )
-                    break
-                case 'pullrequest:updated':
-                    pullRequestFormattedData =
-                        await this.bitbucketEventsService.handleBitbucketPullRequest(
-                            payload
-                        )
-                    break
-                default:
-                    pullRequestFormattedData = false
-            }
-        } catch (error) {
-            console.error(`Error processing Bitbucket ${event} event:`, error);
-            return { error: 'Failed to process pull request data' };
+        let prEvent
+        switch (event) {
+            case 'pullrequest:created':
+                prEvent = PREvent.CREATED
+                pullRequestFormattedData =
+                    await this.bitbucketEventsService.handleBitbucketPullRequest(
+                        payload,
+                        prEvent
+                    )
+                break
+            case 'pullrequest:updated':
+                prEvent = PREvent.UPDATED
+                pullRequestFormattedData =
+                    await this.bitbucketEventsService.handleBitbucketPullRequest(
+                        payload,
+                        prEvent
+                    )
+                break
+            default:
+                pullRequestFormattedData = false
         }
-        
+
         if (pullRequestFormattedData) {
-            try {
-                this.analysisService.makeAnalysis(pullRequestFormattedData)
-            } catch (error) {
-                console.error(`Error making analysis for Bitbucket ${event} event:`, error);
-            }
+            this.analysisService.makeAnalysis(pullRequestFormattedData, prEvent)
         }
         return {}
     }
@@ -256,7 +227,8 @@ export class BitbucketService {
         )
         const pullRequestFormattedData =
             await this.bitbucketEventsService.handleBitbucketPullRequest(
-                PrAndRepo
+                PrAndRepo,
+                PREvent.CREATED
             )
 
         if (!pullRequestFormattedData) {
@@ -264,7 +236,10 @@ export class BitbucketService {
                 'Failed to fetch pull request data'
             )
         }
-        return await this.analysisService.makeAnalysis(pullRequestFormattedData)
+        return await this.analysisService.makeAnalysis(
+            pullRequestFormattedData,
+            PREvent.CREATED
+        )
     }
 
     async getOrgMembers(user: any) {

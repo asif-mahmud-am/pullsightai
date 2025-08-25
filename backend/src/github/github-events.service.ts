@@ -4,6 +4,7 @@ import { createAppAuth } from '@octokit/auth-app'
 import { Octokit } from '@octokit/rest'
 import * as fs from 'fs'
 import * as path from 'path'
+import { mapPREventToState, PREvent } from 'src/common/enums/pr.enum'
 import { PRFile, StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { DatabaseService } from 'src/database/database.service'
 import { PullRequestAnalysisComment } from 'src/database/schemas/pull-request-analysis-comment.schema'
@@ -50,18 +51,15 @@ export class GithubEventService {
     }
 
     // GitHub Pull Request Events
-    async handleGitHubPullRequest(payload) {
+    async handleGitHubPullRequest(payload, event: PREvent) {
         const { action, pull_request, repository, installation } = payload
-        if (['opened', 'synchronize', 'edited'].includes(action)) {
-            return await this.createComprehensivePRAnalysis(
-                repository.owner.login,
-                repository.name,
-                pull_request.number,
-                installation?.id
-            )
-        } else {
-            return false
-        }
+        return await this.createComprehensivePRAnalysis(
+            repository.owner.login,
+            repository.name,
+            pull_request.number,
+            installation?.id,
+            event
+        )
     }
 
     async removeInstallationIdFromWorkspace(installationId: number) {
@@ -111,7 +109,8 @@ export class GithubEventService {
         owner: string,
         repo: string,
         prNumber: number,
-        installationId: number
+        installationId: number,
+        event: PREvent
     ): Promise<StructuredPRData> {
         const octokit = await this.initOctokitApp(installationId)
 
@@ -130,8 +129,14 @@ export class GithubEventService {
         )
 
         const prFiles: PRFile[] = []
-        const totalPrLineAdditions = files.reduce((sum, file) => sum + (file.additions || 0), 0);
-        const totalPrLineDeletion = files.reduce((sum, file) => sum + (file.deletions || 0), 0);
+        const totalPrLineAdditions = files.reduce(
+            (sum, file) => sum + (file.additions || 0),
+            0
+        )
+        const totalPrLineDeletion = files.reduce(
+            (sum, file) => sum + (file.deletions || 0),
+            0
+        )
         // Process each file to get before/after content
         for (let i = 0; i < files.length; i++) {
             const file = files[i]
@@ -183,7 +188,7 @@ export class GithubEventService {
                 prRepoName: `${owner}/${repo}`,
                 prTitle: prData.title,
                 prBody: prData.body || '',
-                prState: prData.state,
+                prState: mapPREventToState(event),
                 prCreatedAt: prData.created_at,
                 prUpdatedAt: prData.updated_at,
                 prClosedAt: prData.closed_at || '',

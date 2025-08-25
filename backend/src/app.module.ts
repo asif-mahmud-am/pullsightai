@@ -6,14 +6,16 @@ import { validate } from 'src/common/config/env.validation'
 import { AllExceptionsFilter } from 'src/common/filters/custom-exception.filter'
 import { HttpModule } from 'src/common/http/http.module'
 import { ResponseInterceptor } from 'src/common/interceptors/response.interceptor'
+import { MailModule } from 'src/common/notifications/mail/mail.module'
 import { DatabaseModule } from 'src/database/database.module'
+import { AnalysisModule } from './analysis/analysis.module'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
+import { DashboardModule } from './dashboard/dashboard.module'
 import { GithubModule } from './github/github.module'
-import { GitlabModule } from './gitlab/gitlab.module';
-import { AnalysisModule } from './analysis/analysis.module';
-import { WorkspaceModule } from './workspace/workspace.module';
-import { DashboardModule } from './dashboard/dashboard.module';
+import { GitlabModule } from './gitlab/gitlab.module'
+import { WorkspaceModule } from './workspace/workspace.module'
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
     imports: [
@@ -28,7 +30,9 @@ import { DashboardModule } from './dashboard/dashboard.module';
         GitlabModule,
         AnalysisModule,
         WorkspaceModule,
-        DashboardModule
+        DashboardModule,
+        MailModule,
+        NotificationModule
     ],
     controllers: [AppController],
     providers: [

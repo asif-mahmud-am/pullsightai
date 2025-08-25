@@ -83,7 +83,7 @@ const Step3Page = () => {
                     <ContentCard>
                         <ContentCard.Header className="flex-wrap md:flex-nowrap gap-y-4 items-start md:items-center">
                             <h3 className="text-[var(--title-50)] font-medium text-lg">
-                                Pull Requests List
+                                PRs list
                             </h3>
                             {searchInput}
                             <Button

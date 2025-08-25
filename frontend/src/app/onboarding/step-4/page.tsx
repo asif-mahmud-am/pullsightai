@@ -326,7 +326,7 @@ const Step4Page = () => {
                                 </div>
                             </>
                         )}
-                        <div className="bg-dark-900 border border-dashed rounded-xl mt-3">
+                        <div className="bg-dark-900 mt-3">
                             {(isLoading || isLoadingAnalysis) && (
                                 <p className="text-[var(--subtitle-400)] p-5">
                                     Loading PR summary...

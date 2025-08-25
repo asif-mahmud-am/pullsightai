@@ -63,7 +63,11 @@ const Avatar: FC<Props> = ({
                     src={
                         src && !hasError ? src : "/images/user_placeholder.png"
                     }
-                    alt=""
+                    alt={
+                        src && !hasError
+                            ? name || ""
+                            : "Default Author Placeholder"
+                    }
                     className={`border rounded-full`}
                     height={sizeNum}
                     width={sizeNum}

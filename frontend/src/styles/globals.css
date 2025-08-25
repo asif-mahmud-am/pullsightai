@@ -189,7 +189,7 @@
             }
         }
         code {
-            @apply bg-muted px-1 py-0.5 rounded;
+            @apply bg-stone-950 px-2 py-1 rounded;
         }
         table {
             @apply w-full border border-border mb-3;

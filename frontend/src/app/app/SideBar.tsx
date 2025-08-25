@@ -11,6 +11,7 @@ import {
     PanelsTopLeft,
     Plus,
     Settings,
+    Users,
 } from "lucide-react";
 
 const AppSideBar = () => {
@@ -53,11 +54,11 @@ const AppSideBar = () => {
                     <NavLink
                         className="inline-flex items-center font-medium gap-3 pl-3 pr-4 py-3.5 rounded-xl"
                         activeClassName="bg-white text-gray-800"
-                        href={ROUTE_CONSTANTS.APP_TEAM_ACTIVITY}
+                        href={ROUTE_CONSTANTS.APP_TEAM_MEMBERS}
                         prefetch
                     >
-                        <ChartLine className="h-4 w-4" />
-                        <span className="text-base">Team activity</span>
+                        <Users className="h-4 w-4" />
+                        <span className="text-base">Team members</span>
                     </NavLink>
                 </SidebarMenuItem>
                 <SidebarMenuItem>

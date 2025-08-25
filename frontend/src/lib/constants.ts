@@ -21,6 +21,6 @@ export const ROUTE_CONSTANTS = {
     APP_DASHBOARD: "/app/dashboard",
     APP_REPOSITORIES: "/app/repositories",
     APP_PULL_REQUESTS: "/app/pull-requests",
-    APP_TEAM_ACTIVITY: "/app/team-activity",
+    APP_TEAM_MEMBERS: "/app/team-members",
     APP_SETTINGS: "/app/settings",
 };

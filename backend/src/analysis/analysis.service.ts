@@ -53,7 +53,8 @@ export class AnalysisService {
         const repository = await this.dataService.repositories.findOne({
             slug: repositorySlug,
             'author.username': workspaceSlug,
-            provider: provider
+            provider: provider,
+            isActive: true
         })
         if (!repository) {
             console.log('Repository not found or does not match the criteria')
@@ -257,7 +258,12 @@ export class AnalysisService {
                     $set: {
                         summary: postSummery.summary,
                         modelInfo: postSummery.modelInfo,
-                        usageInfo: postSummery.usageInfo
+                        usageInfo: postSummery.usageInfo,
+                        estimatedCodeReviewEffort:
+                            postSummery?.reviewInfo
+                                ?.estimated_code_review_effort,
+                        potentialIssueCount:
+                            postSummery?.reviewInfo?.potential_issue_count
                     }
                 },
                 { new: true }

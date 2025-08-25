@@ -123,12 +123,20 @@ export class WorkspaceService {
     }
 
     async findAllRepositories(user: any, query: any) {
+        const { page, limit } = query
+        const filter = { isActive: query.isActive }
+        if (query.author) {
+            filter['author.username'] = query.author
+        }
         const userData =
             await this.analysisService.getUserDataWithWorkspace(user)
-        return this.dataService.repositories.find({
-            workspace: userData?.currentWorkspace!._id,
-            ...query
-        })
+        return this.dataService.repositories.paginate(
+            {
+                workspace: userData?.currentWorkspace!._id,
+                ...filter
+            },
+            { page, limit, sort: { _id: -1 } }
+        )
     }
 
     async updateRepository(id: string, body: UpdateRepositoryDto) {
@@ -140,6 +148,7 @@ export class WorkspaceService {
     }
 
     async findPRs(user: any, query: any) {
+        const { page, limit, ...filter } = query
         const userData =
             await this.analysisService.getUserDataWithWorkspace(user)
 
@@ -147,16 +156,20 @@ export class WorkspaceService {
         const thirtyDaysAgo = new Date()
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-        return this.dataService.pullRequests
-            .find({
+        return this.dataService.pullRequests.paginate(
+            {
                 owner: userData?.currentWorkspace!['slug'],
-                createdAt: {
-                    $gte: thirtyDaysAgo
-                },
-                ...query
-            })
-            .select(
-                'provider prTitle prUser prUserAvatar owner repo prNumber prUrl prId prCreatedAt prUpdatedAt  prMergedAt prState'
-            )
+                // createdAt: {
+                //     $gte: thirtyDaysAgo
+                // },
+                ...filter
+            },
+            {
+                page,
+                limit,
+                sort: { _id: -1 },
+                select: 'provider prTitle prUser prUserAvatar owner repo prNumber prUrl prId prCreatedAt prUpdatedAt  prMergedAt prState'
+            }
+        )
     }
 }

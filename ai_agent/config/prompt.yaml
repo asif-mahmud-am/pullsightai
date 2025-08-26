@@ -44,7 +44,7 @@ summary: |
       - Use `|` to separate columns.
       - Use `---` to separate header from content.
       - Use `:` for right alignment of numbers in the "Change type" column.
-      - Example: | File Path| Change type | Short description |\n | --- | ---: | --- |\n | src/api/user.py | Modified | Adds pagination to /users endpoint |
+      - Example: \n| File Path| Change type | Short description |\n | --- | ---: | --- |\n | src/api/user.py | Modified | Adds pagination to /users endpoint |
 
     Example layout (follow exactly, substituting with PR-specific content):
 
@@ -52,7 +52,8 @@ summary: |
 
     **Walkthrough**: This PR introduces pagination to the `/users` endpoint and fixes\n\n
 
-    **File changes**\n
+    **File changes**\n\n
+
     | File Path| Change type | Short description |\n | --- | ---: | --- |\n | src/api/user.py | Modified | Adds pagination to /users endpoint and fixes a race condition in DB access. |\n | tests/test_user.py | Added | Adds unit tests for pagination and race condition handling. |
 
 

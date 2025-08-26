@@ -42,32 +42,62 @@ export class GitlabApiService {
         } else if (slug && type === OrgType.USER) {
             return await this.getUserRepositories(accessToken, slug)
         } else {
-            const projects = await this.httpService.get(
-                `${this.baseUrl}/projects?membership=true&per_page=100&order_by=updated_at&sort=desc`,
-                {
-                    headers: this.getAuthHeaders(accessToken)
+            let allRepositories: Repository[] = []
+            let page = 1
+            const perPage = 100
+
+            // Paginate through all repositories
+            while (true) {
+                const projects = await this.httpService.get(
+                    `${this.baseUrl}/projects?membership=true&per_page=${perPage}&page=${page}&order_by=updated_at&sort=desc`,
+                    {
+                        headers: this.getAuthHeaders(accessToken)
+                    }
+                )
+
+                // If no projects returned, we've reached the end
+                if (
+                    !projects ||
+                    !Array.isArray(projects) ||
+                    projects.length === 0
+                ) {
+                    break
                 }
-            )
-            const repositories: Repository[] = projects.map(
-                (project: any) =>
-                    ({
-                        id: project.id.toString(),
-                        name: project.name,
-                        fullName: project.path_with_namespace,
-                        slug: project.path_with_namespace,
-                        createdOn: project.created_at,
-                        updatedOn:
-                            project.last_activity_at || project.updated_at,
-                        author: {
-                            username:
-                                project.owner?.username ||
-                                project.namespace?.name ||
-                                'unknown',
-                            avatarUrl: project.owner?.avatar_url || null
-                        }
-                    }) as Repository
-            )
-            return repositories
+
+                // Map and add repositories from current page
+                const repositories: Repository[] = projects.map(
+                    (project: any) =>
+                        ({
+                            id: project.id.toString(),
+                            name: project.name,
+                            fullName: project.path_with_namespace,
+                            slug: project.path_with_namespace,
+                            createdOn: project.created_at,
+                            updatedOn:
+                                project.last_activity_at || project.updated_at,
+                            author: {
+                                username:
+                                    project.owner?.username ||
+                                    project.namespace?.name ||
+                                    'unknown',
+                                avatarUrl: project.owner?.avatar_url || null
+                            },
+                            private: project.visibility === 'private',
+                            openIssues: project.open_issues_count
+                        }) as Repository
+                )
+
+                allRepositories.push(...repositories)
+
+                // If we got less than perPage items, we've reached the end
+                if (projects.length < perPage) {
+                    break
+                }
+
+                page++
+            }
+
+            return allRepositories
         }
     }
 
@@ -198,30 +228,59 @@ export class GitlabApiService {
         accessToken: string,
         groupId: string
     ): Promise<Repository[]> {
-        const projects = await this.httpService.get(
-            `${this.baseUrl}/groups/${encodeURIComponent(groupId)}/projects?per_page=100&order_by=updated_at&sort=desc`,
-            {
-                headers: this.getAuthHeaders(accessToken)
+        let allRepositories: Repository[] = []
+        let page = 1
+        const perPage = 100
+
+        // Paginate through all repositories
+        while (true) {
+            const projects = await this.httpService.get(
+                `${this.baseUrl}/groups/${encodeURIComponent(groupId)}/projects?per_page=${perPage}&page=${page}&order_by=updated_at&sort=desc`,
+                {
+                    headers: this.getAuthHeaders(accessToken)
+                }
+            )
+
+            // If no projects returned, we've reached the end
+            if (
+                !projects ||
+                !Array.isArray(projects) ||
+                projects.length === 0
+            ) {
+                break
             }
-        )
-        const repositories: Repository[] = projects.map(
-            (project: any) =>
-                ({
-                    id: project.id.toString(),
-                    name: project.name,
-                    fullName: project.path_with_namespace,
-                    slug: project.path_with_namespace,
-                    createdOn: project.created_at,
-                    updatedOn: project.last_activity_at || project.updated_at,
-                    author: {
-                        username: project.namespace?.path,
-                        avatarUrl: project.namespace?.avatar_url
-                    },
-                    private: project.visibility === 'private',
-                    openIssues: project.open_issues_count
-                }) as Repository
-        )
-        return repositories
+
+            // Map and add repositories from current page
+            const repositories: Repository[] = projects.map(
+                (project: any) =>
+                    ({
+                        id: project.id.toString(),
+                        name: project.name,
+                        fullName: project.path_with_namespace,
+                        slug: project.path_with_namespace,
+                        createdOn: project.created_at,
+                        updatedOn:
+                            project.last_activity_at || project.updated_at,
+                        author: {
+                            username: project.namespace?.path,
+                            avatarUrl: project.namespace?.avatar_url
+                        },
+                        private: project.visibility === 'private',
+                        openIssues: project.open_issues_count
+                    }) as Repository
+            )
+
+            allRepositories.push(...repositories)
+
+            // If we got less than perPage items, we've reached the end
+            if (projects.length < perPage) {
+                break
+            }
+
+            page++
+        }
+
+        return allRepositories
     }
 
     /**
@@ -231,31 +290,62 @@ export class GitlabApiService {
         accessToken: string,
         userId: string
     ): Promise<Repository[]> {
-        const projects = await this.httpService.get(
-            `${this.baseUrl}/users/${encodeURIComponent(userId)}/projects?per_page=100&order_by=updated_at&sort=desc`,
-            {
-                headers: this.getAuthHeaders(accessToken)
+        let allRepositories: Repository[] = []
+        let page = 1
+        const perPage = 100
+
+        // Paginate through all repositories
+        while (true) {
+            const projects = await this.httpService.get(
+                `${this.baseUrl}/users/${encodeURIComponent(userId)}/projects?per_page=${perPage}&page=${page}&order_by=updated_at&sort=desc`,
+                {
+                    headers: this.getAuthHeaders(accessToken)
+                }
+            )
+
+            console.log(`Page ${page} Projects:`, projects?.length || 0)
+
+            // If no projects returned, we've reached the end
+            if (
+                !projects ||
+                !Array.isArray(projects) ||
+                projects.length === 0
+            ) {
+                break
             }
-        )
-        console.log('Projects:', projects)
-        const repositories: Repository[] = projects.map(
-            (project: any) =>
-                ({
-                    id: project.id.toString(),
-                    name: project.name,
-                    fullName: project.path_with_namespace,
-                    slug: project.path_with_namespace,
-                    createdOn: project.created_at,
-                    updatedOn: project.last_activity_at || project.updated_at,
-                    author: {
-                        username: project.namespace?.path,
-                        avatarUrl: project.namespace?.avatar_url || null
-                    },
-                    private: project.visibility === 'private',
-                    openIssues: project.open_issues_count
-                }) as Repository
-        )
-        return repositories
+
+            // Map and add repositories from current page
+            const repositories: Repository[] = projects.map(
+                (project: any) =>
+                    ({
+                        id: project.id.toString(),
+                        name: project.name,
+                        fullName: project.path_with_namespace,
+                        slug: project.path_with_namespace,
+                        createdOn: project.created_at,
+                        updatedOn:
+                            project.last_activity_at || project.updated_at,
+                        author: {
+                            username: project.namespace?.path,
+                            avatarUrl: project.namespace?.avatar_url || null
+                        },
+                        private: project.visibility === 'private',
+                        openIssues: project.open_issues_count
+                    }) as Repository
+            )
+
+            allRepositories.push(...repositories)
+
+            // If we got less than perPage items, we've reached the end
+            if (projects.length < perPage) {
+                break
+            }
+
+            page++
+        }
+
+        console.log('Total repositories found:', allRepositories.length)
+        return allRepositories
     }
 
     /**

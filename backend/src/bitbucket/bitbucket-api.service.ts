@@ -97,11 +97,25 @@ export class BitbucketApiService {
         let allRepositories: Repository[] = []
         let url = `${this.baseUrl}/repositories/${workspace}?pagelen=100`
 
-        const response = await this.httpService.get(url, {
-            headers: this.getAuthHeaders(accessToken)
-        })
+        // Paginate through all repositories
+        while (url) {
+            const response = await this.httpService.get(url, {
+                headers: this.getAuthHeaders(accessToken)
+            })
 
-        return response.values.map((repo) => this.mapRepositoryResponse(repo))
+            // Add repositories from current page
+            if (response.values && Array.isArray(response.values)) {
+                const repositories = response.values.map((repo) =>
+                    this.mapRepositoryResponse(repo)
+                )
+                allRepositories.push(...repositories)
+            }
+
+            // Check if there's a next page
+            url = response.next || null
+        }
+
+        return allRepositories
     }
 
     /**

@@ -12,24 +12,33 @@ class ClaudeService(BaseLLMService):
         self.client = AsyncAnthropic(api_key=settings.CLAUDE_API_KEY)
 
     async def generate_pr_summary(self, prompt: str) -> str:
+        summary_usage = {}
         try:
             response = await self.client.messages.create(
-                model="claude-sonnet-4-20250514",
+                model="claude-opus-4-1-20250805",
                 max_tokens=5000,
                 temperature=0.5,
                 system="You are a code review assistant. Summarize the pull request for a developer audience.",
                 messages=[{"role": "user", "content": prompt}]
             )
-            return response.content[0].text if response.content else "No summary generated."
+            input_tokens = response.usage.input_tokens
+            output_tokens = response.usage.output_tokens
+            summary_usage = {"input_tokens": input_tokens, "output_tokens": output_tokens}
+            model_info = response.model
+            print("Summary Usage:", summary_usage)
+            text = response.content[0].text if response.content else "No summary generated."
+            
+            return text, summary_usage, model_info
         except Exception as e:
             print(f"Error calling Claude API for summary: {e}")
             return "Could not generate PR summary."
 
     async def generate_code_review(self, prompt: str) -> str:
+        review_usage = {}
         try:
             # Prompt-only approach: ask Claude to return ONLY a JSON array of review items
             response = await self.client.messages.create(
-                model="claude-sonnet-4-20250514",
+                model="claude-opus-4-1-20250805",
                 max_tokens=2048,
                 temperature=0.2,
                 system=(
@@ -39,6 +48,12 @@ class ClaudeService(BaseLLMService):
                 ),
                 messages=[{"role": "user", "content": prompt}],
             )
+            input_tokens = response.usage.input_tokens
+            output_tokens = response.usage.output_tokens
+            review_usage = {"input_tokens": input_tokens, "output_tokens": output_tokens}
+            model_info = response.model
+
+            print("Review Usage:", review_usage)
 
             # Concatenate all text blocks
             text = "".join(
@@ -49,13 +64,13 @@ class ClaudeService(BaseLLMService):
             try:
                 parsed = json.loads(text)
                 if isinstance(parsed, list):
-                    return f"```json\n{json.dumps(parsed, ensure_ascii=False)}\n```"
+                    return f"```json\n{json.dumps(parsed, ensure_ascii=False)}\n```", review_usage, model_info
             except Exception:
                 pass
 
             # If the text already contains a fenced JSON array, keep it as-is; otherwise extract the first array
             if text.startswith("```json") and text.rstrip().endswith("```"):
-                return text
+                return text, review_usage, model_info
 
             # Extract the first JSON array substring as a fallback
             import re
@@ -64,12 +79,12 @@ class ClaudeService(BaseLLMService):
                 array_str = match.group(0)
                 try:
                     json.loads(array_str)  # validate
-                    return f"```json\n{array_str}\n```"
+                    return f"```json\n{array_str}\n```", review_usage, model_info
                 except Exception:
                     pass
 
             # Last resort: return an empty JSON array in a code fence
-            return "```json\n[]\n```"
+            return "```json\n[]\n```", review_usage, model_info
         except Exception as e:
             print(f"Error calling Claude API for review: {e}")
             return "Could not perform code review."

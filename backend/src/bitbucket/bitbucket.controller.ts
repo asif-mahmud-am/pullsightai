@@ -44,6 +44,25 @@ export class BitbucketController {
     }
 
     @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('user-repos')
+    async getUserRepositories(
+        @Req() req: any,
+        @Query() query: { page?: number; limit?: number }
+    ) {
+        const page = query.page || 1
+        const perPage = query.limit || 30
+
+        return {
+            message: 'User repositories fetched successfully',
+            result: await this.bitbucketService.listUserRepositories(
+                req.user,
+                page,
+                perPage
+            )
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
     @Post('add-workspace')
     async addWorkspace(
         @Req() req: any,

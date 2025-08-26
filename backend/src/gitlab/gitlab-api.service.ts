@@ -259,6 +259,45 @@ export class GitlabApiService {
     }
 
     /**
+     * Get all repositories accessible to the authenticated user with pagination
+     */
+    async getAuthenticatedUserRepositories(
+        accessToken: string,
+        page: number = 1,
+        perPage: number = 30
+    ): Promise<any> {
+        const url = `${this.baseUrl}/projects?membership=true&per_page=${perPage}&page=${page}&order_by=updated_at&sort=desc`
+        const response = await this.httpService.get(url, {
+            headers: this.getAuthHeaders(accessToken)
+        })
+
+        // Transform repositories to match the expected format
+        const repositories: Repository[] = response.map(
+            (project: any) =>
+                ({
+                    id: project.id,
+                    name: project.name,
+                    fullName: project.path_with_namespace,
+                    slug: project.path_with_namespace,
+                    createdOn: project.created_at,
+                    updatedOn: project.last_activity_at || project.updated_at,
+                    author: {
+                        username: project.namespace?.path,
+                        avatarUrl: project.namespace?.avatar_url || null
+                    },
+                    private: project.visibility === 'private',
+                    openIssues: project.open_issues_count
+                }) as Repository
+        )
+
+        return {
+            values: repositories,
+            totalCount: repositories.length, // GitLab doesn't provide total count in headers for this endpoint
+            hasNext: repositories.length === perPage
+        }
+    }
+
+    /**
      * Add webhook to a repository
      */
     async addWebhook(
@@ -533,5 +572,27 @@ export class GitlabApiService {
             })
         }
         return allMembers
+    }
+
+    /**
+     * Remove webhook from a specific GitLab project
+     */
+    async removeWebhook(
+        accessToken: string,
+        projectId: string,
+        webhookId: string
+    ): Promise<any> {
+        const apiEndpoint = `${this.baseUrl}/projects/${projectId}/hooks/${webhookId}`
+
+        await this.httpService.delete(apiEndpoint, {
+            headers: this.getAuthHeaders(accessToken)
+        })
+
+        console.log('GitLab webhook removed successfully')
+        return {
+            message: 'Webhook successfully removed!',
+            projectId,
+            webhookId
+        }
     }
 }

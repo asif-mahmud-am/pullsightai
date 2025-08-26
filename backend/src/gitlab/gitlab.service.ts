@@ -47,6 +47,37 @@ export class GitlabService {
         )
     }
 
+    async listUserRepositories(
+        user: any,
+        page: number = 1,
+        perPage: number = 30
+    ) {
+        const userData = await this.dataService.users.findOne(
+            { _id: user.sub },
+            'accessToken'
+        )
+        if (!userData?.accessToken) {
+            throw new BadRequestException('Access token is required')
+        }
+
+        const repositories =
+            await this.gitlabApiService.getAuthenticatedUserRepositories(
+                userData.accessToken,
+                page,
+                perPage
+            )
+
+        return {
+            repositories: repositories.values || [],
+            pagination: {
+                page,
+                perPage,
+                totalCount: repositories.totalCount || null,
+                hasNext: repositories.hasNext || false
+            }
+        }
+    }
+
     async getAllGroups(user: any) {
         const userData = await this.dataService.users.findOne(
             { _id: user.sub },
@@ -148,10 +179,20 @@ export class GitlabService {
 
         const webhook = await this.gitlabApiService.addWebhook(
             userData?.accessToken,
-            repository.slug,
+            repository.id, // Use repository.id instead of repository.slug
             webhookUrl,
             events
         )
+
+        this.dataService.workspaceWebhooks.create({
+            workspace: userData.currentWorkspace!._id,
+            provider: 'gitlab', // Fixed: was 'bitbucket'
+            repository: repository._id,
+            workspaceSlug: userData.currentWorkspace.slug,
+            workspaceRepoSlug: repository.id, // Use repository.id for GitLab project ID
+            workspaceWebhookId: webhook.id
+        })
+
         return {
             ...repository,
             webhookToken: webhook.id
@@ -290,5 +331,17 @@ export class GitlabService {
             await this.analysisService.getUserDataWithWorkspace(user)
 
         return await this.gitlabApiService.getOrgMembers(userData)
+    }
+
+    async removeWebhook(
+        accessToken: string,
+        repoSlug: string,
+        webhookId: string
+    ) {
+        return await this.gitlabApiService.removeWebhook(
+            accessToken,
+            repoSlug, // For GitLab, this would be the project ID
+            webhookId
+        )
     }
 }

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PassportStrategy } from '@nestjs/passport'
+import axios from 'axios'
 import { Profile, Strategy } from 'passport-gitlab2'
 import { AuthService } from 'src/auth/auth.service'
 
@@ -23,6 +24,38 @@ export class GitlabStrategy extends PassportStrategy(Strategy, 'gitlab') {
         refreshToken: string,
         profile: Profile
     ) {
+        try {
+            // Fetch user emails from GitLab API
+            const emailResponse = await axios.get(
+                'https://gitlab.com/api/v4/user/emails',
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            )
+
+            // Find primary email or first email
+            const emails = emailResponse.data || []
+            const primaryEmail =
+                emails.find((email) => email.primary) || emails[0]
+            if (primaryEmail) {
+                // Add email to profile
+                profile.emails = [
+                    {
+                        value: primaryEmail.email,
+                        verified: primaryEmail.confirmed_at !== null
+                    }
+                ]
+            }
+        } catch (error) {
+            console.error(
+                'Error fetching GitLab user emails:',
+                error.response?.data || error.message
+            )
+        }
+
         return this.authService.findOrCreateUser(
             profile,
             'gitlab',

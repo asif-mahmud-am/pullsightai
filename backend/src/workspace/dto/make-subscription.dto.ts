@@ -9,6 +9,7 @@ import {
     IsString,
     ValidateNested
 } from 'class-validator'
+import { Types } from 'mongoose'
 
 export class MemberDto {
     @IsString()
@@ -63,6 +64,8 @@ export class RepositoryDto {
     @IsNumber()
     @IsOptional()
     openIssues: number
+
+    _id: Types.ObjectId | any
 }
 
 export class MakeSubscriptionDto {

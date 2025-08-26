@@ -52,11 +52,12 @@ export class WorkspaceController {
     @Patch('repositories/:id')
     async updateRepository(
         @Param('id') id: string,
-        @Body() body: UpdateRepositoryDto
+        @Body() body: UpdateRepositoryDto,
+        @Req() req: any
     ) {
         return {
             message: 'Repository updated successfully',
-            result: await this.workspaceService.updateRepository(id, body)
+            result: await this.workspaceService.updateRepository(id, body, req.user)
         }
     }
 

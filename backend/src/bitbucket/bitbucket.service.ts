@@ -108,6 +108,37 @@ export class BitbucketService {
         )
     }
 
+    async listUserRepositories(
+        user: any,
+        page: number = 1,
+        perPage: number = 30
+    ) {
+        const userData = await this.dataService.users.findOne(
+            { _id: user.sub },
+            'accessToken'
+        )
+
+        if (!userData?.accessToken) {
+            throw new BadRequestException('Access token is required')
+        }
+
+        const repositories = await this.bitbucketApiService.getUserRepositories(
+            userData.accessToken,
+            page,
+            perPage
+        )
+
+        return {
+            repositories: repositories.values || [],
+            pagination: {
+                page,
+                perPage,
+                totalCount: repositories.size || null,
+                hasNext: !!repositories.next
+            }
+        }
+    }
+
     async addWebhook(userData: any, repository: RepositoryDto): Promise<any> {
         const webhookUrl = `${this.configService.get('BASE_URL')}/v1/bitbucket/events`
         const events = [
@@ -129,6 +160,14 @@ export class BitbucketService {
             webhookUrl,
             events
         )
+        this.dataService.workspaceWebhooks.create({
+            workspace: userData.currentWorkspace!._id,
+            provider: 'bitbucket',
+            repository: repository._id,
+            workspaceSlug: userData.currentWorkspace.slug,
+            workspaceRepoSlug: repository.slug,
+            workspaceWebhookId: response.webhook.id
+        })
         return {
             ...repository,
             webhookToken: response.webhook.id
@@ -249,6 +288,20 @@ export class BitbucketService {
         return await this.bitbucketApiService.getOrgMembers(
             userData.accessToken as string,
             userData?.currentWorkspace!['slug'] as string
+        )
+    }
+
+    async removeWebhook(
+        accessToken: string,
+        workspaceSlug: string,
+        repoSlug: string,
+        webhookId: string
+    ) {
+        return await this.bitbucketApiService.removeWebhook(
+            accessToken,
+            workspaceSlug,
+            repoSlug,
+            webhookId
         )
     }
 }

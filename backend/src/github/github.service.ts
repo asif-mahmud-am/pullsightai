@@ -284,6 +284,60 @@ export class GithubService {
         return repositories
     }
 
+    async listUserRepositories(
+        user: any,
+        page: number = 1,
+        perPage: number = 30
+    ) {
+        await this.initOctokit(user)
+
+        try {
+            const response =
+                await this.octokit.rest.repos.listForAuthenticatedUser({
+                    visibility: 'all',
+                    affiliation: 'owner,collaborator',
+                    sort: 'updated',
+                    direction: 'desc',
+                    page,
+                    per_page: perPage
+                })
+
+            const repositories: Repository[] = response.data.map(
+                (repo) =>
+                    ({
+                        id: repo.id,
+                        name: repo.name,
+                        fullName: repo.full_name,
+                        slug: repo.name,
+                        private: repo.private,
+                        author: {
+                            username: repo.owner.login,
+                            avatarUrl: repo.owner.avatar_url
+                        },
+                        createdOn: repo.created_at,
+                        updatedOn: repo.pushed_at,
+                        openIssues: repo.open_issues_count
+                    }) as Repository
+            )
+
+            return {
+                repositories,
+                pagination: {
+                    page,
+                    perPage,
+                    totalCount: response.headers['x-total-count']
+                        ? parseInt(String(response.headers['x-total-count']))
+                        : null,
+                    hasNext: response.data.length === perPage
+                }
+            }
+        } catch (error) {
+            throw new InternalServerErrorException(
+                `Failed to fetch user repositories: ${error.message}`
+            )
+        }
+    }
+
     async makePRReview(user: any, prReviewDto: PRReviewDto) {
         const existingAnalysis =
             await this.analysisService.getExistingPullRequestAndAnalysis(

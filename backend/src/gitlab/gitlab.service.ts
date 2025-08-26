@@ -179,19 +179,10 @@ export class GitlabService {
 
         const webhook = await this.gitlabApiService.addWebhook(
             userData?.accessToken,
-            repository.id, // Use repository.id instead of repository.slug
+            repository.id,
             webhookUrl,
             events
         )
-
-        this.dataService.workspaceWebhooks.create({
-            workspace: userData.currentWorkspace!._id,
-            provider: 'gitlab', // Fixed: was 'bitbucket'
-            repository: repository._id,
-            workspaceSlug: userData.currentWorkspace.slug,
-            workspaceRepoSlug: repository.id, // Use repository.id for GitLab project ID
-            workspaceWebhookId: webhook.id
-        })
 
         return {
             ...repository,

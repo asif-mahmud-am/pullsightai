@@ -364,4 +364,30 @@ export class BitbucketApiService {
             ? fileDiffMatch[0].trim()
             : 'No diff available for this file'
     }
+
+    /**
+     * Remove webhook from a specific repository
+     */
+    async removeWebhook(
+        accessToken: string,
+        workspace: string,
+        repository: string,
+        webhookId: string
+    ): Promise<any> {
+        const apiEndpoint = `${this.baseUrl}/repositories/${workspace}/${repository}/hooks/${webhookId}`
+
+        await this.httpService.delete(apiEndpoint, {
+            headers: this.getAuthHeaders(accessToken)
+        })
+
+        return {
+            message: 'Webhook successfully removed!',
+            repository: {
+                workspace,
+                name: repository,
+                fullName: `${workspace}/${repository}`
+            },
+            webhookId
+        }
+    }
 }

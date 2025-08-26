@@ -160,6 +160,14 @@ export class BitbucketService {
             webhookUrl,
             events
         )
+        this.dataService.workspaceWebhooks.create({
+            workspace: userData.currentWorkspace!._id,
+            provider: 'bitbucket',
+            repository: repository._id,
+            workspaceSlug: userData.currentWorkspace.slug,
+            workspaceRepoSlug: repository.slug,
+            workspaceWebhookId: response.webhook.id
+        })
         return {
             ...repository,
             webhookToken: response.webhook.id
@@ -280,6 +288,20 @@ export class BitbucketService {
         return await this.bitbucketApiService.getOrgMembers(
             userData.accessToken as string,
             userData?.currentWorkspace!['slug'] as string
+        )
+    }
+
+    async removeWebhook(
+        accessToken: string,
+        workspaceSlug: string,
+        repoSlug: string,
+        webhookId: string
+    ) {
+        return await this.bitbucketApiService.removeWebhook(
+            accessToken,
+            workspaceSlug,
+            repoSlug,
+            webhookId
         )
     }
 }

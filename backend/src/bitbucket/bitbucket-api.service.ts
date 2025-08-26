@@ -105,6 +105,35 @@ export class BitbucketApiService {
     }
 
     /**
+     * Get all repositories accessible to the authenticated user with pagination
+     */
+    async getUserRepositories(
+        accessToken: string,
+        page: number = 1,
+        perPage: number = 30
+    ): Promise<any> {
+        const url = `${this.baseUrl}/repositories?role=member&pagelen=${perPage}&page=${page}`
+
+        const response = await this.httpService.get(url, {
+            headers: this.getAuthHeaders(accessToken)
+        })
+
+        // Transform repositories to match the expected format
+        const repositories =
+            response.values?.map((repo) => this.mapRepositoryResponse(repo)) ||
+            []
+
+        return {
+            values: repositories,
+            size: response.size || repositories.length,
+            page: response.page || page,
+            pagelen: response.pagelen || perPage,
+            next: response.next || null,
+            previous: response.previous || null
+        }
+    }
+
+    /**
      * Add webhook to a specific repository
      */
     async addWebhook(
@@ -166,7 +195,7 @@ export class BitbucketApiService {
             },
             private: repo.is_private,
             openIssues: repo.open_issues_count || 0
-        }
+        } as Repository
     }
 
     /**

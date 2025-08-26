@@ -58,9 +58,8 @@ export class WorkspaceService {
                         provider: userData.provider,
                         workspace: userData?.currentWorkspace!._id
                     })
-                console.log('repositoryData', repositoryData)
-                repository['_id'] = repositoryData!._id // add the id for workspace webhook lookup
                 if (!repositoryData) {
+                    repository['_id'] = repositoryData!._id // add the id for workspace webhook lookup
                     repository = await this.setWebhook(userData, repository)
                     await this.dataService.repositories.create({
                         ...repository,

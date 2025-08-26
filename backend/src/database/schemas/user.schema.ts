@@ -37,9 +37,6 @@ export class User {
     @Prop({ required: false })
     raw?: string
 
-    @Prop({ required: false, default: 1 })
-    onboardingStep: number
-
     @Prop({
         required: false,
         type: Types.ObjectId,

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { Types } from 'mongoose'
 import { AnalysisService } from 'src/analysis/analysis.service'
 import { BitbucketService } from 'src/bitbucket/bitbucket.service'
 import { DatabaseService } from 'src/database/database.service'
@@ -48,7 +49,7 @@ export class WorkspaceService {
         const userData =
             await this.analysisService.getUserDataWithWorkspace(user)
         let repositories = makeSubscriptionDto.repositories
-
+        console.log('userData', userData)
         Promise.all(
             repositories.map(async (repository) => {
                 let repositoryData =
@@ -57,6 +58,8 @@ export class WorkspaceService {
                         provider: userData.provider,
                         workspace: userData?.currentWorkspace!._id
                     })
+                console.log('repositoryData', repositoryData)
+                repository['_id'] = repositoryData!._id // add the id for workspace webhook lookup
                 if (!repositoryData) {
                     repository = await this.setWebhook(userData, repository)
                     await this.dataService.repositories.create({
@@ -69,15 +72,15 @@ export class WorkspaceService {
                     if (!repositoryData.webhookToken) {
                         repository = await this.setWebhook(userData, repository)
                     }
-                    await this.dataService.repositories.updateOne(
-                        { _id: repositoryData['_id'] },
-                        {
-                            $set: {
-                                ...repository,
-                                isActive: true
-                            }
-                        }
-                    )
+                    // await this.dataService.repositories.updateOne(
+                    //     { _id: repositoryData['_id'] },
+                    //     {
+                    //         $set: {
+                    //             ...repository,
+                    //             isActive: true
+                    //         }
+                    //     }
+                    // )
                 }
             })
         )
@@ -139,12 +142,55 @@ export class WorkspaceService {
         )
     }
 
-    async updateRepository(id: string, body: UpdateRepositoryDto) {
+    async updateRepository(id: string, body: UpdateRepositoryDto, user) {
         await this.dataService.repositories.updateOne(
             { _id: id },
             { $set: { ...body } }
         )
+
+        if (body.isActive === false) {
+            const workspaceWebhookData =
+                await this.dataService.workspaceWebhooks.findOne({
+                    repository: new Types.ObjectId(id)
+                })
+            const accessToken = await this.dataService.users.findOne(
+                { _id: user.sub, provider: user.provider },
+                'accessToken'
+            )
+            if (workspaceWebhookData && accessToken) {
+                await this.deleteWebhook(
+                    workspaceWebhookData,
+                    accessToken.accessToken
+                )
+            }
+        }
+
         return await this.dataService.repositories.findOne({ _id: id })
+    }
+
+    async deleteWebhook(webhookData: any, accessToken: any) {
+        switch (webhookData.provider) {
+            case 'bitbucket':
+                await this.bitbucketService.removeWebhook(
+                    accessToken,
+                    webhookData.workspaceSlug,
+                    webhookData.workspaceRepoSlug,
+                    webhookData.workspaceWebhookId
+                )
+                break
+            case 'gitlab':
+                await this.gitlabService.removeWebhook(
+                    accessToken,
+                    webhookData.workspaceRepoSlug,
+                    webhookData.workspaceWebhookId
+                )
+                break
+        }
+
+        // Remove webhook record from database
+        await this.dataService.workspaceWebhooks.deleteOne({
+            _id: webhookData._id
+        })
     }
 
     async findPRs(user: any, query: any) {

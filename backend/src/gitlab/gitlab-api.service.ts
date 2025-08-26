@@ -573,4 +573,26 @@ export class GitlabApiService {
         }
         return allMembers
     }
+
+    /**
+     * Remove webhook from a specific GitLab project
+     */
+    async removeWebhook(
+        accessToken: string,
+        projectId: string,
+        webhookId: string
+    ): Promise<any> {
+        const apiEndpoint = `${this.baseUrl}/projects/${projectId}/hooks/${webhookId}`
+
+        await this.httpService.delete(apiEndpoint, {
+            headers: this.getAuthHeaders(accessToken)
+        })
+
+        console.log('GitLab webhook removed successfully')
+        return {
+            message: 'Webhook successfully removed!',
+            projectId,
+            webhookId
+        }
+    }
 }

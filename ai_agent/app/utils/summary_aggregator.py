@@ -3,7 +3,7 @@ from typing import List, Dict, Any
 
 logger = logging.getLogger(__name__)
 
-async def aggregate_chunk_summaries(chunk_summaries: List[str], pr_metadata: Dict, llm_service: Any, review_info: Dict) -> str:
+async def aggregate_chunk_summaries(chunk_summaries: List[str], pr_metadata: Dict, llm_service: Any, summary_info: Dict) -> str:
     """
     Aggregate multiple chunk summaries into a single comprehensive summary.
     
@@ -26,7 +26,7 @@ async def aggregate_chunk_summaries(chunk_summaries: List[str], pr_metadata: Dic
     logger.info(f"Aggregating {len(chunk_summaries)} chunk summaries")
     
     # Create aggregation prompt
-    aggregation_prompt = create_aggregation_prompt(chunk_summaries, pr_metadata, review_info)
+    aggregation_prompt = create_aggregation_prompt(chunk_summaries, pr_metadata, summary_info)
     
     try:
         # Use LLM to aggregate summaries
@@ -39,7 +39,7 @@ async def aggregate_chunk_summaries(chunk_summaries: List[str], pr_metadata: Dic
         logger.info("Falling back to simple concatenation")
         return fallback_aggregation(chunk_summaries)
 
-def create_aggregation_prompt(chunk_summaries: List[str], pr_metadata: Dict, review_info: Dict) -> str:
+def create_aggregation_prompt(chunk_summaries: List[str], pr_metadata: Dict, summary_info: Dict) -> str:
     """
     Create a prompt for aggregating multiple chunk summaries.
     
@@ -70,7 +70,7 @@ The PR has been analyzed in {len(chunk_summaries)} chunks due to size constraint
 3. Eliminates redundancy while preserving all important details
 4. Provides a cohesive overview of the entire pull request
 5. Includes the review info provided below exactly the same format and structure as the original summaries but with the total values:
-{review_info}
+{summary_info}
 
 Aggregated Summary:"""
     

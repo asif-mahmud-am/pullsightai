@@ -160,14 +160,6 @@ export class BitbucketService {
             webhookUrl,
             events
         )
-        this.dataService.workspaceWebhooks.create({
-            workspace: userData.currentWorkspace!._id,
-            provider: 'bitbucket',
-            repository: repository._id,
-            workspaceSlug: userData.currentWorkspace.slug,
-            workspaceRepoSlug: repository.slug,
-            workspaceWebhookId: response.webhook.id
-        })
         return {
             ...repository,
             webhookToken: response.webhook.id

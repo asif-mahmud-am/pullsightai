@@ -3,7 +3,7 @@ import { NestFactory } from '@nestjs/core'
 import * as bodyParser from 'body-parser'
 import * as compression from 'compression'
 import helmet from 'helmet'
-// import * as morgan from 'morgan'
+import * as morgan from 'morgan'
 import { AppModule } from './app.module'
 
 async function bootstrap() {
@@ -22,7 +22,7 @@ async function bootstrap() {
         credentials: true
     }
 
-    // app.use(morgan('tiny'))
+    app.use(morgan('tiny'))
 
     // Increase request body size limit (default: 100kb)
     app.use(bodyParser.json({ limit: '10mb' })) // Set the limit as per needs

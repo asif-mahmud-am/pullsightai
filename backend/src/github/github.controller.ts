@@ -65,6 +65,19 @@ export class GithubController {
     }
 
     @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('user-repos')
+    async getUserRepos(@Req() req: any, @Query() query: { page?: number; per_page?: number }) {
+        const page = query.page || 1
+        const perPage = query.per_page || 30
+        
+        const repos = await this.githubService.listUserRepositories(req.user, page, perPage)
+        return {
+            message: 'User repositories fetched successfully',
+            result: repos
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
     @Get('repos-pr-list')
     async getRepoPRList(@Req() req: any, @Query() getPRDto: GetPRDto) {
         const repos = await this.githubService.listRepoPullRequests(

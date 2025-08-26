@@ -108,6 +108,37 @@ export class BitbucketService {
         )
     }
 
+    async listUserRepositories(
+        user: any,
+        page: number = 1,
+        perPage: number = 30
+    ) {
+        const userData = await this.dataService.users.findOne(
+            { _id: user.sub },
+            'accessToken'
+        )
+
+        if (!userData?.accessToken) {
+            throw new BadRequestException('Access token is required')
+        }
+
+        const repositories = await this.bitbucketApiService.getUserRepositories(
+            userData.accessToken,
+            page,
+            perPage
+        )
+
+        return {
+            repositories: repositories.values || [],
+            pagination: {
+                page,
+                perPage,
+                totalCount: repositories.size || null,
+                hasNext: !!repositories.next
+            }
+        }
+    }
+
     async addWebhook(userData: any, repository: RepositoryDto): Promise<any> {
         const webhookUrl = `${this.configService.get('BASE_URL')}/v1/bitbucket/events`
         const events = [

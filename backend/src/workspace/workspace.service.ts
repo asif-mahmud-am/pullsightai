@@ -127,7 +127,10 @@ export class WorkspaceService {
 
     async findAllRepositories(user: any, query: any) {
         const { page, limit } = query
-        const filter = { isActive: query.isActive }
+        const filter = {}
+        if (query.isActive) {
+            filter['isActive'] = query.isActive === 'true' ? true : false
+        }
         if (query.author) {
             filter['author.username'] = query.author
         }

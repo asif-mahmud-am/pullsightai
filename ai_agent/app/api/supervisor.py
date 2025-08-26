@@ -230,11 +230,12 @@ async def process_pr_review_background(extracted_data: dict):
     logger.info(f"Total summary usage: {summary_usage}")
     # Post summary to backend
     logger.info("Posting summary to backend...")
+    model_information = {"model_name": model_info} if model_info else {}
     async with httpx.AsyncClient() as client:
         summary_payload = {
             "pullRequestAnalysisId": extracted_data["pullRequestAnalysisId"],
             "summary": summary.pr_summary,
-            "modelInfo": model_info,
+            "modelInfo": model_information,
             "usageInfo": summary_usage,
             "summary_info": summary_info,
             
@@ -330,10 +331,12 @@ async def process_pr_review_background(extracted_data: dict):
 
                 logger.info(f"Total review usage for batch {batch_index + 1}: {review_usage}")
 
+                model_information = {"model_name": model_info} if model_info else {}
+
                 review_payload = {
                     "pullRequestAnalysisId": extracted_data["pullRequestAnalysisId"],
                     "comments": batch_comments,
-                    "modelInfo": model_info,
+                    "modelInfo": model_information,
                     "usageInfo": review_usage,
                     "completed": 1 if is_last_batch else 0
                 }

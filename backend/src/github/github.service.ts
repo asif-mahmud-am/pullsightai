@@ -246,42 +246,67 @@ export class GithubService {
             Number(userData.currentWorkspace['installationId'])
         )
 
-        let data
+        let allRepositories: Repository[] = []
+
         if (userData.currentWorkspace['type'] === 'User') {
-            const repoData =
-                await octokit.rest.apps.listReposAccessibleToInstallation({
+            // For User workspaces, get all accessible repositories with pagination
+            const repoData = await octokit.paginate(
+                octokit.rest.apps.listReposAccessibleToInstallation,
+                {
                     sort: 'created',
-                    direction: 'desc'
-                })
-            data = repoData.data.repositories
+                    direction: 'desc',
+                    per_page: 100
+                }
+            )
+            allRepositories = repoData.map(
+                (repo) =>
+                    ({
+                        id: repo.id,
+                        name: repo.name,
+                        fullName: repo.full_name,
+                        slug: repo.name,
+                        private: repo.private,
+                        author: {
+                            username: repo.owner.login,
+                            avatarUrl: repo.owner.avatar_url
+                        },
+                        createdOn: repo.created_at,
+                        updatedOn: repo.pushed_at,
+                        openIssues: repo.open_issues_count
+                    }) as Repository
+            )
         } else {
-            data = await octokit.rest.repos.listForOrg({
-                org: userData.currentWorkspace['name'],
-                type: 'all',
-                sort: 'created',
-                direction: 'desc'
-            })
-            data = data.data
+            // For Organization workspaces, get all org repositories with pagination
+            const orgRepos = await octokit.paginate(
+                octokit.rest.repos.listForOrg,
+                {
+                    org: userData.currentWorkspace['name'],
+                    type: 'all',
+                    sort: 'created',
+                    direction: 'desc',
+                    per_page: 100
+                }
+            )
+            allRepositories = orgRepos.map(
+                (repo) =>
+                    ({
+                        id: repo.id,
+                        name: repo.name,
+                        fullName: repo.full_name,
+                        slug: repo.name,
+                        private: repo.private,
+                        author: {
+                            username: repo.owner.login,
+                            avatarUrl: repo.owner.avatar_url
+                        },
+                        createdOn: repo.created_at,
+                        updatedOn: repo.pushed_at,
+                        openIssues: repo.open_issues_count
+                    }) as Repository
+            )
         }
 
-        const repositories: Repository[] = data.map(
-            (repo) =>
-                ({
-                    id: repo.id.toString(),
-                    name: repo.name,
-                    fullName: repo.full_name,
-                    slug: repo.name,
-                    private: repo.private,
-                    author: {
-                        username: repo.owner.login,
-                        avatarUrl: repo.owner.avatar_url
-                    },
-                    createdOn: repo.created_at,
-                    updatedOn: repo.pushed_at,
-                    openIssues: repo.open_issues_count
-                }) as Repository
-        )
-        return repositories
+        return allRepositories
     }
 
     async listUserRepositories(

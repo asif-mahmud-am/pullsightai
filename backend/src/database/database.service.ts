@@ -25,7 +25,6 @@ import {
     WorkspaceMember,
     WorkspaceMemberDocument
 } from 'src/database/schemas/workspace-members.schema'
-import { WorkspaceWebhook, WorkspaceWebhookDocument } from 'src/database/schemas/workspace-webhook.schema'
 import {
     Workspace,
     WorkspaceDocument
@@ -42,7 +41,6 @@ export class DatabaseService {
     eventLogs: PaginateModel<EventLogDocument>
     pullRequests: PaginateModel<PullRequestDocument>
     workspaceMembers: PaginateModel<WorkspaceMemberDocument>
-    workspaceWebhooks: PaginateModel<WorkspaceWebhookDocument>
     constructor(
         @InjectModel(User.name)
         private UserRepository: PaginateModel<UserDocument>,
@@ -59,9 +57,7 @@ export class DatabaseService {
         @InjectModel(PullRequest.name)
         private PullRequestRepository: PaginateModel<PullRequestDocument>,
         @InjectModel(WorkspaceMember.name)
-        private TeamMemberRepository: PaginateModel<WorkspaceMemberDocument>,
-        @InjectModel(WorkspaceWebhook.name)
-        private WorkspaceWebhookRepository: PaginateModel<WorkspaceWebhookDocument>
+        private TeamMemberRepository: PaginateModel<WorkspaceMemberDocument>
     ) {}
     onApplicationBootstrap() {
         this.users = this.UserRepository
@@ -73,6 +69,5 @@ export class DatabaseService {
         this.eventLogs = this.EventLogRepository
         this.pullRequests = this.PullRequestRepository
         this.workspaceMembers = this.TeamMemberRepository
-        this.workspaceWebhooks = this.WorkspaceWebhookRepository
     }
 }

@@ -24,38 +24,39 @@ export class BitbucketStrategy extends PassportStrategy(Strategy, 'bitbucket') {
         refreshToken: string,
         profile: Profile
     ) {
-        try {
-            // Fetch user emails from Bitbucket API
-            const emailResponse = await axios.get(
-                'https://api.bitbucket.org/2.0/user/emails',
-                {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                        Accept: 'application/json'
-                    }
-                }
-            )
-
-            // Find primary email or first email
-            const emails = emailResponse.data.values || []
-            const primaryEmail =
-                emails.find((email) => email.is_primary) || emails[0]
-
-            if (primaryEmail) {
-                // Add email to profile
-                profile.emails = [
+        if (profile.emails.length === 0) {
+            try {
+                // Fetch user emails from Bitbucket API
+                const emailResponse = await axios.get(
+                    'https://api.bitbucket.org/2.0/user/emails',
                     {
-                        value: primaryEmail.email,
-                        verified: primaryEmail.is_confirmed
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                            Accept: 'application/json'
+                        }
                     }
-                ]
-            }
+                )
 
-        } catch (error) {
-            console.error(
-                'Error fetching Bitbucket user emails:',
-                error.response?.data || error.message
-            )
+                // Find primary email or first email
+                const emails = emailResponse.data.values || []
+                const primaryEmail =
+                    emails.find((email) => email.is_primary) || emails[0]
+
+                if (primaryEmail) {
+                    // Add email to profile
+                    profile.emails = [
+                        {
+                            value: primaryEmail.email,
+                            verified: primaryEmail.is_confirmed
+                        }
+                    ]
+                }
+            } catch (error) {
+                console.error(
+                    'Error fetching Bitbucket user emails:',
+                    error.response?.data || error.message
+                )
+            }
         }
 
         return this.authService.findOrCreateUser(

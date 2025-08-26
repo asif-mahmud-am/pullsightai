@@ -24,7 +24,7 @@ export class BitbucketStrategy extends PassportStrategy(Strategy, 'bitbucket') {
         refreshToken: string,
         profile: Profile
     ) {
-        if (profile.emails.length === 0) {
+        if (profile?.emails?.length === 0) {
             try {
                 // Fetch user emails from Bitbucket API
                 const emailResponse = await axios.get(

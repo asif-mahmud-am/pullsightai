@@ -51,7 +51,7 @@ export class AuthService {
             user.tokenExpiresAt = tokenExpiresAt
             await user.save()
         }
-        return user
+        return await this.getProfile(user._id)
     }
 
     generateJwt(user: any) {
@@ -63,15 +63,24 @@ export class AuthService {
         return this.jwtService.sign(payload, { expiresIn: '7d' })
     }
 
-    async getProfile(user: any) {
+    async getProfile(userId: any) {
         return await this.dataService.users
             .findOne(
                 {
-                    _id: user.sub
+                    _id: userId
                 },
-                'providerId provider username displayName email avatarUrl onboardingStep'
+                'providerId provider username displayName email avatarUrl'
             )
-            .populate('currentWorkspace')
+            .populate([
+                {
+                    path: 'currentWorkspace',
+                    select: 'name slug avatarUrl'
+                },
+                {
+                    path: 'workspaces',
+                    select: 'name slug avatarUrl'
+                }
+            ])
     }
 
     async updateProfile(user: any, updateProfileDto: UpdateOnboardingStepDto) {
@@ -85,13 +94,6 @@ export class AuthService {
             { ...updateProfileDto },
             { new: true }
         )
-        return await this.dataService.users
-            .findOne(
-                {
-                    _id: user.sub
-                },
-                'providerId provider username displayName email avatarUrl onboardingStep'
-            )
-            .populate('currentWorkspace')
+        return await this.getProfile(user.sub)
     }
 }

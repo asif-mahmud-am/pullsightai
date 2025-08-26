@@ -5,13 +5,12 @@ import * as uniqueValidator from 'mongoose-unique-validator'
 
 export type WorkspaceDocument = Workspace & Document
 
-
 @Schema({ timestamps: false, versionKey: false, id: false })
 export class WorkspaceSetting {
     @Prop({ default: true })
     anthropicApiKey: string
 
-    @Prop({ type : 'number' , default: 50 })
+    @Prop({ type: 'number', default: 50 })
     hourlyRate: number
 }
 
@@ -55,6 +54,9 @@ export class Workspace {
 
     @Prop({ required: false })
     createdOn?: string
+
+    @Prop({ required: false, default: 1 })
+    onboardingStep?: number
 
     @Prop({
         required: true,

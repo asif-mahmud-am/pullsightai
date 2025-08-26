@@ -87,7 +87,7 @@ export class AuthController {
     async getProfile(@Req() req) {
         return {
             message: SUCCESS,
-            result: await this.authService.getProfile(req.user)
+            result: await this.authService.getProfile(req.user.sub)
         }
     }
 

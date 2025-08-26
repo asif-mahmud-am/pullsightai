@@ -1,6 +1,6 @@
 import re
 
-def extract_review_info(text: str) -> dict:
+def extract_summary_info(text: str) -> dict:
     result = {}
     
     # Extract estimated code review effort (robust: handles ~, minutes, etc.)

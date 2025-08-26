@@ -5,7 +5,7 @@ from app.api.review import generate_review_response
 from app.services.claude_service import ClaudeService
 from app.utils.chunking_strategy import create_summary_chunks, prepare_chunk_for_summary
 from app.utils.summary_aggregator import aggregate_chunk_summaries
-from app.utils.line_perser import extract_review_info
+from app.utils.line_perser import extract_summary_info
 import httpx
 import os
 import json
@@ -151,7 +151,9 @@ async def process_pr_review_background(extracted_data: dict):
         chunk_summaries = []
         total_time_estimation = 0
         total_issue_count = 0
-        review_info = {}
+        total_input_tokens = 0
+        total_output_tokens = 0
+        summary_info = {}
         for chunk in chunks:
             logger.info(f"Generating summary for chunk {chunk['chunk_index'] + 1}/{len(chunks)} with {len(chunk['files'])} files")
             
@@ -160,30 +162,40 @@ async def process_pr_review_background(extracted_data: dict):
             
             try:
                 chunk_summary = await generate_summary_response(chunk_variables, llm_service)
-                chunk_summaries.append(chunk_summary.pr_summary)
-                review_info = extract_review_info(chunk_summary.pr_summary)
-                logger.info(f"Review info: {review_info}")
-                total_time_estimation += review_info["estimated_code_review_time"]
-                total_issue_count += review_info["potential_issue_count"]
+                summary_usage = chunk_summary.summary_usage or {}
+                logger.info(f"Chunk summary usage: {summary_usage}")
+                model_info = chunk_summary.model_info or ""
+                chunk_summaries.append(chunk_summary)
+                summary_info = extract_summary_info(chunk_summary.pr_summary)
+                logger.info(f"Summary info: {summary_info}")
+                total_time_estimation += summary_info["estimated_code_review_time"]
+                total_issue_count += summary_info["potential_issue_count"]
+                total_input_tokens += summary_usage["input_tokens"]
+                total_output_tokens += summary_usage["output_tokens"]
                 logger.info(f"Successfully generated summary for chunk {chunk['chunk_index'] + 1}")
             except Exception as e:
                 logger.error(f"Failed to generate summary for chunk {chunk['chunk_index'] + 1}: {str(e)}")
                 # Continue with other chunks
                 continue
-        review_info = {
+        summary_info = {
             "estimated_code_review_time": total_time_estimation,
             "potential_issue_count": total_issue_count
         }
+        logger.info(f"Total estimated code review time: {total_time_estimation} minutes")
+        logger.info(f"Total potential issue count: {total_issue_count}")
+        
         
         # Aggregate chunk summaries if multiple chunks
         if len(chunk_summaries) > 1:
             logger.info(f"Aggregating {len(chunk_summaries)} chunk summaries")
             try:
                 
-                final_summary = await aggregate_chunk_summaries(chunk_summaries, extracted_data, llm_service, review_info)
-                review_info = extract_review_info(final_summary)
-                logger.info(f"Review info: {review_info}")
-                summary = type('Summary', (), {'pr_summary': final_summary})()
+                aggregated_summary, summary_usage, model_info = await aggregate_chunk_summaries(chunk_summaries, extracted_data, llm_service, summary_info)
+                summary_info = extract_summary_info(aggregated_summary)
+                total_input_tokens += summary_usage["input_tokens"]
+                total_output_tokens += summary_usage["output_tokens"]
+                logger.info(f"Summary info: {summary_info}")
+                summary = type('Summary', (), {'pr_summary': aggregated_summary})()
                 logger.info("Successfully aggregated chunk summaries")
             except Exception as e:
                 logger.error(f"Failed to aggregate summaries: {str(e)}")
@@ -211,18 +223,22 @@ async def process_pr_review_background(extracted_data: dict):
     # Log summary generation completion
     logger.info("PR summary generation completed successfully")
 
-    sumery_result=None
-    review_result=[]
-
+    summary_usage = {
+            "input_tokens": total_input_tokens,
+            "output_tokens": total_output_tokens
+        }
+    logger.info(f"Total summary usage: {summary_usage}")
     # Post summary to backend
     logger.info("Posting summary to backend...")
+    model_information = {"model_name": model_info} if model_info else {}
     async with httpx.AsyncClient() as client:
         summary_payload = {
             "pullRequestAnalysisId": extracted_data["pullRequestAnalysisId"],
             "summary": summary.pr_summary,
-            "modelInfo": {},
-            "usageInfo": {},
-            "reviewInfo": review_info
+            "modelInfo": model_information,
+            "usageInfo": summary_usage,
+            "summary_info": summary_info,
+            
         }
 
         try:
@@ -257,6 +273,8 @@ async def process_pr_review_background(extracted_data: dict):
                 logger.info(f"Processing batch {batch_index + 1}/{total_batches} (files {start_index + 1}-{end_index})")
                 
                 batch_comments = []
+                total_input_tokens = 0
+                total_output_tokens = 0
                 
                 # Process files in current batch
                 for file_index, file_info in enumerate(current_batch):
@@ -280,6 +298,11 @@ async def process_pr_review_background(extracted_data: dict):
                         logger.info(f"Generating review for {file_name} with LLM...")
                         llm_start_time = time.time()
                         review = await generate_review_response(review_variables, llm_service)
+                        review_usage = review.review_usage or {}
+                        total_input_tokens += review_usage.get("input_tokens", 0)
+                        total_output_tokens += review_usage.get("output_tokens", 0)
+                        logger.info(f"Review usage for {file_name}: {review_usage}")
+                        model_info = review.model_info or ""
                         llm_duration = time.time() - llm_start_time
                         logger.info(f"LLM review generated for {file_name} in {llm_duration:.2f}s")
                         
@@ -300,10 +323,21 @@ async def process_pr_review_background(extracted_data: dict):
                 
                 # Determine if this is the last batch
                 is_last_batch = batch_index == total_batches - 1
-                
+
+                review_usage = {
+                    "input_tokens": total_input_tokens,
+                    "output_tokens": total_output_tokens
+                }
+
+                logger.info(f"Total review usage for batch {batch_index + 1}: {review_usage}")
+
+                model_information = {"model_name": model_info} if model_info else {}
+
                 review_payload = {
                     "pullRequestAnalysisId": extracted_data["pullRequestAnalysisId"],
                     "comments": batch_comments,
+                    "modelInfo": model_information,
+                    "usageInfo": review_usage,
                     "completed": 1 if is_last_batch else 0
                 }
                 

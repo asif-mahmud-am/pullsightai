@@ -11,9 +11,14 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Create .env file
+      - name: Stop and remove existing containers
+        run: |
+          docker compose down --remove-orphans || true
+          docker container prune -f || true
+
+      - name: Create .env file for backend
         run: |
           cd backend
           cat << EOF > .env
@@ -57,18 +62,14 @@ jobs:
           NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
           EOF
 
-      - name: Create PEM file
+      - name: Create GitHub App private key
         run: |
           echo "${{ secrets.GIT_PRIVATE_KEY }}" > backend/app.private-key.pem
           chmod 600 backend/app.private-key.pem
 
-      - name: Create PEM file
-        run: |
-          echo "${{ secrets.GIT_PRIVATE_KEY }}" > backend/app.private-key.pem
-          chmod 600 backend/app.private-key.pem
-
-      - name: Deploy with Docker Compose
+      - name: Build and deploy services
         env:
+          # Backend environment variables
           NODE_ENV: ${{ vars.NODE_ENV }}
           PORT: ${{ vars.PORT }}
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
@@ -88,26 +89,65 @@ jobs:
           GITHUB_APP_SLUG: ${{ secrets.GIT_APP_SLUG }}
           GITHUB_APP_ID: ${{ secrets.GIT_APP_ID }}
           DOMAIN: ${{ vars.DOMAIN }}
+          # AI Agent environment variables
           CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
           BACKEND_BASE_URL: ${{ vars.BACKEND_BASE_URL }}
           BACKEND_SUMMARY_ENDPOINT: ${{ vars.BACKEND_SUMMARY_ENDPOINT }}
           BACKEND_REVIEW_ENDPOINT: ${{ vars.BACKEND_REVIEW_ENDPOINT }}
+          # Frontend environment variables
           NEXT_NODE_ENV: ${{ vars.NEXT_NODE_ENV }}
           NEXT_TELEMETRY_DISABLED: ${{ vars.NEXT_TELEMETRY_DISABLED }}
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
         run: |
-          DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 docker compose up --build -d
+          # Build with no cache to avoid issues
+          DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 docker compose build --no-cache
+          
+          # Start services
+          docker compose up -d
 
-      - name: Clean up Docker resources
+      - name: Wait for services to start
         run: |
-          docker system prune -a --volumes -f
+          echo "Waiting for services to start..."
+          sleep 30
 
-      - name: Show service status and logs
+      - name: Check service health
         run: |
+          echo "=== Container Status ==="
           docker compose ps
+          
+          echo "=== Backend Health Check ==="
+          # Try to connect to backend
+          timeout 30 bash -c 'until curl -f http://localhost:3001/health 2>/dev/null || curl -f http://localhost:3001/ 2>/dev/null; do echo "Waiting for backend..."; sleep 2; done' || echo "Backend health check failed"
+          
+          echo "=== Frontend Health Check ==="
+          # Try to connect to frontend
+          timeout 30 bash -c 'until curl -f http://localhost:3000 2>/dev/null; do echo "Waiting for frontend..."; sleep 2; done' || echo "Frontend health check failed"
+          
+          echo "=== AI Agent Health Check ==="
+          # Try to connect to AI agent
+          timeout 30 bash -c 'until curl -f http://localhost:8030/health 2>/dev/null || curl -f http://localhost:8030/ 2>/dev/null; do echo "Waiting for AI agent..."; sleep 2; done' || echo "AI Agent health check failed"
+
+      - name: Show service logs
+        run: |
           echo "=== Backend Logs ==="
-          docker compose logs pullsightai-backend --tail=20
+          docker compose logs pullsightai-backend --tail=50
+          echo ""
           echo "=== Frontend Logs ==="
-          docker compose logs pullsightai-frontend --tail=20
+          docker compose logs pullsightai-frontend --tail=50
+          echo ""
           echo "=== AI Agent Logs ==="
-          docker compose logs pullsightai-ai-agent --tail=20
+          docker compose logs pullsightai-ai-agent --tail=50
+
+      - name: Clean up old Docker resources (on failure)
+        if: failure()
+        run: |
+          echo "Deployment failed, cleaning up..."
+          docker compose down --remove-orphans || true
+          docker system prune -f --volumes || true
+
+      - name: Clean up unused Docker resources (on success)
+        if: success()
+        run: |
+          # Only clean up dangling images and unused volumes, keep running containers
+          docker image prune -f || true
+          docker volume prune -f || true

@@ -30,14 +30,14 @@ async def aggregate_chunk_summaries(chunk_summaries: List[str], pr_metadata: Dic
     
     try:
         # Use LLM to aggregate summaries
-        aggregated_summary = await llm_service.generate_pr_summary(aggregation_prompt)
+        aggregated_summary, summary_usage, model_info = await llm_service.generate_pr_summary(aggregation_prompt)
         logger.info("Successfully aggregated chunk summaries")
-        return aggregated_summary
+        return aggregated_summary, summary_usage, model_info
     except Exception as e:
         logger.error(f"Failed to aggregate summaries with LLM: {str(e)}")
         # Fallback: simple concatenation
         logger.info("Falling back to simple concatenation")
-        return fallback_aggregation(chunk_summaries)
+        return fallback_aggregation(chunk_summaries), {"input_tokens": 0, "output_tokens": 0}, "claude-opus-4-1-20250805"
 
 def create_aggregation_prompt(chunk_summaries: List[str], pr_metadata: Dict, summary_info: Dict) -> str:
     """

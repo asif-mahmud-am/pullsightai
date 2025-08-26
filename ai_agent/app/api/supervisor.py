@@ -165,7 +165,7 @@ async def process_pr_review_background(extracted_data: dict):
                 summary_usage = chunk_summary.summary_usage or {}
                 logger.info(f"Chunk summary usage: {summary_usage}")
                 model_info = chunk_summary.model_info or ""
-                chunk_summaries.append(chunk_summary.pr_summary)
+                chunk_summaries.append(chunk_summary)
                 summary_info = extract_summary_info(chunk_summary.pr_summary)
                 logger.info(f"Summary info: {summary_info}")
                 total_time_estimation += summary_info["estimated_code_review_time"]
@@ -183,21 +183,19 @@ async def process_pr_review_background(extracted_data: dict):
         }
         logger.info(f"Total estimated code review time: {total_time_estimation} minutes")
         logger.info(f"Total potential issue count: {total_issue_count}")
-        summary_usage = {
-            "input_tokens": total_input_tokens,
-            "output_tokens": total_output_tokens
-        }
-        logger.info(f"Total summary usage: {summary_usage}")
+        
         
         # Aggregate chunk summaries if multiple chunks
         if len(chunk_summaries) > 1:
             logger.info(f"Aggregating {len(chunk_summaries)} chunk summaries")
             try:
                 
-                final_summary = await aggregate_chunk_summaries(chunk_summaries, extracted_data, llm_service, summary_info)
-                summary_info = extract_summary_info(final_summary)
+                aggregated_summary, summary_usage, model_info = await aggregate_chunk_summaries(chunk_summaries, extracted_data, llm_service, summary_info)
+                summary_info = extract_summary_info(aggregated_summary)
+                total_input_tokens += summary_usage["input_tokens"]
+                total_output_tokens += summary_usage["output_tokens"]
                 logger.info(f"Summary info: {summary_info}")
-                summary = type('Summary', (), {'pr_summary': final_summary})()
+                summary = type('Summary', (), {'pr_summary': aggregated_summary})()
                 logger.info("Successfully aggregated chunk summaries")
             except Exception as e:
                 logger.error(f"Failed to aggregate summaries: {str(e)}")
@@ -225,7 +223,11 @@ async def process_pr_review_background(extracted_data: dict):
     # Log summary generation completion
     logger.info("PR summary generation completed successfully")
 
-
+    summary_usage = {
+            "input_tokens": total_input_tokens,
+            "output_tokens": total_output_tokens
+        }
+    logger.info(f"Total summary usage: {summary_usage}")
     # Post summary to backend
     logger.info("Posting summary to backend...")
     async with httpx.AsyncClient() as client:

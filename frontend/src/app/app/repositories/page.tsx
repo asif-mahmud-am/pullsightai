@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { columns } from "./tableColumns";
 import DataTable from "@/components/reusable/DataTable";
-import { List, Grid, Info } from "lucide-react";
+import { List, Grid, Info, Plus } from "lucide-react";
 import { useGetWorkspaceRepositoriesQuery } from "@/api/queries/workspace";
 import usePagination from "@/hooks/usePagination";
 import Tabs from "@/components/reusable/Tabs";
 import ContentCard from "@/components/reusable/ContentCard";
 import Select from "@/components/reusable/Select";
+import { Button } from "@/components/ui/button";
 
 const RepositoriesPage = () => {
     const [tab, setTab] = useState<"all" | "active">("all");
@@ -35,8 +36,12 @@ const RepositoriesPage = () => {
     return (
         <div className="">
             {/* Header */}
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center justify-between gap-2 mb-3">
                 <h2 className="text-2xl font-semibold">Repositories</h2>
+                <Button variant="outline">
+                    <Plus />
+                    <span className="ml-2">Add Repository</span>
+                </Button>
             </div>
 
             {/* Table */}

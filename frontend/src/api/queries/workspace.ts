@@ -88,3 +88,23 @@ export const useGetWorkspacePullRequestsQuery = ({
         enabled: isEnabled,
     });
 };
+
+export const useGetWorkspaceTeamMembersQuery = ({
+    page = 1,
+    limit = 10,
+    isEnabled = true,
+}: {
+    page?: number;
+    limit?: number;
+    isEnabled?: boolean;
+}) => {
+    return useQuery({
+        queryKey: ["teamMembers", { page, limit }],
+        queryFn: () =>
+            workspaceEndpoints.getTeamMembers({
+                page,
+                limit,
+            }),
+        enabled: isEnabled,
+    });
+};

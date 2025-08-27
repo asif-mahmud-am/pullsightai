@@ -11,11 +11,11 @@ import { Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const claudeModels = [
-    { value: "claude-3-5-sonnet-20241022", label: "Claude 3.5 Sonnet" },
+    { value: "claude-4-1-opus-20241022", label: "Claude 4.1 Opus" },
+    { value: "claude-4-opus-20241022", label: "Claude 4 Opus" },
+    { value: "claude-4-sonnet-20241022", label: "Claude 4 Sonnet" },
+    { value: "claude-3-7-sonnet-20241022", label: "Claude 3.7 Sonnet" },
     { value: "claude-3-5-haiku-20241022", label: "Claude 3.5 Haiku" },
-    { value: "claude-3-opus-20240229", label: "Claude 3 Opus" },
-    { value: "claude-3-sonnet-20240229", label: "Claude 3 Sonnet" },
-    { value: "claude-3-haiku-20240307", label: "Claude 3 Haiku" },
 ];
 
 const SettingsPage = () => {

@@ -55,4 +55,17 @@ export const workspaceEndpoints = {
             })
             .then((res) => res.data);
     },
+    getTeamMembers: ({
+        page = 1,
+        limit = 10,
+    }: {
+        page?: number;
+        limit?: number;
+    }) => {
+        return apiClient
+            .get("/workspace/team-members", {
+                params: { page, limit },
+            })
+            .then((res) => res.data);
+    },
 };

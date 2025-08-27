@@ -74,11 +74,11 @@ export class AuthService {
             .populate([
                 {
                     path: 'currentWorkspace',
-                    select: 'name slug avatarUrl'
+                    select: 'name slug avatarUrl '
                 },
                 {
                     path: 'workspaces',
-                    select: 'name slug avatarUrl'
+                    select: 'name slug avatarUrl workSpaceSetting'
                 }
             ])
     }

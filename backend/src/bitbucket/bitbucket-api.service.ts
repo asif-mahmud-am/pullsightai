@@ -127,9 +127,6 @@ export class BitbucketApiService {
         workspace: string,
         paginate: PaginateDto
     ): Promise<any> {
-        console.log('Paginate DTO:', paginate)
-        console.log('Paginate DTO Limit:', workspace, accessToken)
-
         const url = `${this.baseUrl}/repositories/${workspace}?pagelen=${paginate.limit}&page=${paginate.page}`
 
         const response = await this.httpService.get(url, {

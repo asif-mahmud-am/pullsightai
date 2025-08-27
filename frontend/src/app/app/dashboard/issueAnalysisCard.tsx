@@ -31,12 +31,14 @@ const IssueAnalysisCard = ({
     className,
     fromDate,
     toDate,
+    repo,
     breakdown,
 }: Props) => {
     const { data, isFetching } = useDashboardIssueAnalysisQuery({
         from: fromDate,
         to: toDate,
         breakdown,
+        repo,
     });
     return (
         <ContentCard className={cn(``, className)}>

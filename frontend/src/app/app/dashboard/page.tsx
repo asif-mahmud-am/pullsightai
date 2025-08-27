@@ -80,7 +80,7 @@ const DashboardPage = () => {
                         className="bg-background"
                         options={[
                             { value: "day", label: "Breakdown: Days" },
-                            { value: "week", label: "Breakdown: Weeks" },
+                            // { value: "week", label: "Breakdown: Weeks" },
                             { value: "month", label: "Breakdown: Months" },
                             { value: "year", label: "Breakdown: Years" },
                         ]}

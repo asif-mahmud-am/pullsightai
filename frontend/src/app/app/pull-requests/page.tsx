@@ -9,11 +9,13 @@ import { Repository } from "@/types/repository";
 import {
     useGetWorkspacePullRequestsQuery,
     useGetWorkspaceRepositoriesQuery,
+    useGetWorkspaceTeamMembersQuery,
 } from "@/api/queries/workspace";
 import usePagination from "@/hooks/usePagination";
 import Tabs from "@/components/reusable/Tabs";
 import Select from "@/components/reusable/Select";
 import ContentCard from "@/components/reusable/ContentCard";
+import { TeamMember } from "@/types/user";
 
 const PullRequestsPage = () => {
     const [tab, setTab] = useState<"all" | "activePrs" | "myPrs" | "">("all");
@@ -29,6 +31,10 @@ const PullRequestsPage = () => {
         prUser,
     });
     const { data: repoData } = useGetWorkspaceRepositoriesQuery({
+        isEnabled: true,
+        limit: 100,
+    });
+    const { data: teamMembersData } = useGetWorkspaceTeamMembersQuery({
         isEnabled: true,
         limit: 100,
     });
@@ -81,8 +87,12 @@ const PullRequestsPage = () => {
                             <Select
                                 options={[
                                     { value: "", label: "Authors: All" },
-                                    { value: "noelle", label: "Noelle Ruiz" },
-                                    { value: "john", label: "John Doe" },
+                                    ...(teamMembersData?.data?.docs.map(
+                                        (member: TeamMember) => ({
+                                            value: member.username,
+                                            label: member.username,
+                                        })
+                                    ) || []),
                                 ]}
                                 value={prUser || ""}
                                 onChange={setPrUser}

@@ -12,10 +12,29 @@ export const useMakeSubscriptionMutation = () => {
     });
 };
 
-export const useGetRepositoriesQuery = () => {
+export const useGetWorkspaceRepositoriesQuery = ({
+    isActive = undefined,
+    page = 1,
+    limit = 10,
+    author = null,
+    isEnabled = true,
+}: {
+    isActive?: boolean;
+    page?: number;
+    limit?: number;
+    author?: string | null;
+    isEnabled?: boolean;
+}) => {
     return useQuery({
-        queryKey: ["repositories"],
-        queryFn: workspaceEndpoints.getRepositories,
+        queryKey: ["repositories", { isActive, page, limit, author }],
+        queryFn: ({}) =>
+            workspaceEndpoints.getRepositories({
+                isActive,
+                page,
+                limit,
+                author,
+            }),
+        enabled: isEnabled,
     });
 };
 
@@ -30,9 +49,31 @@ export const useUpdateRepositoryMutation = () => {
     });
 };
 
-export const useGetPullRequestsQuery = () => {
+export const useGetWorkspacePullRequestsQuery = ({
+    page = 1,
+    limit = 10,
+    repo = null,
+    prState = null,
+    prUser = null,
+    isEnabled = true,
+}: {
+    page?: number;
+    limit?: number;
+    repo?: string | null;
+    prState?: string | null;
+    prUser?: string | null;
+    isEnabled?: boolean;
+}) => {
     return useQuery({
-        queryKey: ["pullRequests"],
-        queryFn: workspaceEndpoints.getPullRequests,
+        queryKey: ["pullRequests", { page, limit, repo, prState, prUser }],
+        queryFn: () =>
+            workspaceEndpoints.getPullRequests({
+                page,
+                limit,
+                repo: repo || undefined,
+                prState: prState || undefined,
+                prUser: prUser || undefined,
+            }),
+        enabled: isEnabled,
     });
 };

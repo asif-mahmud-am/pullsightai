@@ -7,14 +7,47 @@ export const workspaceEndpoints = {
             .post("/workspace/subscription", payload)
             .then((res) => res.data),
 
-    getRepositories: () =>
-        apiClient.get("/workspace/repositories").then((res) => res.data),
+    getRepositories: ({
+        page = 1,
+        limit = 10,
+        isActive,
+        author = null,
+    }: {
+        page?: number;
+        limit?: number;
+        isActive?: boolean;
+        author?: string | null;
+    }) => {
+        return apiClient
+            .get("/workspace/repositories", {
+                params: { isActive, page, limit, author },
+            })
+            .then((res) => res.data);
+    },
 
-    updateRepository: (payload: { id: string; data: unknown }) =>
-        apiClient
+    updateRepository: (payload: { id: string; data: unknown }) => {
+        return apiClient
             .patch(`/workspace/repositories/${payload.id}`, payload.data)
-            .then((res) => res.data),
+            .then((res) => res.data);
+    },
 
-    getPullRequests: () =>
-        apiClient.get("/workspace/pr-list").then((res) => res.data),
+    getPullRequests: ({
+        page = 1,
+        limit = 10,
+        repo = null,
+        prState = null,
+        prUser = null,
+    }: {
+        page?: number;
+        limit?: number;
+        repo?: string | null;
+        prState?: string | null;
+        prUser?: string | null;
+    }) => {
+        return apiClient
+            .get("/workspace/pr-list", {
+                params: { page, limit, repo, prState, prUser },
+            })
+            .then((res) => res.data);
+    },
 };

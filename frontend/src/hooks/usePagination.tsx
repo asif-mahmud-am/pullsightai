@@ -4,18 +4,31 @@ import { useState } from "react";
 
 interface UsePaginationOptions {
     totalPages: number;
+    currentPage?: number;
+    onPageChange?: (page: number) => void;
 }
 
 interface PaginationProps {
     className?: string;
 }
 
-const usePagination = ({ totalPages }: UsePaginationOptions) => {
-    const [currentPage, setCurrentPage] = useState(1);
+const usePagination = ({
+    totalPages,
+    currentPage: externalCurrentPage,
+    onPageChange: externalOnPageChange,
+}: UsePaginationOptions) => {
+    const [internalCurrentPage, setInternalCurrentPage] = useState(1);
+
+    // Use external currentPage if provided, otherwise use internal
+    const currentPage = externalCurrentPage ?? internalCurrentPage;
 
     const goToPage = (page: number) => {
         if (page >= 1 && page <= totalPages) {
-            setCurrentPage(page);
+            if (externalOnPageChange) {
+                externalOnPageChange(page);
+            } else {
+                setInternalCurrentPage(page);
+            }
         }
     };
 

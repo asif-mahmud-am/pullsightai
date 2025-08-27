@@ -1,4 +1,7 @@
-import { useDashboardPrAnalysisQuery } from "@/api/queries/dashboard";
+import {
+    useDashboardPrAnalysisQuery,
+    useDashboardTimeMoneySavedQuery,
+} from "@/api/queries/dashboard";
 import ContentCard from "@/components/reusable/ContentCard";
 import {
     ChartContainer,
@@ -7,7 +10,15 @@ import {
 } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/dayjs";
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import {
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Line,
+    LineChart,
+    XAxis,
+    YAxis,
+} from "recharts";
 
 interface Props {
     className?: string;
@@ -17,14 +28,14 @@ interface Props {
     breakdown?: string | null;
 }
 
-const PrAnalysisCard = ({
+const TimeMoneySavedCard = ({
     className,
     fromDate,
     toDate,
     repo,
     breakdown,
 }: Props) => {
-    const { data, isFetching } = useDashboardPrAnalysisQuery({
+    const { data, isFetching } = useDashboardTimeMoneySavedQuery({
         from: fromDate,
         to: toDate,
         repo,
@@ -33,27 +44,25 @@ const PrAnalysisCard = ({
     return (
         <ContentCard className={cn(``, className)}>
             <ContentCard.Header className="flex-wrap sm:flex-nowrap gap-y-4">
-                <h3 className="text-muted font-semibold">PRs</h3>
+                <h3 className="text-muted font-semibold">Time & Money Saved</h3>
             </ContentCard.Header>
             <ContentCard.Body isLoading={isFetching}>
                 <div className="flex divide-x gap-9 py-5">
                     <div className="pr-9">
-                        <div className="opacity-50 text-xs mb-1">Opened</div>
+                        <div className="opacity-50 text-xs mb-1">Hours</div>
                         <div className="text-3xl">
-                            {data?.data?.opened || 0}
+                            {data?.data?.totalTimeSaved || 0}
                         </div>
                     </div>
                     <div className="pr-9">
-                        <div className="opacity-50 text-xs mb-1">Merged</div>
-                        <div className="text-3xl">
-                            {data?.data?.merged || 0}
+                        <div className="opacity-50 text-xs mb-1">
+                            Money Saved
                         </div>
+                        <div className="text-3xl">$500</div>
                     </div>
                     <div className="pr-9">
-                        <div className="opacity-50 text-xs mb-1">Declined</div>
-                        <div className="text-3xl">
-                            {data?.data?.declined || 0}
-                        </div>
+                        <div className="opacity-50 text-xs mb-1">ROI</div>
+                        <div className="text-3xl">3.2x</div>
                     </div>
                 </div>
                 <ChartContainer
@@ -65,44 +74,33 @@ const PrAnalysisCard = ({
                         },
                     }}
                 >
-                    <LineChart
+                    <BarChart
+                        accessibilityLayer
                         data={data?.data?.graphChart || []}
-                        margin={{
-                            left: 0,
-                            right: 0,
-                        }}
-                        key={`chart-${data?.data?.graphChart?.length || 0}`}
                     >
                         <CartesianGrid vertical={false} />
                         <XAxis
                             dataKey="date"
                             tickLine={false}
+                            tickMargin={10}
                             axisLine={false}
-                            tickMargin={8}
                             tickFormatter={(value) => formatDate(value, "DD")}
-                        />
-                        <YAxis
-                            tickLine={false}
-                            axisLine={false}
-                            tickMargin={8}
                         />
                         <ChartTooltip
                             cursor={false}
-                            content={<ChartTooltipContent />}
+                            content={<ChartTooltipContent hideLabel />}
                         />
-                        <Line
-                            dataKey="total"
-                            type="monotone"
-                            stroke="#39d5f7"
-                            strokeWidth={2}
-                            animationDuration={1000}
-                            dot={false}
+                        <Bar
+                            dataKey="timeSaved"
+                            fill="#3AF7AF"
+                            radius={8}
+                            maxBarSize={30}
                         />
-                    </LineChart>
+                    </BarChart>
                 </ChartContainer>
             </ContentCard.Body>
         </ContentCard>
     );
 };
 
-export default PrAnalysisCard;
+export default TimeMoneySavedCard;

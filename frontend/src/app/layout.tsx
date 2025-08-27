@@ -4,6 +4,7 @@ import "../styles/globals.css";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { TanstackProvider } from "@/providers/TanstackProvider";
 import AuthInitializer from "@/components/auth/AuthInitializer";
+import { Toaster } from "@/components/ui/sonner";
 import { FC, ReactNode } from "react";
 
 const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ["latin"] });
@@ -25,6 +26,7 @@ const RootLayout: FC<{ children: ReactNode }> = async ({ children }) => {
                         <div className="bg-[var(--body-900)] min-h-screen text-white">
                             {children}
                         </div>
+                        <Toaster richColors />
                     </TanstackProvider>
                 </AuthInitializer>
             </body>

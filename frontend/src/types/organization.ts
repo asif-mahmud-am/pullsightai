@@ -16,4 +16,5 @@ export interface Organization {
     createdOn?: string;
     createdAt?: string;
     updatedAt?: string;
+    workspaceSetting?: unknown;
 }

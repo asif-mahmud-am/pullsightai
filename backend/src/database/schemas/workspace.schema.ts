@@ -7,11 +7,11 @@ export type WorkspaceDocument = Workspace & Document
 
 // Enum for Claude model families
 export enum ClaudeModelEnum {
-    CLAUDE_SONNET_4 = 'claude-sonnet-4-20250514',
-    CLAUDE_OPUS_4 = 'claude-opus-4', // Adjust based on actual model string
-    CLAUDE_3_5_SONNET = 'claude-3-5-sonnet-20241022',
-    CLAUDE_3_OPUS = 'claude-3-opus-20240229',
-    CLAUDE_3_HAIKU = 'claude-3-haiku-20240307'
+    CLAUDE_4_1_OPUS = 'claude-4-1-opus-20241022',
+    CLAUDE_4_OPUS = 'claude-4-opus-20241022',
+    CLAUDE_4_SONNET = 'claude-4-sonnet-20241022',
+    CLAUDE_3_7_SONNET = 'claude-3-7-sonnet-20241022',
+    CLAUDE_3_5_HAIKU = 'claude-3-5-haiku-2024102'
 }
 
 @Schema({ timestamps: false, versionKey: false, id: false })
@@ -25,7 +25,7 @@ export class workspaceSetting {
     @Prop({
         type: String,
         enum: Object.values(ClaudeModelEnum),
-        default: ClaudeModelEnum.CLAUDE_SONNET_4
+        default: ClaudeModelEnum.CLAUDE_4_1_OPUS
     })
     model?: ClaudeModelEnum
 

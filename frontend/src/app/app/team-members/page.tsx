@@ -10,7 +10,7 @@ import { columns } from "./tableColumns";
 const TeamActivityPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
 
-    const { data, isLoading, isFetching } = useGetWorkspaceTeamMembersQuery({
+    const { data, isFetching } = useGetWorkspaceTeamMembersQuery({
         page: currentPage,
         limit: 10,
         isEnabled: true,

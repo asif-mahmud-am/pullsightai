@@ -10,6 +10,9 @@ import {
     UseGuards
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
+import { PaginateDto } from 'src/common/dto/paginate.dto'
+import { DATA_RETRIEVED, UPDATED } from 'src/common/utils/response-message.util'
+import { CreateAndUpdateWorkspaceSettingsDto } from 'src/workspace/dto/create-update-workspace-settings.dto'
 import { MakeSubscriptionDto } from 'src/workspace/dto/make-subscription.dto'
 import { UpdateRepositoryDto } from 'src/workspace/dto/update-repository.dto'
 import { WorkspaceService } from './workspace.service'
@@ -37,6 +40,40 @@ export class WorkspaceController {
     }
 
     @UseGuards(AuthGuard('jwt-cookie'))
+    @Patch('update-settings')
+    async updateWorkspace(
+        @Req() req,
+        @Body()
+        createAndUpdateWorkspaceSettingsDto: CreateAndUpdateWorkspaceSettingsDto
+    ) {
+        return {
+            message: UPDATED,
+            result: await this.workspaceService.createAndUpdateWorkspaceSettings(
+                req.user,
+                createAndUpdateWorkspaceSettingsDto
+            )
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('team-members')
+    async findAll(
+        @Req() req: any,
+        @Query() paginate: PaginateDto,
+        @Query() filter: any
+    ) {
+        const result = await this.workspaceService.findAllWorkspaceTeamMember(
+            req.user,
+            paginate,
+            filter
+        )
+        return {
+            message: DATA_RETRIEVED,
+            result: result
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
     @Get('repositories')
     async findAllRepositories(@Req() req: any, @Query() query: any) {
         return {
@@ -57,7 +94,11 @@ export class WorkspaceController {
     ) {
         return {
             message: 'Repository updated successfully',
-            result: await this.workspaceService.updateRepository(id, body, req.user)
+            result: await this.workspaceService.updateRepository(
+                id,
+                body,
+                req.user
+            )
         }
     }
 

@@ -69,7 +69,7 @@ export class AuthService {
                 {
                     _id: userId
                 },
-                'providerId provider username displayName email avatarUrl'
+                'providerId provider username displayName email avatarUrl onboardingStep'
             )
             .populate([
                 {

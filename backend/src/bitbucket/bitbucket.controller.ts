@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
+import { PaginateDto } from 'src/common/dto/paginate.dto'
 import { GetPRDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
 import { BitbucketEventsService } from './bitbucket-events.service'
 import { BitbucketService } from './bitbucket.service'
@@ -45,19 +46,15 @@ export class BitbucketController {
 
     @UseGuards(AuthGuard('jwt-cookie'))
     @Get('user-repos')
-    async getUserRepositories(
+    async getOrganizationSpeficiRepositories(
         @Req() req: any,
-        @Query() query: { page?: number; limit?: number }
+        @Query() paginate: PaginateDto
     ) {
-        const page = query.page || 1
-        const perPage = query.limit || 30
-
         return {
             message: 'User repositories fetched successfully',
-            result: await this.bitbucketService.listUserRepositories(
+            result: await this.bitbucketService.listOrganizationSpecificRepositories(
                 req.user,
-                page,
-                perPage
+                paginate
             )
         }
     }

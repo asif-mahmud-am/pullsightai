@@ -8,7 +8,7 @@ export const authEndpoints = {
         apiClient
             .get("/auth/profile", { headers: { Cookie: cookie } })
             .then((res) => res.data),
-    updateUser: async (data: Partial<User>) =>
+    updateUser: async (data: unknown) =>
         apiClient.patch("/auth/update-profile", data).then((res) => res.data),
     logout: async () => apiClient.post("/auth/logout").then((res) => res.data),
 };

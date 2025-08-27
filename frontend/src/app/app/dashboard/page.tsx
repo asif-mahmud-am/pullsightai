@@ -1,17 +1,46 @@
 "use client";
 
 import ContentCard from "@/components/reusable/ContentCard";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PrAnalysisCard from "./prAnalysisCard";
 import { subtractDays } from "@/lib/dayjs";
+import IssueAnalysisCard from "./issueAnalysisCard";
+import TimeMoneySavedCard from "./timeMoneySavedCard";
+import { useGetWorkspaceRepositoriesQuery } from "@/api/queries/workspace";
+import Select from "@/components/reusable/Select";
+import { Repository } from "@/types/repository";
 
 const DashboardPage = () => {
-    const [fromDate, setFromDate] = useState<string | null>(
-        subtractDays(new Date(), 6).toISOString()
-    );
-    const [toDate, setToDate] = useState<string | null>(
-        new Date().toISOString()
-    );
+    const [fromDate, setFromDate] = useState<string | null>(null);
+    const [toDate, setToDate] = useState<string | null>(null);
+    const [repo, setRepo] = useState<string | null>(null);
+    const [breakdown, setBreakdown] = useState<string>("day");
+    const [selectedPeriod, setSelectedPeriod] = useState<string>("7");
+
+    const { data: repoData } = useGetWorkspaceRepositoriesQuery({
+        isEnabled: true,
+        limit: 100,
+    });
+
+    const handlePeriodChange = (value: string) => {
+        setSelectedPeriod(value);
+        const days = parseInt(value);
+        const newToDate = new Date().toISOString();
+        const newFromDate = subtractDays(new Date(), days - 1).toISOString();
+        setFromDate(newFromDate);
+        setToDate(newToDate);
+    };
+
+    // Set initial dates on component mount
+    useEffect(() => {
+        if (!fromDate || !toDate) {
+            handlePeriodChange(selectedPeriod);
+        }
+    }, [fromDate, toDate, selectedPeriod]);
+
+    const handleRepoChange = (value: string) => {
+        setRepo(value || null);
+    };
 
     return (
         <div>
@@ -19,76 +48,69 @@ const DashboardPage = () => {
             <div className="flex items-center gap-3 mb-3">
                 <h2 className="text-2xl font-semibold">Dashboard</h2>
                 <div className="ml-auto flex gap-3">
-                    <select className="border text-gray-300 rounded-md px-3 py-2 text-sm ">
-                        <option value="all">Repositories: All</option>
-                    </select>
-                    <select className="border text-gray-300 rounded-md px-3 py-2 text-sm ">
-                        <option value="all">Period: Last 7 Days</option>
-                    </select>
-                    <select className="border text-gray-300 rounded-md px-3 py-2 text-sm ">
-                        <option value="all">Breakdown: Days</option>
-                        {/* <option value="days">Days</option>
-                        <option value="weeks">Weeks</option>
-                        <option value="months">Months</option> */}
-                    </select>
+                    <Select
+                        className="bg-background"
+                        options={[
+                            { value: "", label: "Repositories: All" },
+                            ...(repoData?.data?.docs.map(
+                                (repo: Repository) => ({
+                                    value: repo.name,
+                                    label: repo.name,
+                                })
+                            ) || []),
+                        ]}
+                        value={repo || ""}
+                        onChange={handleRepoChange}
+                    />
+                    <Select
+                        className="bg-background"
+                        options={[
+                            { value: "7", label: "Period: Last 7 Days" },
+                            { value: "15", label: "Period: Last 15 Days" },
+                            { value: "30", label: "Period: Last 30 Days" },
+                            { value: "60", label: "Period: Last 60 Days" },
+                            { value: "90", label: "Period: Last 90 Days" },
+                            { value: "180", label: "Period: Last 180 Days" },
+                            { value: "365", label: "Period: Last 365 Days" },
+                        ]}
+                        value={selectedPeriod}
+                        onChange={handlePeriodChange}
+                    />
+                    <Select
+                        className="bg-background"
+                        options={[
+                            { value: "day", label: "Breakdown: Days" },
+                            { value: "week", label: "Breakdown: Weeks" },
+                            { value: "month", label: "Breakdown: Months" },
+                            { value: "year", label: "Breakdown: Years" },
+                        ]}
+                        value={breakdown}
+                        onChange={setBreakdown}
+                    />
                 </div>
             </div>
             <div className="grid grid-cols-12 gap-5">
                 <PrAnalysisCard
                     className="col-span-4"
-                    fromDate={fromDate}
-                    toDate={toDate}
+                    fromDate={fromDate || undefined}
+                    toDate={toDate || undefined}
+                    repo={repo || undefined}
+                    breakdown={breakdown || undefined}
                 />
-                <ContentCard className="col-span-4">
-                    <ContentCard.Header className="flex-wrap sm:flex-nowrap gap-y-4">
-                        <h3 className="text-muted font-semibold">Issues</h3>
-                    </ContentCard.Header>
-                    <ContentCard.Body>
-                        <div className="flex divide-x gap-9 pt-5">
-                            <div className="pr-9">
-                                <div className="opacity-50 text-xs mb-1">
-                                    Total
-                                </div>
-                                <div className="text-3xl">0</div>
-                            </div>
-                            <div className="pr-9">
-                                <div className="opacity-50 text-xs mb-1">
-                                    Completion Rate
-                                </div>
-                                <div className="text-3xl">0%</div>
-                            </div>
-                        </div>
-                    </ContentCard.Body>
-                </ContentCard>
-                <ContentCard className="col-span-4">
-                    <ContentCard.Header className="flex-wrap sm:flex-nowrap gap-y-4">
-                        <h3 className="text-muted font-semibold">
-                            Time & Money Saved
-                        </h3>
-                    </ContentCard.Header>
-                    <ContentCard.Body>
-                        <div className="flex divide-x gap-9 pt-5">
-                            <div className="pr-9">
-                                <div className="opacity-50 text-xs mb-1">
-                                    Hours
-                                </div>
-                                <div className="text-3xl">0</div>
-                            </div>
-                            <div className="pr-9">
-                                <div className="opacity-50 text-xs mb-1">
-                                    Money Saved
-                                </div>
-                                <div className="text-3xl">$500</div>
-                            </div>
-                            <div className="pr-9">
-                                <div className="opacity-50 text-xs mb-1">
-                                    ROI
-                                </div>
-                                <div className="text-3xl">3.2x</div>
-                            </div>
-                        </div>
-                    </ContentCard.Body>
-                </ContentCard>
+                <IssueAnalysisCard
+                    className="col-span-4"
+                    fromDate={fromDate || undefined}
+                    toDate={toDate || undefined}
+                    repo={repo || undefined}
+                    breakdown={breakdown || undefined}
+                />
+                <TimeMoneySavedCard
+                    className="col-span-4"
+                    fromDate={fromDate || undefined}
+                    toDate={toDate || undefined}
+                    repo={repo || undefined}
+                    breakdown={breakdown || undefined}
+                />
             </div>
         </div>
     );

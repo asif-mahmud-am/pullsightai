@@ -25,6 +25,7 @@ const PullRequestsPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
 
     const { data, isFetching } = useGetWorkspacePullRequestsQuery({
+        page: currentPage,
         isEnabled: true,
         prState,
         repo,

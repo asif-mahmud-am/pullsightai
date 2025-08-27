@@ -80,7 +80,7 @@ const Select = ({
                 <label
                     htmlFor={id || name}
                     className={cn(
-                        "text-sm font-medium text-gray-700",
+                        "text-sm font-medium ",
                         disabled && "opacity-50"
                     )}
                 >

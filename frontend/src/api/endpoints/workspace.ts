@@ -2,6 +2,11 @@ import apiClient from "@/lib/axios";
 import { get } from "http";
 
 export const workspaceEndpoints = {
+    updateWorkspaceSettings: (payload: unknown) => {
+        return apiClient
+            .patch("/workspace/update-settings", payload)
+            .then((res) => res.data);
+    },
     createSubscription: (payload: unknown) =>
         apiClient
             .post("/workspace/subscription", payload)

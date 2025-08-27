@@ -46,7 +46,7 @@ const PullRequestsPage = () => {
     return (
         <div className="">
             <div className="flex items-center gap-2 mb-3">
-                <h2 className="text-2xl font-semibold">Review Pull Requests</h2>
+                <h2 className="text-2xl font-semibold">Pull Requests</h2>
             </div>
 
             <ContentCard className="">

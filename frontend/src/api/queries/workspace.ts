@@ -1,6 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { workspaceEndpoints } from "../endpoints/workspace";
 
+export const useUpdateWorkspaceSettingsMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: workspaceEndpoints.updateWorkspaceSettings,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["workspace"] });
+        },
+    });
+};
+
 export const useMakeSubscriptionMutation = () => {
     const queryClient = useQueryClient();
 

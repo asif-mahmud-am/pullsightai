@@ -200,9 +200,9 @@ async def process_pr_review_background(extracted_data: dict):
             except Exception as e:
                 logger.error(f"Failed to aggregate summaries: {str(e)}")
                 # Fallback to first chunk summary
-                summary = type('Summary', (), {'pr_summary': chunk_summaries[0] if chunk_summaries else ""})()
+                summary = type('Summary', (), {'pr_summary': chunk_summaries[0].pr_summary if chunk_summaries else ""})()
         elif len(chunk_summaries) == 1:
-            summary = type('Summary', (), {'pr_summary': chunk_summaries[0]})()
+            summary = type('Summary', (), {'pr_summary': chunk_summaries[0].pr_summary})()
         else:
             logger.error("No summaries generated from any chunks")
             return

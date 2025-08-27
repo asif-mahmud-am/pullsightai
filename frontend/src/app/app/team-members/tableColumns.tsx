@@ -8,46 +8,32 @@ import { formatDate } from "@/lib/dayjs";
 import { useState } from "react";
 import ConfirmDialog from "@/components/reusable/ConfirmDialog";
 import { useUpdateRepositoryMutation } from "@/api/queries/workspace";
+import { TeamMember } from "@/types/user";
 
-export const columns: ColumnDef<Repository>[] = [
+export const columns: ColumnDef<TeamMember>[] = [
     {
-        accessorKey: "name",
-        header: "Repository name",
-        cell: ({ row }) => {
-            const name = row.getValue("name") as string;
-            return (
-                <span className="text-white hover:underline cursor-pointer">
-                    {name}
-                </span>
-            );
-        },
-    },
-    {
-        accessorKey: "author",
+        accessorKey: "username",
         header: "Author",
         cell: ({ row }) => {
-            const author =
-                (row.getValue("author") as {
-                    avatarUrl?: string;
-                    username?: string;
-                }) || {};
+            const username = row.original?.username as string | undefined;
+            const avatarUrl = row.original?.avatarUrl as string | undefined;
             return (
                 <Avatar
-                    src={author?.avatarUrl || ""}
-                    name={author?.username || "Unknown"}
+                    src={avatarUrl || ""}
+                    name={username || "Unknown"}
                     size="sm"
                 />
             );
         },
     },
     {
-        accessorKey: "updatedOn",
-        header: "Updated",
+        accessorKey: "invitedAt",
+        header: "Invited",
         cell: ({ row }) => {
-            const updated = row.getValue("updatedOn") as string | undefined;
+            const invitedAt = row.getValue("invitedAt") as string | undefined;
             return (
                 <span className="text-gray-400">
-                    {formatDate(updated || "")}
+                    {formatDate(invitedAt || "")}
                 </span> // fallback if empty
             );
         },

@@ -4,11 +4,13 @@ import ContentCard from "@/components/reusable/ContentCard";
 import Switch from "@/components/reusable/Switch";
 import Input from "@/components/reusable/Input";
 import Select from "@/components/reusable/Select";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useUpdateWorkspaceSettingsMutation } from "@/api/queries/workspace";
 import Alert from "@/components/reusable/Alert";
 import { Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/store/authStore";
+import showToast from "@/lib/toast";
 
 const claudeModels = [
     { value: "claude-4-1-opus-20241022", label: "Claude 4.1 Opus" },
@@ -19,10 +21,12 @@ const claudeModels = [
 ];
 
 const SettingsPage = () => {
+    const { user } = useAuthStore((s) => s);
+
     const [useOwnApiKey, setUseOwnApiKey] = useState(false);
     const [apiKey, setApiKey] = useState("");
     const [selectedModel, setSelectedModel] = useState(
-        "claude-3-5-sonnet-20241022"
+        "claude-4-1-opus-20241022"
     );
 
     const {
@@ -54,7 +58,13 @@ const SettingsPage = () => {
             model: useOwnApiKey ? selectedModel : null,
         };
 
-        await updateWorkspaceSettings(payload);
+        await updateWorkspaceSettings(payload)
+            .then(() => {
+                showToast.success("Settings updated successfully");
+            })
+            .catch((error) => {
+                showToast.error("Failed to update settings");
+            });
     };
 
     const handleSwitchChange = (checked: boolean) => {
@@ -65,6 +75,15 @@ const SettingsPage = () => {
             setSelectedModel("claude-3-5-sonnet-20241022");
         }
     };
+
+    useEffect(() => {
+        if (user?.currentWorkspace?.workspaceSetting) {
+            const setting: any = user.currentWorkspace.workspaceSetting;
+            setUseOwnApiKey(!!setting?.apiKey);
+            setApiKey(setting?.apiKey || "");
+            setSelectedModel(setting?.model || "claude-4-1-opus-20241022");
+        }
+    }, [user]);
 
     return (
         <div className="max-w-4xl mx-auto">

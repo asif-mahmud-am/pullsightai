@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config'
 import { AnalysisService } from 'src/analysis/analysis.service'
 import { BitbucketEventsService } from 'src/bitbucket/bitbucket-events.service'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
+import { PaginateDto } from 'src/common/dto/paginate.dto'
 import { PREvent } from 'src/common/enums/pr.enum'
 import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
@@ -108,31 +109,42 @@ export class BitbucketService {
         )
     }
 
-    async listUserRepositories(
+    async listOrganizationSpecificRepositories(
         user: any,
-        page: number = 1,
-        perPage: number = 30
+        paginate: PaginateDto
     ) {
-        const userData = await this.dataService.users.findOne(
-            { _id: user.sub },
-            'accessToken'
-        )
+        const userData = await this.dataService.users
+            .findOne({ _id: user.sub, provider: user.provider })
+            .populate('currentWorkspace')
+        if (!userData || !userData?.currentWorkspace) {
+            throw new Error('User or current workspace not found')
+        }
 
         if (!userData?.accessToken) {
             throw new BadRequestException('Access token is required')
         }
 
-        const repositories = await this.bitbucketApiService.getUserRepositories(
-            userData.accessToken,
-            page,
-            perPage
-        )
+        const workspace = await this.dataService.workspaces
+            .findOne({ _id: userData.currentWorkspace })
+            .select('slug')
+            .lean()
 
+        if (!workspace) {
+            throw new BadRequestException('Workspace not found')
+        }
+
+        const repositories =
+            await this.bitbucketApiService.getWorkspaceRepositoriesPaginated(
+                userData.accessToken,
+                workspace.slug,
+                paginate
+            )
+        const { page, pagelen } = repositories
         return {
             repositories: repositories.values || [],
             pagination: {
-                page,
-                perPage,
+                page: page || paginate.page,
+                perPage: pagelen || paginate.limit,
                 totalCount: repositories.size || null,
                 hasNext: !!repositories.next
             }

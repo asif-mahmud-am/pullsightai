@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { PaginateDto } from 'src/common/dto/paginate.dto'
 import { OrgType } from 'src/common/enums/org.enum'
 import { HttpService } from 'src/common/http/http.service'
 import {
@@ -119,14 +120,17 @@ export class BitbucketApiService {
     }
 
     /**
-     * Get all repositories accessible to the authenticated user with pagination
+     * Get repositories for a specific workspace with pagination
      */
-    async getUserRepositories(
+    async getWorkspaceRepositoriesPaginated(
         accessToken: string,
-        page: number = 1,
-        perPage: number = 30
+        workspace: string,
+        paginate: PaginateDto
     ): Promise<any> {
-        const url = `${this.baseUrl}/repositories?role=member&pagelen=${perPage}&page=${page}`
+        console.log('Paginate DTO:', paginate)
+        console.log('Paginate DTO Limit:', workspace, accessToken)
+
+        const url = `${this.baseUrl}/repositories/${workspace}?pagelen=${paginate.limit}&page=${paginate.page}`
 
         const response = await this.httpService.get(url, {
             headers: this.getAuthHeaders(accessToken)
@@ -140,8 +144,8 @@ export class BitbucketApiService {
         return {
             values: repositories,
             size: response.size || repositories.length,
-            page: response.page || page,
-            pagelen: response.pagelen || perPage,
+            page: response.page || paginate.page,
+            pagelen: response.pagelen || paginate.limit,
             next: response.next || null,
             previous: response.previous || null
         }

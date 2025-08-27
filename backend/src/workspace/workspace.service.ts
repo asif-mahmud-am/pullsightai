@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { AnalysisService } from 'src/analysis/analysis.service'
 import { BitbucketService } from 'src/bitbucket/bitbucket.service'
+import { PaginateDto } from 'src/common/dto/paginate.dto'
 import { DatabaseService } from 'src/database/database.service'
 import { MemberRole } from 'src/database/schemas/workspace-members.schema'
 import { GitlabService } from 'src/gitlab/gitlab.service'
+import { CreateAndUpdateWorkspaceSettingsDto } from 'src/workspace/dto/create-update-workspace-settings.dto'
 import { MakeSubscriptionDto } from 'src/workspace/dto/make-subscription.dto'
 import { UpdateRepositoryDto } from 'src/workspace/dto/update-repository.dto'
 
@@ -17,6 +19,65 @@ export class WorkspaceService {
         private readonly gitlabService: GitlabService,
         private readonly bitbucketService: BitbucketService
     ) {}
+
+    async createAndUpdateWorkspaceSettings(
+        user: any,
+        createAndUpdateWorkspaceSettingsDto: CreateAndUpdateWorkspaceSettingsDto
+    ) {
+        // Find the user's current workspace
+        const userData = await this.dataService.users.findOne({
+            _id: user.sub,
+            provider: user.provider
+        })
+
+        const userWorkspace = await this.dataService.workspaces.findOne({
+            _id: userData?.currentWorkspace
+        })
+
+        if (!userWorkspace) {
+            throw new Error('Workspace not found')
+        }
+
+        // Update only the WorkspaceSetting subdocument
+        await this.dataService.workspaces.updateOne(
+            { _id: userWorkspace._id },
+            { $set: { workSpaceSetting: createAndUpdateWorkspaceSettingsDto } }
+        )
+
+        // Return the updated workspace settings
+        const updatedWorkspace = await this.dataService.workspaces.findOne({
+            _id: userWorkspace._id
+        })
+
+        return updatedWorkspace
+    }
+
+    async findAllWorkspaceTeamMember(
+        user: any,
+        paginate: PaginateDto,
+        filter: any
+    ) {
+        const userData =
+            await this.analysisService.getUserDataWithWorkspace(user)
+
+        if (!userData?.currentWorkspace) {
+            throw new BadRequestException('No active workspace found for user')
+        }
+
+        // Build query filter
+        const query: any = { workspace: userData.currentWorkspace._id }
+        if (filter?.role) {
+            query.role = filter.role
+        }
+        if (filter?.isActive !== undefined) {
+            query.isActive = filter.isActive === 'true' ? true : false
+        }
+
+        // Paginate results
+        return await this.dataService.workspaceMembers.paginate(query, {
+            ...paginate
+        })
+    }
 
     async setWebhook(userData, repository) {
         let repositoryData

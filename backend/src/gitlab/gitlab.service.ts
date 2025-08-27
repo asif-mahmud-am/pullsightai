@@ -6,6 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { AnalysisService } from 'src/analysis/analysis.service'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
+import { PaginateDto } from 'src/common/dto/paginate.dto'
 import { PREvent } from 'src/common/enums/pr.enum'
 import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
@@ -47,31 +48,43 @@ export class GitlabService {
         )
     }
 
-    async listUserRepositories(
+    async listOrganizationSpecificRepositories(
         user: any,
-        page: number = 1,
-        perPage: number = 30
+        paginate: PaginateDto
     ) {
-        const userData = await this.dataService.users.findOne(
-            { _id: user.sub },
-            'accessToken'
-        )
+        const userData = await this.dataService.users
+            .findOne({ _id: user.sub, provider: user.provider })
+            .populate('currentWorkspace')
+        if (!userData || !userData?.currentWorkspace) {
+            throw new Error('User or current workspace not found')
+        }
         if (!userData?.accessToken) {
             throw new BadRequestException('Access token is required')
         }
 
+        const workspace = await this.dataService.workspaces
+            .findOne({ _id: userData.currentWorkspace })
+            .select('slug id type')
+            .lean()
+
+        if (!workspace) {
+            throw new BadRequestException('Workspace not found')
+        }
         const repositories =
-            await this.gitlabApiService.getAuthenticatedUserRepositories(
+            await this.gitlabApiService.getWorkspaceRepositoriesPaginated(
                 userData.accessToken,
-                page,
-                perPage
+                workspace.slug,
+                workspace.type == 'User' ? 'user' : 'organization',
+                paginate
             )
+
+        const { page, pagelen } = repositories
 
         return {
             repositories: repositories.values || [],
             pagination: {
-                page,
-                perPage,
+                page: page || paginate.page,
+                perPage: pagelen || paginate.limit,
                 totalCount: repositories.totalCount || null,
                 hasNext: repositories.hasNext || false
             }

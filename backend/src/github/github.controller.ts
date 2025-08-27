@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { AuthGuard } from '@nestjs/passport'
+import { PaginateDto } from 'src/common/dto/paginate.dto'
 import {
     GetPRDto,
     InstallCallbackDto,
@@ -66,11 +67,11 @@ export class GithubController {
 
     @UseGuards(AuthGuard('jwt-cookie'))
     @Get('user-repos')
-    async getUserRepos(@Req() req: any, @Query() query: { page?: number; per_page?: number }) {
-        const page = query.page || 1
-        const perPage = query.per_page || 30
-        
-        const repos = await this.githubService.listUserRepositories(req.user, page, perPage)
+    async getUserRepos(@Req() req: any, @Query() paginate: PaginateDto) {
+        const repos = await this.githubService.listUserRepositories(
+            req.user,
+            paginate
+        )
         return {
             message: 'User repositories fetched successfully',
             result: repos

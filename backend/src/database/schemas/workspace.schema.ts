@@ -15,7 +15,7 @@ export enum ClaudeModelEnum {
 }
 
 @Schema({ timestamps: false, versionKey: false, id: false })
-export class WorkspaceSetting {
+export class workspaceSetting {
     @Prop({
         required: false,
         trim: true
@@ -133,8 +133,8 @@ export class Workspace {
     })
     team?: Types.ObjectId
 
-    @Prop({ type: WorkspaceSetting, nullable: true })
-    workSpaceSetting?: WorkspaceSetting
+    @Prop({ type: workspaceSetting, nullable: true })
+    workspaceSetting?: workspaceSetting
 }
 
 const schema = SchemaFactory.createForClass(Workspace)

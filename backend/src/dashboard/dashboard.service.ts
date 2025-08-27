@@ -285,7 +285,7 @@ export class DashboardService {
         }
 
         // Get hourly rate from workspace prFiles (default to 50 if not set)
-        const hourlyRate = findWorkspace.workSpaceSetting?.hourlyRate || 50
+        const hourlyRate = findWorkspace.workspaceSetting?.hourlyRate || 50
 
         // Set default date range if not provided (last 30 days)
         const toDate = timeAndMoneySaveCardFilterDto.to

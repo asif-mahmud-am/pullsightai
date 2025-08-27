@@ -57,6 +57,7 @@ export class WorkspaceService {
                         provider: userData.provider,
                         workspace: userData?.currentWorkspace!._id
                     })
+
                 if (!repositoryData) {
                     repository = await this.setWebhook(userData, repository)
                     await this.dataService.repositories.create({

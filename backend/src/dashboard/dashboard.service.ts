@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common'
 import { DatabaseService } from 'src/database/database.service'
-import { IssueAnalysisCardFilterDto, PrAnalysisCardFilterDto, TimeAndMoneySaveCardFilterDto } from './dto/dashboardFilter.dto'
-import { Types } from 'mongoose'
+import {
+    IssueAnalysisCardFilterDto,
+    PrAnalysisCardFilterDto,
+    TimeAndMoneySaveCardFilterDto
+} from './dto/dashboardFilter.dto'
 
 @Injectable()
 export class DashboardService {
@@ -42,11 +45,11 @@ export class DashboardService {
         }
 
         // Set default date range if not provided (last 30 days)
-        const toDate = prAnalysisCardFilterDto.to 
-            ? new Date(prAnalysisCardFilterDto.to) 
+        const toDate = prAnalysisCardFilterDto.to
+            ? new Date(prAnalysisCardFilterDto.to)
             : new Date()
-        const fromDate = prAnalysisCardFilterDto.from 
-            ? new Date(prAnalysisCardFilterDto.from) 
+        const fromDate = prAnalysisCardFilterDto.from
+            ? new Date(prAnalysisCardFilterDto.from)
             : new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
 
         const match: any = {
@@ -93,14 +96,18 @@ export class DashboardService {
 
         // Get time series data based on breakdown
         const breakdown = prAnalysisCardFilterDto.breakdown || 'day'
-        const graphChart = await this.getTimeSeriesData(match, fromDate, toDate, breakdown)
+        const graphChart = await this.getTimeSeriesData(
+            match,
+            fromDate,
+            toDate,
+            breakdown
+        )
 
         return {
             graphChart,
             ...totals
         }
     }
-
 
     async getIssueAnalysisCard(
         user: any,
@@ -131,12 +138,13 @@ export class DashboardService {
             }
         }
 
-        const pullRequestAnalysisId = await this.dataService.pullRequestAnalysis.findOne(
-            { workspaceSlug: findWorkspace.slug },
-            '_id'
-        )
+        const pullRequestAnalysisIds =
+            await this.dataService.pullRequestAnalysis.find(
+                { workspaceSlug: findWorkspace.slug },
+                '_id'
+            )
 
-        if (!pullRequestAnalysisId) {
+        if (!pullRequestAnalysisIds || pullRequestAnalysisIds.length === 0) {
             return {
                 pieChart: [],
                 completeRate: 0,
@@ -144,31 +152,78 @@ export class DashboardService {
             }
         }
 
-
         // Set default date range if not provided (last 30 days)
-        const toDate = issueAnalysisCardFilterDto.to 
-            ? new Date(issueAnalysisCardFilterDto.to) 
+        const toDate = issueAnalysisCardFilterDto.to
+            ? new Date(issueAnalysisCardFilterDto.to)
             : new Date()
-        const fromDate = issueAnalysisCardFilterDto.from 
-            ? new Date(issueAnalysisCardFilterDto.from) 
+        const fromDate = issueAnalysisCardFilterDto.from
+            ? new Date(issueAnalysisCardFilterDto.from)
             : new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
 
-        const match: any = {
-            pullRequestAnalysisId: pullRequestAnalysisId._id,
+        // Fix 3: Use $in to match multiple IDs
+        const match = {
+            pullRequestAnalysisId: {
+                $in: pullRequestAnalysisIds.map((item) => item._id)
+            },
             createdAt: {
                 $gte: fromDate,
                 $lte: toDate
             }
         }
 
+        // if (issueAnalysisCardFilterDto.repo) {
+        //     match.repo = issueAnalysisCardFilterDto.repo
+        // }
+        // // Get overall totals
+        // const prAnalysisReviewSeveritys =
+        //     await this.dataService.pullRequestAnalysisComments.aggregate([
+        //         { $match: match },
+        //         { $group: { _id: '$severity', count: { $sum: 1 } } }
+        //     ])
+        let prAnalysisReviewSeveritys
         if (issueAnalysisCardFilterDto.repo) {
-            match.repo = issueAnalysisCardFilterDto.repo
+            prAnalysisReviewSeveritys =
+                await this.dataService.pullRequestAnalysisComments.aggregate([
+                    {
+                        $lookup: {
+                            from: 'pullrequestanalyses',
+                            let: { analysisId: '$pullRequestAnalysisId' },
+                            pipeline: [
+                                {
+                                    $match: {
+                                        $expr: {
+                                            $and: [
+                                                {
+                                                    $eq: [
+                                                        '$_id',
+                                                        '$$analysisId'
+                                                    ]
+                                                },
+                                                {
+                                                    $eq: [
+                                                        '$repositorySlug',
+                                                        issueAnalysisCardFilterDto.repo
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ],
+                            as: 'analysis'
+                        }
+                    },
+                    { $match: { analysis: { $ne: [] } } },
+                    { $match: match },
+                    { $group: { _id: '$severity', count: { $sum: 1 } } }
+                ])
+        } else {
+            prAnalysisReviewSeveritys =
+                await this.dataService.pullRequestAnalysisComments.aggregate([
+                    { $match: match },
+                    { $group: { _id: '$severity', count: { $sum: 1 } } }
+                ])
         }
-        // Get overall totals
-        const prAnalysisReviewSeveritys = await this.dataService.pullRequestAnalysisComments.aggregate([
-            { $match: match },
-            { $group: { _id: '$severity', count: { $sum: 1 } } }
-        ])
 
         // Transform aggregation result to required format
         const totals = {
@@ -189,7 +244,6 @@ export class DashboardService {
             }
             totals.total += item.count
         })
-
 
         return {
             ...totals
@@ -231,14 +285,14 @@ export class DashboardService {
         }
 
         // Get hourly rate from workspace prFiles (default to 50 if not set)
-        const hourlyRate = findWorkspace.workSpaceSetting?.hourlyRate || 50
+        const hourlyRate = findWorkspace.workspaceSetting?.hourlyRate || 50
 
         // Set default date range if not provided (last 30 days)
-        const toDate = timeAndMoneySaveCardFilterDto.to 
-            ? new Date(timeAndMoneySaveCardFilterDto.to) 
+        const toDate = timeAndMoneySaveCardFilterDto.to
+            ? new Date(timeAndMoneySaveCardFilterDto.to)
             : new Date()
-        const fromDate = timeAndMoneySaveCardFilterDto.from 
-            ? new Date(timeAndMoneySaveCardFilterDto.from) 
+        const fromDate = timeAndMoneySaveCardFilterDto.from
+            ? new Date(timeAndMoneySaveCardFilterDto.from)
             : new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
 
         // Build match criteria for pull request analysis
@@ -255,7 +309,8 @@ export class DashboardService {
         }
 
         // Get all PR analyses with populated pull request data
-        const prAnalyses = await this.dataService.pullRequestAnalysis.find(analysisMatch)
+        const prAnalyses = await this.dataService.pullRequestAnalysis
+            .find(analysisMatch)
             .populate({
                 path: 'pullRequest',
                 populate: {
@@ -270,34 +325,50 @@ export class DashboardService {
 
         for (const analysis of prAnalyses) {
             if (analysis.pullRequest) {
-                const pullRequest = analysis.pullRequest as any;
-                
+                const pullRequest = analysis.pullRequest as any
+
                 // Use total line counts from PR schema
-                const prTotalLineAddition = pullRequest.prTotalLineAddition || 0;
-                const prTotalLineDeletion = pullRequest.prTotalLineDeletion || 0;
-                
-                const timeInSecondToReviewPrLine = 30;
-                const totalPrReviewTimeInSeconds = (prTotalLineAddition + prTotalLineDeletion) * timeInSecondToReviewPrLine;
-                const totalPrReviewTimeInHour = totalPrReviewTimeInSeconds / 3600;
-                
-                totalTimeSaved += totalPrReviewTimeInHour;
-                totalLinesReviewed += (prTotalLineAddition + prTotalLineDeletion);
+                const prTotalLineAddition = pullRequest.prTotalLineAddition || 0
+                const prTotalLineDeletion = pullRequest.prTotalLineDeletion || 0
+
+                const timeInSecondToReviewPrLine = 30
+                const totalPrReviewTimeInSeconds =
+                    (prTotalLineAddition + prTotalLineDeletion) *
+                    timeInSecondToReviewPrLine
+                const totalPrReviewTimeInHour =
+                    totalPrReviewTimeInSeconds / 3600
+
+                totalTimeSaved += totalPrReviewTimeInHour
+                totalLinesReviewed += prTotalLineAddition + prTotalLineDeletion
 
                 // Group by time period for chart data
-                const breakdown = timeAndMoneySaveCardFilterDto.breakdown || 'day'
-                const dateKey = this.formatDateByBreakdown((analysis as any).createdAt, breakdown)
-                
-                timeSeriesData.set(dateKey, (timeSeriesData.get(dateKey) || 0) + totalPrReviewTimeInHour)
+                const breakdown =
+                    timeAndMoneySaveCardFilterDto.breakdown || 'day'
+                const dateKey = this.formatDateByBreakdown(
+                    (analysis as any).createdAt,
+                    breakdown
+                )
+
+                timeSeriesData.set(
+                    dateKey,
+                    (timeSeriesData.get(dateKey) || 0) + totalPrReviewTimeInHour
+                )
             }
         }
 
         // Calculate money saved
         const totalMoneySaved = totalTimeSaved * hourlyRate
-        const averageTimePerPR = prAnalyses.length > 0 ? totalTimeSaved / prAnalyses.length : 0
+        const averageTimePerPR =
+            prAnalyses.length > 0 ? totalTimeSaved / prAnalyses.length : 0
 
         // Generate time series chart data
         const breakdown = timeAndMoneySaveCardFilterDto.breakdown || 'day'
-        const graphChart = this.generateTimeSeriesChart(timeSeriesData, fromDate, toDate, breakdown)
+        const graphChart = this.generateTimeSeriesChart(
+            timeSeriesData,
+            fromDate,
+            toDate,
+            breakdown
+        )
 
         return {
             graphChart,
@@ -310,9 +381,9 @@ export class DashboardService {
     }
 
     private async getTimeSeriesData(
-        match: any, 
-        fromDate: Date, 
-        toDate: Date, 
+        match: any,
+        fromDate: Date,
+        toDate: Date,
         breakdown: 'day' | 'month' | 'year'
     ) {
         let groupBy: any
@@ -357,7 +428,12 @@ export class DashboardService {
                     opened: {
                         $sum: {
                             $cond: [
-                                { $in: ['$prState', ['open', 'opened', 'OPEN']] },
+                                {
+                                    $in: [
+                                        '$prState',
+                                        ['open', 'opened', 'OPEN']
+                                    ]
+                                },
                                 1,
                                 0
                             ]
@@ -366,7 +442,12 @@ export class DashboardService {
                     merged: {
                         $sum: {
                             $cond: [
-                                { $in: ['$prState', ['merged', 'merge', 'closed', 'MERGED']] },
+                                {
+                                    $in: [
+                                        '$prState',
+                                        ['merged', 'merge', 'closed', 'MERGED']
+                                    ]
+                                },
                                 1,
                                 0
                             ]
@@ -375,7 +456,12 @@ export class DashboardService {
                     declined: {
                         $sum: {
                             $cond: [
-                                { $in: ['$prState', ['declined', 'decline', 'DECLINED']] },
+                                {
+                                    $in: [
+                                        '$prState',
+                                        ['declined', 'decline', 'DECLINED']
+                                    ]
+                                },
                                 1,
                                 0
                             ]
@@ -386,11 +472,30 @@ export class DashboardService {
             {
                 $project: {
                     _id: 0,
-                    date: breakdown === 'year' 
-                        ? { $dateFromParts: { year: '$_id.year', month: 1, day: 1 } }
-                        : breakdown === 'month'
-                        ? { $dateFromParts: { year: '$_id.year', month: '$_id.month', day: 1 } }
-                        : { $dateFromParts: { year: '$_id.year', month: '$_id.month', day: '$_id.day' } },
+                    date:
+                        breakdown === 'year'
+                            ? {
+                                  $dateFromParts: {
+                                      year: '$_id.year',
+                                      month: 1,
+                                      day: 1
+                                  }
+                              }
+                            : breakdown === 'month'
+                              ? {
+                                    $dateFromParts: {
+                                        year: '$_id.year',
+                                        month: '$_id.month',
+                                        day: 1
+                                    }
+                                }
+                              : {
+                                    $dateFromParts: {
+                                        year: '$_id.year',
+                                        month: '$_id.month',
+                                        day: '$_id.day'
+                                    }
+                                },
                     total: 1,
                     opened: 1,
                     merged: 1,
@@ -402,20 +507,21 @@ export class DashboardService {
 
         // Fill missing time periods with zero values
         const result: Array<{
-            date: string;
-            total: number;
-            opened: number;
-            merged: number;
-            declined: number;
+            date: string
+            total: number
+            opened: number
+            merged: number
+            declined: number
         }> = []
-        
+
         const current = new Date(fromDate)
         const end = new Date(toDate)
 
         while (current <= end) {
             const dateStr = this.formatDateByBreakdown(current, breakdown)
-            const existingData = prTimeSeriesData.find(item => 
-                this.formatDateByBreakdown(item.date, breakdown) === dateStr
+            const existingData = prTimeSeriesData.find(
+                (item) =>
+                    this.formatDateByBreakdown(item.date, breakdown) === dateStr
             )
 
             result.push({
@@ -485,11 +591,14 @@ export class DashboardService {
     }
 
     private countChangedLines(diff: string): number {
-        return diff
-        .split("\n")
-        .filter(line => line.startsWith("+") || line.startsWith("-"))
-        // ignore diff headers like '--- a/...' or '+++ b/...'
-        .filter(line => !line.startsWith("+++") && !line.startsWith("---"))
-        .length;
+        return (
+            diff
+                .split('\n')
+                .filter((line) => line.startsWith('+') || line.startsWith('-'))
+                // ignore diff headers like '--- a/...' or '+++ b/...'
+                .filter(
+                    (line) => !line.startsWith('+++') && !line.startsWith('---')
+                ).length
+        )
     }
 }

@@ -1,89 +1,107 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { columns } from "./tableColumns";
 import DataTable from "@/components/reusable/DataTable";
-import { List, Grid, Info } from "lucide-react";
-import { useGetRepositoriesQuery } from "@/api/queries/workspace";
+import { List, Grid, Info, Plus } from "lucide-react";
+import { useGetWorkspaceRepositoriesQuery } from "@/api/queries/workspace";
+import usePagination from "@/hooks/usePagination";
+import Tabs from "@/components/reusable/Tabs";
+import ContentCard from "@/components/reusable/ContentCard";
+import Select from "@/components/reusable/Select";
+import { Button } from "@/components/ui/button";
 
 const RepositoriesPage = () => {
     const [tab, setTab] = useState<"all" | "active">("all");
+    const [currentPage, setCurrentPage] = useState(1);
 
-    const { data, isFetching } = useGetRepositoriesQuery();
+    const { data, isLoading, isFetching } = useGetWorkspaceRepositoriesQuery({
+        isActive: tab === "active" ? true : undefined,
+        page: currentPage,
+        limit: 10,
+        isEnabled: true,
+    });
+
+    // Reset to page 1 when tab changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [tab]);
+
+    const { Pagination } = usePagination({
+        totalPages: data?.data?.totalPages || 1,
+        currentPage,
+        onPageChange: setCurrentPage,
+    });
 
     return (
         <div className="">
             {/* Header */}
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center justify-between gap-2 mb-3">
                 <h2 className="text-2xl font-semibold">Repositories</h2>
+                <Button variant="outline">
+                    <Plus />
+                    <span className="ml-2">Add Repository</span>
+                </Button>
             </div>
 
             {/* Table */}
-            <div className="bg-[#1D1D20] p-4 space-y-4 rounded-lg border border-gray-800">
-                <div className="flex items-center gap-2">
+            <ContentCard className="">
+                <ContentCard.Header className="flex items-center gap-2">
                     <h2 className="text-sm  text-[#71717A] font-semibold">
                         Repositories
                     </h2>
-                </div>
-                {/* Filters Row */}
-                <div className="flex items-center justify-between ">
-                    {/* Tabs */}
-                    <div className="flex gap-2 border  rounded-md overflow-hidden">
-                        <button
-                            onClick={() => setTab("all")}
-                            className={`px-3 py-1 rounded-md text-sm font-medium ${
-                                tab === "all"
-                                    ? "bg-gray-700 text-white"
-                                    : "text-gray-400"
-                            }`}
+                </ContentCard.Header>
+                <ContentCard.Body>
+                    {/* Filters Row */}
+                    <div className="flex items-center justify-between mb-3 gap-3">
+                        <Tabs
+                            value={tab}
+                            onValueChange={(value) =>
+                                setTab(value as "all" | "active")
+                            }
                         >
-                            All
-                        </button>
-                        <button
-                            onClick={() => setTab("active")}
-                            className={`px-3 py-1 rounded-md text-sm font-medium ${
-                                tab === "active"
-                                    ? "bg-gray-700 text-white"
-                                    : "text-gray-400"
-                            }`}
-                        >
-                            Active
-                        </button>
-                    </div>
+                            <Tabs.List>
+                                <Tabs.Trigger value="all">All</Tabs.Trigger>
+                                <Tabs.Trigger value="active">
+                                    Active
+                                </Tabs.Trigger>
+                            </Tabs.List>
+                        </Tabs>
 
-                    <div className="flex items-center gap-6">
-                        {/* Author filter */}
-                        <select className="border text-gray-300 rounded-md px-3 py-2 text-sm ">
-                            <option value="all">Authors: All</option>
-                            <option value="noelle">Noelle Ruiz</option>
-                            <option value="john">John Doe</option>
-                        </select>
+                        {/* <Select
+                            options={[
+                                { value: "", label: "Authors: All" },
+                                { value: "noelle", label: "Noelle Ruiz" },
+                                { value: "john", label: "John Doe" },
+                            ]}
+                        />
 
-                        {/* Date filter */}
-                        <select className="border text-gray-300 rounded-md px-3 py-2 text-sm ">
-                            <option value="all">Date: All</option>
-                            <option value="today">Today</option>
-                            <option value="week">This Week</option>
-                            <option value="month">This Month</option>
-                        </select>
+                        <Select
+                            options={[
+                                { value: "", label: "Date: All" },
+                                { value: "today", label: "Today" },
+                                { value: "week", label: "This Week" },
+                                { value: "month", label: "This Month" },
+                            ]}
+                        />
 
-                        {/* View toggle */}
-                        <div className="flex border border-gray-700 rounded-md overflow-hidden">
+                        <div className="flex border border-gray-700 rounded-md">
                             <button className="p-2  text-gray-300 hover:bg-gray-700">
                                 <List size={18} />
                             </button>
                             <button className="p-2  text-gray-400 hover:bg-gray-700">
                                 <Grid size={18} />
                             </button>
-                        </div>
+                        </div> */}
                     </div>
-                </div>
-                <DataTable
-                    columns={columns}
-                    isLoading={isFetching}
-                    data={data?.data || []}
-                />
-            </div>
+                    <DataTable
+                        columns={columns}
+                        isLoading={isFetching}
+                        data={data?.data?.docs || []}
+                    />
+                    <Pagination />
+                </ContentCard.Body>
+            </ContentCard>
         </div>
     );
 };

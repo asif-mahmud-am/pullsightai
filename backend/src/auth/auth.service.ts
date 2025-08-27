@@ -69,16 +69,16 @@ export class AuthService {
                 {
                     _id: userId
                 },
-                'providerId provider username displayName email avatarUrl'
+                'providerId provider username displayName email avatarUrl onboardingStep'
             )
             .populate([
                 {
                     path: 'currentWorkspace',
-                    select: 'name slug avatarUrl'
+                    select: 'name slug avatarUrl '
                 },
                 {
                     path: 'workspaces',
-                    select: 'name slug avatarUrl'
+                    select: 'name slug avatarUrl workSpaceSetting'
                 }
             ])
     }

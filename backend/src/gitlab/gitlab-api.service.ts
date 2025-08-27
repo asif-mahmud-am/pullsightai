@@ -1,5 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { PaginateDto } from 'src/common/dto/paginate.dto'
 import { OrgType } from 'src/common/enums/org.enum'
 import { HttpService } from 'src/common/http/http.service'
 import {
@@ -349,23 +350,29 @@ export class GitlabApiService {
     }
 
     /**
-     * Get all repositories accessible to the authenticated user with pagination
+     * Get repositories for a specific workspace (group or user) with pagination
      */
-    async getAuthenticatedUserRepositories(
+    async getWorkspaceRepositoriesPaginated(
         accessToken: string,
-        page: number = 1,
-        perPage: number = 30
+        workspaceSlug: string,
+        workspaceType: string, // 'organization' or 'user'
+        paginate: PaginateDto
     ): Promise<any> {
-        const url = `${this.baseUrl}/projects?membership=true&per_page=${perPage}&page=${page}&order_by=updated_at&sort=desc`
+        let url: string
+        if (workspaceType === 'organization') {
+            url = `${this.baseUrl}/groups/${encodeURIComponent(workspaceSlug)}/projects?per_page=${paginate.limit}&page=${paginate.page}&order_by=updated_at&sort=desc`
+        } else {
+            url = `${this.baseUrl}/users/${encodeURIComponent(workspaceSlug)}/projects?per_page=${paginate.limit}&page=${paginate.page}&order_by=updated_at&sort=desc`
+        }
+
         const response = await this.httpService.get(url, {
             headers: this.getAuthHeaders(accessToken)
         })
-
         // Transform repositories to match the expected format
         const repositories: Repository[] = response.map(
             (project: any) =>
                 ({
-                    id: project.id,
+                    id: project.id.toString(),
                     name: project.name,
                     fullName: project.path_with_namespace,
                     slug: project.path_with_namespace,
@@ -382,11 +389,10 @@ export class GitlabApiService {
 
         return {
             values: repositories,
-            totalCount: repositories.length, // GitLab doesn't provide total count in headers for this endpoint
-            hasNext: repositories.length === perPage
+            totalCount: repositories.length,
+            hasNext: repositories.length === paginate.limit
         }
     }
-
     /**
      * Add webhook to a repository
      */

@@ -10,7 +10,7 @@ export interface User {
     provider: Provider;
     providerId: string;
     avatarUrl: string;
-    currentWorkspace?: Organization | string; // Can be Organization object or ID
+    currentWorkspace?: Organization; // Can be Organization object or ID
     onboardingStep: number | null;
 }
 

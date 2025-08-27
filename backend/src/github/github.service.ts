@@ -2,6 +2,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Octokit } from '@octokit/rest'
 import { AnalysisService } from 'src/analysis/analysis.service'
+import { PaginateDto } from 'src/common/dto/paginate.dto'
 import { PREvent } from 'src/common/enums/pr.enum'
 import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
@@ -309,13 +310,10 @@ export class GithubService {
         return allRepositories
     }
 
-    async listUserRepositories(
-        user: any,
-        page: number = 1,
-        perPage: number = 30
-    ) {
+    async listUserRepositories(user: any, paginate: PaginateDto) {
         await this.initOctokit(user)
-
+        const { page, limit } = paginate
+        const perPage = limit || 10
         try {
             const response =
                 await this.octokit.rest.repos.listForAuthenticatedUser({
@@ -324,7 +322,7 @@ export class GithubService {
                     sort: 'updated',
                     direction: 'desc',
                     page,
-                    per_page: perPage
+                    per_page: paginate.limit
                 })
 
             const repositories: Repository[] = response.data.map(

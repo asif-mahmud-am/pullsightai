@@ -5,13 +5,66 @@ import * as uniqueValidator from 'mongoose-unique-validator'
 
 export type WorkspaceDocument = Workspace & Document
 
-@Schema({ timestamps: false, versionKey: false, id: false })
-export class WorkspaceSetting {
-    @Prop({ default: true })
-    anthropicApiKey: string
+// Enum for Claude model families
+export enum ClaudeModelEnum {
+    CLAUDE_SONNET_4 = 'claude-sonnet-4-20250514',
+    CLAUDE_OPUS_4 = 'claude-opus-4', // Adjust based on actual model string
+    CLAUDE_3_5_SONNET = 'claude-3-5-sonnet-20241022',
+    CLAUDE_3_OPUS = 'claude-3-opus-20240229',
+    CLAUDE_3_HAIKU = 'claude-3-haiku-20240307'
+}
 
-    @Prop({ type: 'number', default: 50 })
-    hourlyRate: number
+@Schema({ timestamps: false, versionKey: false, id: false })
+export class workspaceSetting {
+    @Prop({
+        required: false,
+        trim: true
+    })
+    apiKey?: string
+
+    @Prop({
+        type: String,
+        enum: Object.values(ClaudeModelEnum),
+        default: ClaudeModelEnum.CLAUDE_SONNET_4
+    })
+    model?: ClaudeModelEnum
+
+    @Prop({
+        type: Number,
+        default: 50,
+        min: 0
+    })
+    hourlyRate?: number
+
+    @Prop({
+        type: Boolean,
+        default: false
+    })
+    usingOwnModel?: boolean
+
+    @Prop({
+        type: String,
+        required: false,
+        description: 'Custom API endpoint URL (if using own model)'
+    })
+    customApiEndpoint?: string
+
+    @Prop({
+        type: Number,
+        default: 1000,
+        min: 1,
+        description: 'Maximum tokens per request'
+    })
+    maxTokens?: number
+
+    @Prop({
+        type: Number,
+        default: 0.7,
+        min: 0,
+        max: 2,
+        description: 'Temperature for AI model responses (0-2)'
+    })
+    temperature?: number
 }
 
 @Schema({ timestamps: true, versionKey: false })
@@ -80,8 +133,8 @@ export class Workspace {
     })
     team?: Types.ObjectId
 
-    @Prop({ type: WorkspaceSetting, nullable: true })
-    workSpaceSetting?: WorkspaceSetting
+    @Prop({ type: workspaceSetting, nullable: true })
+    workspaceSetting?: workspaceSetting
 }
 
 const schema = SchemaFactory.createForClass(Workspace)

@@ -1,8 +1,56 @@
 import apiClient from "@/lib/axios";
 
 export const dashboardEndpoints = {
-    getPrAnalysis: (params: unknown) =>
-        apiClient
-            .get("/api/dashboard/pr-analysis-card", { params })
-            .then((res) => res.data),
+    getPrAnalysis: ({
+        from,
+        to,
+        repo,
+        breakdown,
+    }: {
+        from?: string;
+        to?: string;
+        repo?: string | null;
+        breakdown?: string | null;
+    }) => {
+        return apiClient
+            .get("/api/dashboard/pr-analysis-card", {
+                params: { from, to, repo, breakdown },
+            })
+            .then((res) => res.data);
+    },
+
+    getIssueAnalysis: ({
+        from,
+        to,
+        repo,
+        breakdown,
+    }: {
+        from?: string;
+        to?: string;
+        repo?: string | null;
+        breakdown?: string | null;
+    }) => {
+        return apiClient
+            .get("/api/dashboard/issue-analysis-card", {
+                params: { from, to, repo, breakdown },
+            })
+            .then((res) => res.data);
+    },
+    getTimeMoneySaved: ({
+        from,
+        to,
+        repo,
+        breakdown,
+    }: {
+        from?: string;
+        to?: string;
+        repo?: string | null;
+        breakdown?: string | null;
+    }) => {
+        return apiClient
+            .get("/api/dashboard/time-money-save-card", {
+                params: { from, to, repo, breakdown },
+            })
+            .then((res) => res.data);
+    },
 };

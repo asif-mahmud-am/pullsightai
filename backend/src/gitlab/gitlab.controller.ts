@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
+import { PaginateDto } from 'src/common/dto/paginate.dto'
 import { GetPRDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
 import { GitlabEventsService } from './gitlab-events.service'
 import { GitlabService } from './gitlab.service'
@@ -58,19 +59,12 @@ export class GitlabController {
 
     @UseGuards(AuthGuard('jwt-cookie'))
     @Get('user-repos')
-    async getUserRepositories(
-        @Req() req: any,
-        @Query() query: { page?: number; limit?: number }
-    ) {
-        const page = query.page || 1
-        const perPage = query.limit || 30
-
+    async getUserRepositories(@Req() req: any, @Query() paginate: PaginateDto) {
         return {
             message: 'User repositories fetched successfully',
-            result: await this.gitlabService.listUserRepositories(
+            result: await this.gitlabService.listOrganizationSpecificRepositories(
                 req.user,
-                page,
-                perPage
+                paginate
             )
         }
     }

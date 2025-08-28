@@ -4,26 +4,34 @@ import { useUpdateUserMutation } from "@/api/queries/auth";
 import LogoutHandler from "@/components/auth/LogoutHandler";
 import Dropdown from "@/components/reusable/Dropdown";
 import { Button } from "@/components/ui/button";
+import { ROUTE_CONSTANTS } from "@/lib/constants";
 import showToast from "@/lib/toast";
 import { useAuthStore } from "@/store/authStore";
 import { ChevronDown, LogOutIcon, Plus } from "lucide-react";
 import Image from "next/image";
+import { redirect } from "next/navigation";
 import { Fragment, use } from "react";
 
 const AppTopBar = () => {
-    const { user, workspaces, selectedWorkspace } = useAuthStore((s) => s);
+    const { user, workspaces, selectedWorkspace, setSelectedWorkspace } =
+        useAuthStore((s) => s);
     const {
         mutateAsync: updateUser,
         isPending: isUpdatingUser,
         error: updateUserError,
     } = useUpdateUserMutation();
 
-    const handleInstall = () => {
-        const apiUrl =
-            process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
-        const baseUrl = `${apiUrl}/github/install`;
-        // Redirect to the GitHub installation URL
-        window.location.href = baseUrl;
+    const onboardedWorkspaces = workspaces?.filter(
+        (workspace) =>
+            !workspace.onboardingStep || workspace.onboardingStep == 0
+    );
+
+    const handleAddNewWorkspace = () => {
+        updateUser({
+            currentWorkspace: null,
+        }).then(() => {
+            redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_1);
+        });
     };
 
     const handleWorkspaceChange = async (workspaceId: string) => {
@@ -72,7 +80,7 @@ const AppTopBar = () => {
                         Switch Organization
                     </div>
                     <div className="mt-3 mb-3 space-y-1">
-                        {workspaces?.map((ws) => {
+                        {onboardedWorkspaces?.map((ws) => {
                             if (typeof ws === "string")
                                 return <Fragment key={ws} />;
                             return (
@@ -97,7 +105,7 @@ const AppTopBar = () => {
                             variant="outline"
                             className="!border-primary text-primary"
                             size="xs"
-                            onClick={handleInstall}
+                            onClick={handleAddNewWorkspace}
                         >
                             <Plus />
                             Add new organization

@@ -20,8 +20,15 @@ import { humanizeDate } from "@/lib/dayjs";
 
 const Step1Page = () => {
     const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
-    const user = useAuthStore((s) => s.user);
+    const { user, workspaces } = useAuthStore((s) => s);
+
     const provider = user?.provider || "github"; // Default to GitHub if not set
+    const onboardedWorkspaces = workspaces
+        ?.filter(
+            (workspace) =>
+                !workspace.onboardingStep || workspace.onboardingStep == 0
+        )
+        ?.map((ws) => ws.id);
 
     const router = useRouter();
 
@@ -175,6 +182,11 @@ const Step1Page = () => {
                                         </div>
                                     </div>
                                 )}
+                                isDisabled={(item) =>
+                                    onboardedWorkspaces
+                                        ? onboardedWorkspaces.includes(item.id)
+                                        : false
+                                }
                             />
                         </ContentCard.Body>
                     </ContentCard>

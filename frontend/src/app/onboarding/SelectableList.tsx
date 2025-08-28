@@ -4,7 +4,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 
 interface SelectableListProps<TItem> {
-    disabled?: boolean;
     selectedId?: string;
     onSelect?: (id: string) => void;
     wrapperClassName?: string;
@@ -12,17 +11,18 @@ interface SelectableListProps<TItem> {
     itemClassName?: string;
     items: TItem[];
     getKey: (item: TItem) => string;
+    isDisabled?: (item: TItem) => boolean;
     renderHeader?: () => ReactNode;
     renderItem?: (
         item: TItem,
         opts: {
             checked: boolean;
+            disabled: boolean;
         }
     ) => ReactNode;
 }
 
 const SelectableList = <TItem,>({
-    disabled,
     items,
     selectedId,
     onSelect,
@@ -32,6 +32,7 @@ const SelectableList = <TItem,>({
     renderHeader,
     renderItem,
     getKey,
+    isDisabled,
 }: SelectableListProps<TItem>) => {
     return (
         <div className={cn(wrapperClassName)}>
@@ -40,15 +41,16 @@ const SelectableList = <TItem,>({
                 value={selectedId}
                 onValueChange={onSelect}
                 className={cn("gap-2 w-full", className)}
-                disabled={disabled}
             >
                 {items.map((item: TItem) => {
                     const key = getKey(item);
                     const checked = selectedId === key;
+                    const disabled = isDisabled ? isDisabled(item) : false;
+
                     return (
                         <div
                             key={key}
-                            onClick={() => onSelect?.(key)}
+                            onClick={() => !disabled && onSelect?.(key)}
                             className={cn(
                                 "flex items-center gap-5 rounded-lg py-3 px-4",
                                 checked ? "bg-white/5" : "",
@@ -62,9 +64,12 @@ const SelectableList = <TItem,>({
                                 value={key}
                                 id={`item-${key}`}
                                 checked={checked}
+                                disabled={disabled}
                                 className=""
                             />
-                            {renderItem ? renderItem(item, { checked }) : null}
+                            {renderItem
+                                ? renderItem(item, { checked, disabled })
+                                : null}
                         </div>
                     );
                 })}

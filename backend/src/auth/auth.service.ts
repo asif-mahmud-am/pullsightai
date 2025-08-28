@@ -65,20 +65,15 @@ export class AuthService {
 
     async getProfile(userId: any) {
         return await this.dataService.users
-            .findOne(
-                {
-                    _id: userId
-                },
-                'providerId provider username displayName email avatarUrl onboardingStep'
-            )
+            .findOne({
+                _id: userId
+            })
             .populate([
                 {
-                    path: 'currentWorkspace',
-                    select: 'name slug avatarUrl '
+                    path: 'currentWorkspace'
                 },
                 {
-                    path: 'workspaces',
-                    select: 'name slug avatarUrl workSpaceSetting'
+                    path: 'workspaces'
                 }
             ])
     }

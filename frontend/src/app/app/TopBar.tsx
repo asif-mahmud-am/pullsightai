@@ -11,7 +11,7 @@ import Image from "next/image";
 import { Fragment, use } from "react";
 
 const AppTopBar = () => {
-    const user = useAuthStore((s) => s.user);
+    const { user, workspaces, selectedWorkspace } = useAuthStore((s) => s);
     const {
         mutateAsync: updateUser,
         isPending: isUpdatingUser,
@@ -27,10 +27,7 @@ const AppTopBar = () => {
     };
 
     const handleWorkspaceChange = async (workspaceId: string) => {
-        if (
-            user?.currentWorkspace &&
-            user.currentWorkspace?._id === workspaceId
-        ) {
+        if (selectedWorkspace?._id === workspaceId) {
             return;
         }
 
@@ -62,11 +59,7 @@ const AppTopBar = () => {
                         className="justify-between ml-auto bg-[var(--box-800)] flex items-center !h-auto !px-3 rounded-2xl gap-5 w-[214px]"
                     >
                         <div className="text-left">
-                            <div>
-                                {user?.currentWorkspace &&
-                                    typeof user.currentWorkspace !== "string" &&
-                                    user.currentWorkspace.name}
-                            </div>
+                            <div>{selectedWorkspace?.name}</div>
                             <div className="opacity-60 text-xs truncate">
                                 {user?.email || "n/a"}
                             </div>
@@ -79,17 +72,14 @@ const AppTopBar = () => {
                         Switch Organization
                     </div>
                     <div className="mt-3 mb-3 space-y-1">
-                        {user?.workspaces?.map((ws) => {
+                        {workspaces?.map((ws) => {
                             if (typeof ws === "string")
                                 return <Fragment key={ws} />;
                             return (
                                 <div
                                     key={ws._id}
                                     className={`py-2 px-3 rounded-xl cursor-pointer hover:bg-neutral-800 transition-colors ${
-                                        user?.currentWorkspace?._id &&
-                                        typeof user.currentWorkspace !==
-                                            "string" &&
-                                        user.currentWorkspace._id === ws._id
+                                        selectedWorkspace?._id === ws._id
                                             ? "bg-neutral-800"
                                             : ""
                                     }`}

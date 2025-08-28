@@ -5,6 +5,7 @@ export const AUTH_CONSTANTS = {
 
 export const ROUTE_CONSTANTS = {
     // Auth routes
+    AUTH: "/auth",
     LOGIN: "/auth/login",
     REGISTER: "/auth/register",
 
@@ -18,6 +19,7 @@ export const ROUTE_CONSTANTS = {
     ONBOARDING_STEP_6: "/onboarding/step-6",
 
     // Dashboard routes
+    APP: "/app",
     APP_DASHBOARD: "/app/dashboard",
     APP_REPOSITORIES: "/app/repositories",
     APP_PULL_REQUESTS: "/app/pull-requests",

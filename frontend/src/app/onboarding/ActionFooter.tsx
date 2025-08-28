@@ -6,7 +6,6 @@ import {
     RightBarArrowIcon,
 } from "@/components/reusable/icons";
 import { Button } from "@/components/ui/button";
-import { useUpdateUserMutation } from "@/api/queries/auth";
 import { cn } from "@/lib/utils";
 
 interface ActionFooterProps {
@@ -30,8 +29,6 @@ const ActionFooter: FC<ActionFooterProps> = ({
     confirmButtonClassname,
     confirmButtonSubtitle,
 }) => {
-    const { mutateAsync: updateUser } = useUpdateUserMutation();
-
     return (
         <div className="fixed left-0 right-0 bottom-6 w-full z-10">
             <div className="container flex items-center">

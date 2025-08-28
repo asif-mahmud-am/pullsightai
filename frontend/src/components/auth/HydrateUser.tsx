@@ -4,11 +4,15 @@ import { User } from "@/types/user";
 import { useEffect } from "react";
 
 const HydrateUser = ({ user }: { user: User }) => {
-    const setUser = useAuthStore((s) => s.setUser);
-    const setHydrated = useAuthStore((s) => s.setHydrated);
+    const { setWorkspaces, setSelectedWorkspace, setUser, setHydrated } =
+        useAuthStore((s) => s);
 
     useEffect(() => {
-        if (user) setUser(user);
+        if (user) {
+            setUser(user);
+            setWorkspaces(user.workspaces);
+            setSelectedWorkspace(user.currentWorkspace || null);
+        }
         setHydrated();
     }, [user, setUser, setHydrated]);
 

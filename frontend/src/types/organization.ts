@@ -17,4 +17,5 @@ export interface Organization {
     createdAt?: string;
     updatedAt?: string;
     workspaceSetting?: unknown;
+    onboardingStep?: number;
 }

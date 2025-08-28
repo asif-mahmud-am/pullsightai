@@ -110,6 +110,13 @@ export class WorkspaceService {
             await this.analysisService.getUserDataWithWorkspace(user)
         let repositories = makeSubscriptionDto.repositories
         console.log('userData', userData)
+
+        // update workspace onboarding step
+        await this.dataService.workspaces.updateOne(
+            { _id: userData?.currentWorkspace!._id },
+            { $set: { onboardingStep: 0 } }
+        )
+
         Promise.all(
             repositories.map(async (repository) => {
                 let repositoryData =

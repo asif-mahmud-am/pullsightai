@@ -9,7 +9,7 @@ import { gitlabEndpoints } from "../endpoints/gitlab";
 interface UseRepositoryQueryParams {
     provider?: Provider;
     isEnabled?: boolean;
-    orgName?: string;
+    filter?: string;
     page?: number;
     limit?: number;
 }
@@ -17,11 +17,11 @@ interface UseRepositoryQueryParams {
 export const useRepositoryQuery = ({
     provider = "github",
     isEnabled = true,
-    orgName = "",
+    filter = "",
 }: UseRepositoryQueryParams) => {
     const queryFnMap: Record<
         Provider,
-        ({ orgName }: { orgName: string }) => Promise<ApiResponse<Repository[]>>
+        ({ filter }: { filter: string }) => Promise<ApiResponse<Repository[]>>
     > = {
         github: githubEndpoints.getRepos,
         bitbucket: bitbucketEndpoints.getRepos,
@@ -37,7 +37,7 @@ export const useRepositoryQuery = ({
         queryKey: ["repos"],
         queryFn: async () => {
             const response = await queryFn({
-                orgName,
+                filter,
             });
             if (!response?.data) {
                 throw new Error("No data received from response");

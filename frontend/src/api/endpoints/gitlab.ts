@@ -14,13 +14,13 @@ export const gitlabEndpoints = {
             .then((res) => res.data);
     },
     getRepos: async ({
-        orgName,
+        filter,
     }: {
-        orgName?: string;
+        filter?: string;
     }): Promise<ApiResponse<Repository[]>> => {
         return apiClient
             .get("/gitlab/org-repos", {
-                params: {},
+                params: { filter },
             })
             .then((res) => res.data);
     },

@@ -18,13 +18,13 @@ export const bitbucketEndpoints = {
     },
 
     getRepos: async ({
-        orgName,
+        filter,
     }: {
-        orgName: string;
+        filter: string;
     }): Promise<ApiResponse<Repository[]>> => {
         return apiClient
             .get("/bitbucket/org-repos", {
-                params: {},
+                params: { filter },
             })
             .then((res) => res.data);
     },

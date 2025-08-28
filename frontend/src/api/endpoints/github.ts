@@ -9,13 +9,13 @@ export const githubEndpoints = {
         return apiClient.get("/github/organizations").then((res) => res.data);
     },
     getRepos: async ({
-        orgName,
+        filter,
     }: {
-        orgName?: string;
+        filter?: string;
     }): Promise<ApiResponse<Repository[]>> => {
         return apiClient
             .get("/github/org-repos", {
-                params: {},
+                params: { filter },
             })
             .then((res) => res.data);
     },

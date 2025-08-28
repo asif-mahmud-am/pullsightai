@@ -5,6 +5,7 @@ import { Search, GitBranch } from "lucide-react";
 import {
     useOtherRepositoryQuery,
     useAddRepositoryMutation,
+    useRepositoryQuery,
 } from "@/api/queries/repository";
 import Dialog from "@/components/reusable/Dialog";
 import Input from "@/components/reusable/Input";
@@ -17,6 +18,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { formatDate } from "@/lib/dayjs";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
+import Badge from "@/components/reusable/Badge";
 
 interface AddRepositoryDialogProps {
     open: boolean;
@@ -30,18 +32,7 @@ const createColumns = (
 ): ColumnDef<Repository>[] => [
     {
         id: "select",
-        header: ({ table }) => (
-            <Checkbox
-                checked={
-                    table.getIsAllPageRowsSelected() ||
-                    (table.getIsSomePageRowsSelected() && "indeterminate")
-                }
-                onCheckedChange={(value) =>
-                    table.toggleAllPageRowsSelected(!!value)
-                }
-                aria-label="Select all"
-            />
-        ),
+        header: "",
         cell: ({ row }) => {
             const isSelected = selectedRepos.some(
                 (r) => r.id === row.original.id
@@ -86,18 +77,6 @@ const createColumns = (
         },
     },
     {
-        accessorKey: "provider",
-        header: "Provider",
-        cell: ({ row }) => {
-            const provider = row.getValue("provider") as string;
-            return provider ? (
-                <span className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full capitalize">
-                    {provider}
-                </span>
-            ) : null;
-        },
-    },
-    {
         accessorKey: "createdOn",
         header: "Created",
         cell: ({ row }) => {
@@ -122,7 +101,6 @@ const AddRepositoryDialog = ({
 }: AddRepositoryDialogProps) => {
     const [selectedRepos, setSelectedRepos] = useState<Repository[]>([]);
     const [isAdding, setIsAdding] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
     const [columnFilters, setColumnFilters] = useState<
         { id: string; value: unknown }[]
     >([]);
@@ -130,13 +108,11 @@ const AddRepositoryDialog = ({
     const user = useAuthStore((s) => s.user);
 
     // Fetch other repositories for the dialog with pagination
-    const { data, isLoading: isLoadingOtherRepos } = useOtherRepositoryQuery({
+    const { data, isLoading: isLoadingOtherRepos } = useRepositoryQuery({
         provider: user?.provider || "github", // Default to GitHub if not set
         isEnabled: open,
-        page: currentPage,
-        limit: 10, // Show 10 items per page
+        filter: "available",
     });
-    const otherRepos = data?.data?.docs;
 
     // Mutation for adding repositories
     const addRepositoryMutation = useAddRepositoryMutation();
@@ -152,13 +128,6 @@ const AddRepositoryDialog = ({
             }
         });
     };
-
-    // Set up pagination
-    const { Pagination } = usePagination({
-        totalPages: Math.ceil((otherRepos?.length || 0) / 10), // This should come from API response
-        currentPage,
-        onPageChange: setCurrentPage,
-    });
 
     // Create table columns
     const columns = createColumns(selectedRepos, handleRepoToggle);
@@ -201,7 +170,6 @@ const AddRepositoryDialog = ({
             onOpenChange(false);
             setSelectedRepos([]);
             setColumnFilters([]);
-            setCurrentPage(1);
         }
     };
 
@@ -210,7 +178,7 @@ const AddRepositoryDialog = ({
             open={open}
             onOpenChange={handleDialogClose}
             title="Add Repositories"
-            description="Select repositories from your connected accounts to add to your workspace"
+            description="Select repositories from your connected workspace to analyze Pull Requests"
             size="lg"
             actions={[
                 {
@@ -255,33 +223,30 @@ const AddRepositoryDialog = ({
                 />
 
                 {/* Repository Table */}
-                <div className="space-y-4">
+                <div className="space-y-4 max-h-[500px] overflow-y-auto custom-scrollbar">
                     <DataTable
                         isLoading={isLoadingOtherRepos}
                         columns={columns}
-                        data={otherRepos || []}
+                        data={data || []}
                         columnFilters={columnFilters}
                         onColumnFiltersChange={setColumnFilters}
                         className="min-w-full"
                     />
 
                     {/* Pagination */}
-                    <Pagination />
+                    {/* <Pagination /> */}
                 </div>
 
                 {/* Selection Summary */}
                 {selectedRepos.length > 0 && (
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md">
-                        <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <div className="border  p-3 rounded-md">
+                        <p className="text-sm">
                             <strong>{selectedRepos.length}</strong> repository
                             {selectedRepos.length !== 1 ? "ies" : ""} selected
                         </p>
                         <div className="flex flex-wrap gap-1 mt-2">
                             {selectedRepos.map((repo) => (
-                                <span
-                                    key={repo.id}
-                                    className="inline-flex items-center px-2 py-1 bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 text-xs rounded-full"
-                                >
+                                <Badge key={repo.id} type="faded">
                                     {repo.name}
                                     <button
                                         onClick={(e) => {
@@ -292,7 +257,7 @@ const AddRepositoryDialog = ({
                                     >
                                         ×
                                     </button>
-                                </span>
+                                </Badge>
                             ))}
                         </div>
                     </div>

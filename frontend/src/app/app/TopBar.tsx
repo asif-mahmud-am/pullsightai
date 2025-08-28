@@ -1,15 +1,22 @@
 "use client";
 
+import { useUpdateUserMutation } from "@/api/queries/auth";
 import LogoutHandler from "@/components/auth/LogoutHandler";
 import Dropdown from "@/components/reusable/Dropdown";
 import { Button } from "@/components/ui/button";
+import showToast from "@/lib/toast";
 import { useAuthStore } from "@/store/authStore";
 import { ChevronDown, LogOutIcon, Plus } from "lucide-react";
 import Image from "next/image";
-import { use } from "react";
+import { Fragment, use } from "react";
 
 const AppTopBar = () => {
     const user = useAuthStore((s) => s.user);
+    const {
+        mutateAsync: updateUser,
+        isPending: isUpdatingUser,
+        error: updateUserError,
+    } = useUpdateUserMutation();
 
     const handleInstall = () => {
         const apiUrl =
@@ -17,6 +24,22 @@ const AppTopBar = () => {
         const baseUrl = `${apiUrl}/github/install`;
         // Redirect to the GitHub installation URL
         window.location.href = baseUrl;
+    };
+
+    const handleWorkspaceChange = async (workspaceId: string) => {
+        if (
+            user?.currentWorkspace &&
+            user.currentWorkspace?._id === workspaceId
+        ) {
+            return;
+        }
+
+        await updateUser({
+            currentWorkspace: workspaceId,
+        }).then(() => {
+            window.location.reload();
+            // showToast.success("Organization switched successfully!");
+        });
     };
 
     return (
@@ -55,14 +78,29 @@ const AppTopBar = () => {
                     <div className="text-xs uppercase text-muted px-2">
                         Switch Organization
                     </div>
-                    <div className="my-2">
-                        <div className="py-3 px-2">
-                            {user?.currentWorkspace &&
-                            typeof user.currentWorkspace !== "string"
-                                ? user.currentWorkspace.name
-                                : null}
-                        </div>
-                        <div className="py-3 px-2">Gethookd</div>
+                    <div className="mt-3 mb-3 space-y-1">
+                        {user?.workspaces?.map((ws) => {
+                            if (typeof ws === "string")
+                                return <Fragment key={ws} />;
+                            return (
+                                <div
+                                    key={ws._id}
+                                    className={`py-2 px-3 rounded-xl cursor-pointer hover:bg-neutral-800 transition-colors ${
+                                        user?.currentWorkspace?._id &&
+                                        typeof user.currentWorkspace !==
+                                            "string" &&
+                                        user.currentWorkspace._id === ws._id
+                                            ? "bg-neutral-800"
+                                            : ""
+                                    }`}
+                                    onClick={() =>
+                                        handleWorkspaceChange(ws._id)
+                                    }
+                                >
+                                    {ws.name}
+                                </div>
+                            );
+                        })}
                     </div>
                     <div className="text-center">
                         <Button

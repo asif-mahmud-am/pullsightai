@@ -1,7 +1,7 @@
 import { Provider } from "./user";
 
 export interface Organization {
-    _id?: string;
+    _id: string;
     id: string;
     name: string;
     slug?: string;

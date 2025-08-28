@@ -11,6 +11,7 @@ export interface User {
     providerId: string;
     avatarUrl: string;
     currentWorkspace?: Organization; // Can be Organization object or ID
+    workspaces: Organization[];
     onboardingStep: number | null;
 }
 

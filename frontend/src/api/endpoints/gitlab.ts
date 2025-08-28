@@ -1,7 +1,7 @@
 import apiClient from "@/lib/axios";
 import { Organization } from "@/types/organization";
 import { Repository } from "@/types/repository";
-import { ApiResponse } from "@/types/response";
+import { ApiResponse, PaginatedResponse } from "@/types/response";
 import { User } from "@/types/user";
 
 export const gitlabEndpoints = {
@@ -21,6 +21,16 @@ export const gitlabEndpoints = {
         return apiClient
             .get("/gitlab/org-repos", {
                 params: {},
+            })
+            .then((res) => res.data);
+    },
+    getOtherRepos: async ({
+        page = 1,
+        limit = 10,
+    }): Promise<PaginatedResponse<Repository>> => {
+        return apiClient
+            .get("/gitlab/user-repos", {
+                params: { page, limit },
             })
             .then((res) => res.data);
     },

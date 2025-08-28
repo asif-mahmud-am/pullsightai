@@ -8,7 +8,7 @@ import {
     ChartTooltip,
     ChartTooltipContent,
 } from "@/components/ui/chart";
-import { cn } from "@/lib/utils";
+import { cn, numToHip } from "@/lib/utils";
 import { formatDate } from "@/lib/dayjs";
 import {
     Bar,
@@ -45,6 +45,9 @@ const TimeMoneySavedCard = ({
         <ContentCard className={cn(``, className)}>
             <ContentCard.Header className="flex-wrap sm:flex-nowrap gap-y-4">
                 <h3 className="text-muted font-semibold">Time & Money Saved</h3>
+                <div className="text-sm text-neutral-500 border px-3 py-2 rounded-md">
+                    Hourly rate: $<span className="text-neutral-300">50</span>
+                </div>
             </ContentCard.Header>
             <ContentCard.Body isLoading={isFetching}>
                 <div className="flex divide-x gap-9 py-5">
@@ -58,12 +61,14 @@ const TimeMoneySavedCard = ({
                         <div className="opacity-50 text-xs mb-1">
                             Money Saved
                         </div>
-                        <div className="text-3xl">$500</div>
+                        <div className="text-3xl">
+                            ${numToHip((data?.data?.totalTimeSaved || 0) * 50)}
+                        </div>
                     </div>
-                    <div className="pr-9">
+                    {/* <div className="pr-9">
                         <div className="opacity-50 text-xs mb-1">ROI</div>
                         <div className="text-3xl">3.2x</div>
-                    </div>
+                    </div> */}
                 </div>
                 <ChartContainer
                     className="border py-3 pr-3 rounded-xl"

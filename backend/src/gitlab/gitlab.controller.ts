@@ -50,10 +50,10 @@ export class GitlabController {
 
     @UseGuards(AuthGuard('jwt-cookie'))
     @Get('org-repos')
-    async getAllRepositories(@Req() req) {
+    async getAllRepositories(@Req() req, @Query('filter') filter?: string) {
         return {
             message: 'All repositories fetched successfully',
-            result: await this.gitlabService.getAllRepositories(req.user)
+            result: await this.gitlabService.getAllRepositories(req.user, filter)
         }
     }
 

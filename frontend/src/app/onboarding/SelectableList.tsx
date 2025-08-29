@@ -11,11 +11,13 @@ interface SelectableListProps<TItem> {
     itemClassName?: string;
     items: TItem[];
     getKey: (item: TItem) => string;
+    isDisabled?: (item: TItem) => boolean;
     renderHeader?: () => ReactNode;
     renderItem?: (
         item: TItem,
         opts: {
             checked: boolean;
+            disabled: boolean;
         }
     ) => ReactNode;
 }
@@ -30,6 +32,7 @@ const SelectableList = <TItem,>({
     renderHeader,
     renderItem,
     getKey,
+    isDisabled,
 }: SelectableListProps<TItem>) => {
     return (
         <div className={cn(wrapperClassName)}>
@@ -42,13 +45,18 @@ const SelectableList = <TItem,>({
                 {items.map((item: TItem) => {
                     const key = getKey(item);
                     const checked = selectedId === key;
+                    const disabled = isDisabled ? isDisabled(item) : false;
+
                     return (
                         <div
                             key={key}
-                            onClick={() => onSelect?.(key)}
+                            onClick={() => !disabled && onSelect?.(key)}
                             className={cn(
-                                "flex items-center gap-5 cursor-pointer rounded-lg py-3 px-4",
+                                "flex items-center gap-5 rounded-lg py-3 px-4",
                                 checked ? "bg-white/5" : "",
+                                disabled
+                                    ? "opacity-50 cursor-not-allowed"
+                                    : "cursor-pointer",
                                 itemClassName
                             )}
                         >
@@ -56,9 +64,12 @@ const SelectableList = <TItem,>({
                                 value={key}
                                 id={`item-${key}`}
                                 checked={checked}
+                                disabled={disabled}
                                 className=""
                             />
-                            {renderItem ? renderItem(item, { checked }) : null}
+                            {renderItem
+                                ? renderItem(item, { checked, disabled })
+                                : null}
                         </div>
                     );
                 })}

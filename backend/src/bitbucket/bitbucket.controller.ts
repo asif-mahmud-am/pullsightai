@@ -35,11 +35,12 @@ export class BitbucketController {
 
     @UseGuards(AuthGuard('jwt-cookie'))
     @Get('org-repos')
-    async getWorkspaceRepositories(@Req() req: any) {
+    async getWorkspaceRepositories(@Req() req: any, @Query('filter') filter?: string) {
         return {
             message: 'Workspace repositories fetched successfully',
             result: await this.bitbucketService.getWorkspaceRepositories(
-                req.user
+                req.user,
+                filter
             )
         }
     }

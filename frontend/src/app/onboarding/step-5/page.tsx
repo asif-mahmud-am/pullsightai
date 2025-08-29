@@ -54,7 +54,6 @@ const Step5Page = () => {
         })
             .then(() => {
                 updateUser({
-                    onboardingStep: 0,
                     currentWorkspace:
                         typeof user?.currentWorkspace === "object" &&
                         user?.currentWorkspace !== null

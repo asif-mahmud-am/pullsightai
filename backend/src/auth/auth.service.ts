@@ -74,24 +74,36 @@ export class AuthService {
             .populate([
                 {
                     path: 'currentWorkspace',
-                    select: 'name slug avatarUrl '
                 },
                 {
                     path: 'workspaces',
-                    select: 'name slug avatarUrl workSpaceSetting'
                 }
             ])
     }
 
     async updateProfile(user: any, updateProfileDto: UpdateOnboardingStepDto) {
-        if (!updateProfileDto.currentWorkspace) {
+        
+        let updateOperation: any = {}
+        
+        if (updateProfileDto.currentWorkspace === null) {
+            // Use $unset to remove the field from MongoDB document
+            updateOperation = {
+                $unset: { currentWorkspace: "" },
+                $set: { ...updateProfileDto }
+            }
+            delete updateOperation.$set.currentWorkspace
+        } else if (updateProfileDto.currentWorkspace === undefined) {
             delete updateProfileDto.currentWorkspace
+            updateOperation = { $set: { ...updateProfileDto } }
+        } else {
+            updateOperation = { $set: { ...updateProfileDto } }
         }
+
         await this.dataService.users.updateOne(
             {
                 _id: user.sub
             },
-            { ...updateProfileDto },
+            updateOperation,
             { new: true }
         )
         return await this.getProfile(user.sub)

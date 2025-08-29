@@ -1,7 +1,7 @@
 import apiClient from "@/lib/axios";
 import { Organization } from "@/types/organization";
 import { Repository } from "@/types/repository";
-import { ApiResponse } from "@/types/response";
+import { ApiResponse, PaginatedResponse } from "@/types/response";
 import { User } from "@/types/user";
 
 export const githubEndpoints = {
@@ -9,13 +9,23 @@ export const githubEndpoints = {
         return apiClient.get("/github/organizations").then((res) => res.data);
     },
     getRepos: async ({
-        orgName,
+        filter,
     }: {
-        orgName?: string;
+        filter?: string;
     }): Promise<ApiResponse<Repository[]>> => {
         return apiClient
             .get("/github/org-repos", {
-                params: {},
+                params: { filter },
+            })
+            .then((res) => res.data);
+    },
+    getOtherRepos: async ({
+        page = 1,
+        limit = 10,
+    }): Promise<PaginatedResponse<Repository>> => {
+        return apiClient
+            .get("/github/user-repos", {
+                params: { page, limit },
             })
             .then((res) => res.data);
     },

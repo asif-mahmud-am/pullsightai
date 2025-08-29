@@ -51,12 +51,12 @@ const IssueAnalysisCard = ({
                         <div className="opacity-50 text-xs mb-1">Total</div>
                         <div className="text-3xl">{data?.data?.total || 0}</div>
                     </div>
-                    <div className="pr-9">
+                    {/* <div className="pr-9">
                         <div className="opacity-50 text-xs mb-1">
                             Completion Rate
                         </div>
                         <div className="text-3xl">0%</div>
-                    </div>
+                    </div> */}
                 </div>
                 <div className="border rounded-xl">
                     {data?.data?.total < 1 ? (
@@ -106,8 +106,9 @@ const IssueAnalysisCard = ({
                                     ]}
                                     dataKey="value"
                                     nameKey="name"
-                                    innerRadius={60}
+                                    innerRadius={50}
                                     paddingAngle={2}
+                                    outerRadius={70}
                                 />
                                 <ChartLegend
                                     content={

@@ -9,22 +9,25 @@ import Image from "next/image";
 
 export default function AuthGuardClient({ children }: { children: ReactNode }) {
     const pathname = usePathname();
-    const user = useAuthStore((s) => s.user);
-    const hydrated = useAuthStore((s) => s.hydrated);
+    const { user, hydrated, selectedWorkspace } = useAuthStore((s) => s);
 
     useEffect(() => {
-        console.log("First effect", user);
-        if (hydrated && !user) {
+        console.log("First effect", user, selectedWorkspace);
+        if (!hydrated) return; // Wait for hydration
+
+        // redirect to login if user is not authenticated
+        if (!user && !pathname.includes(ROUTE_CONSTANTS.AUTH)) {
             redirect(ROUTE_CONSTANTS.LOGIN);
-            // Alternatively, you can use router.push(ROUTE_CONSTANTS.LOGIN);
         }
+
+        // redirect to onboarding if user is authenticated but no workspace is selected
         if (
-            hydrated &&
-            user &&
-            (user.onboardingStep ?? 0) > 0 &&
-            !pathname.includes(ROUTE_CONSTANTS.ONBOARDING) // need to check current step and pathname to redirect to proper step
+            (!selectedWorkspace ||
+                (selectedWorkspace?.onboardingStep &&
+                    selectedWorkspace?.onboardingStep > 0)) &&
+            !pathname.includes(ROUTE_CONSTANTS.ONBOARDING)
         ) {
-            const onboardingStep = user.onboardingStep;
+            const onboardingStep = selectedWorkspace?.onboardingStep;
             if (onboardingStep === 2) {
                 redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_2);
             } else if (onboardingStep === 3) {
@@ -36,16 +39,53 @@ export default function AuthGuardClient({ children }: { children: ReactNode }) {
             } else {
                 redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_1);
             }
-        } else if (
-            hydrated &&
+        }
+
+        // redirect to dashboard if user is authenticated and workspace is selected
+        if (
             user &&
-            (user.onboardingStep ?? 0) == 0 &&
-            (pathname.includes(ROUTE_CONSTANTS.ONBOARDING) ||
-                pathname.includes("auth"))
+            selectedWorkspace &&
+            (!selectedWorkspace.onboardingStep ||
+                selectedWorkspace.onboardingStep == 0) &&
+            !pathname.includes(ROUTE_CONSTANTS.APP)
         ) {
             redirect(ROUTE_CONSTANTS.APP_DASHBOARD);
         }
-    }, [user, hydrated]);
+    }, [user, hydrated, selectedWorkspace]);
+
+    // useEffect(() => {
+    //     console.log("First effect", user);
+    //     if (hydrated && !user) {
+    //         redirect(ROUTE_CONSTANTS.LOGIN);
+    //     }
+    //     if (
+    //         hydrated &&
+    //         user &&
+    //         (user.onboardingStep ?? 0) > 0 &&
+    //         !pathname.includes(ROUTE_CONSTANTS.ONBOARDING)
+    //     ) {
+    //         const onboardingStep = user.onboardingStep;
+    //         if (onboardingStep === 2) {
+    //             redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_2);
+    //         } else if (onboardingStep === 3) {
+    //             redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_3);
+    //         } else if (onboardingStep === 4) {
+    //             redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_4);
+    //         } else if (onboardingStep === 5) {
+    //             redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_5);
+    //         } else {
+    //             redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_1);
+    //         }
+    //     } else if (
+    //         hydrated &&
+    //         user &&
+    //         (user.onboardingStep ?? 0) == 0 &&
+    //         (pathname.includes(ROUTE_CONSTANTS.ONBOARDING) ||
+    //             pathname.includes("auth"))
+    //     ) {
+    //         redirect(ROUTE_CONSTANTS.APP_DASHBOARD);
+    //     }
+    // }, [user, hydrated]);
 
     if (!hydrated)
         return (

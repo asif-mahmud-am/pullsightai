@@ -16,6 +16,7 @@ import { CreateAndUpdateWorkspaceSettingsDto } from 'src/workspace/dto/create-up
 import { MakeSubscriptionDto } from 'src/workspace/dto/make-subscription.dto'
 import { UpdateRepositoryDto } from 'src/workspace/dto/update-repository.dto'
 import { WorkspaceService } from './workspace.service'
+import { CreateRepositoryDto } from './dto/create-repository.dto'
 
 @Controller({
     path: 'workspace',
@@ -34,6 +35,21 @@ export class WorkspaceController {
             message: 'Subscription created successfully',
             result: await this.workspaceService.makeSubscription(
                 makeSubscriptionDto,
+                req.user
+            )
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Post('repositories')
+    async createRepository(
+        @Body() createRepositoryDto: CreateRepositoryDto,
+        @Req() req: any
+    ) {
+        return {
+            message: 'Repositories added successfully',
+            result: await this.workspaceService.createRepository(
+                createRepositoryDto,
                 req.user
             )
         }

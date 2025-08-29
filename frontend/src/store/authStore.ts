@@ -1,18 +1,39 @@
+import { Organization } from "@/types/organization";
 import { User } from "@/types/user";
 import { create } from "zustand";
 
 type AuthState = {
     hydrated: boolean;
     user: User | null;
-    setHydrated: () => void;
-    setUser: (user: User) => void;
-    clearUser: () => void;
+    selectedWorkspace: Organization | null;
+    workspaces: Organization[] | null;
 };
 
-export const useAuthStore = create<AuthState>((set) => ({
+interface AuthActions {
+    setHydrated: () => void;
+    setUser: (user: User) => void;
+    setSelectedWorkspace: (workspace: Organization | null) => void;
+    setWorkspaces: (workspaces: Organization[] | null) => void;
+    clearStore: () => void;
+}
+
+interface AuthStore extends AuthState, AuthActions {}
+
+export const useAuthStore = create<AuthStore>((set) => ({
     hydrated: false,
     user: null,
-    setHydrated: () => set({ hydrated: true }),
-    setUser: (user) => set({ user }),
-    clearUser: () => set({ user: null }),
+    selectedWorkspace: null,
+    workspaces: null,
+    setHydrated: (): void => set({ hydrated: true }),
+    setUser: (user: User): void => set({ user }),
+    setSelectedWorkspace: (workspace: Organization | null): void =>
+        set({ selectedWorkspace: workspace }),
+    setWorkspaces: (workspaces: Organization[] | null): void =>
+        set({ workspaces }),
+    clearStore: (): void =>
+        set({
+            user: null,
+            selectedWorkspace: null,
+            workspaces: null,
+        }),
 }));

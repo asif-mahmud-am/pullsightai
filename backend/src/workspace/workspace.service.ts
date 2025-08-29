@@ -9,6 +9,7 @@ import { GitlabService } from 'src/gitlab/gitlab.service'
 import { CreateAndUpdateWorkspaceSettingsDto } from 'src/workspace/dto/create-update-workspace-settings.dto'
 import { MakeSubscriptionDto } from 'src/workspace/dto/make-subscription.dto'
 import { UpdateRepositoryDto } from 'src/workspace/dto/update-repository.dto'
+import { CreateRepositoryDto } from './dto/create-repository.dto'
 
 @Injectable()
 export class WorkspaceService {
@@ -188,6 +189,50 @@ export class WorkspaceService {
                 )
             }
         })
+        return {}
+    }
+
+    async createRepository(createRepositoryDto: CreateRepositoryDto,
+        user: any
+    ) {
+        
+        const userData =
+            await this.analysisService.getUserDataWithWorkspace(user)
+        let repositories = createRepositoryDto.repositories
+
+        Promise.all(
+            repositories.map(async (repository) => {
+                let repositoryData =
+                    await this.dataService.repositories.findOne({
+                        id: repository['id'],
+                        provider: userData.provider,
+                        workspace: userData?.currentWorkspace!._id
+                    })
+
+                if (!repositoryData) {
+                    repository = await this.setWebhook(userData, repository)
+                    await this.dataService.repositories.create({
+                        ...repository,
+                        provider: userData.provider,
+                        workspace: userData?.currentWorkspace!._id,
+                        isActive: true
+                    })
+                } else {
+                    if (!repositoryData.webhookToken) {
+                        repository = await this.setWebhook(userData, repository)
+                    }
+                    await this.dataService.repositories.updateOne(
+                        { _id: repositoryData['_id'] },
+                        {
+                            $set: {
+                                ...repository,
+                                isActive: true
+                            }
+                        }
+                    )
+                }
+            })
+        )
         return {}
     }
 

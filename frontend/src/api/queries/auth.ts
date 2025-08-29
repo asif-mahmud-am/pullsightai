@@ -4,12 +4,16 @@ import { useAuthStore } from "@/store/authStore";
 import { authEndpoints } from "../endpoints/auth";
 
 export const useUserQuery = () => {
-    const setUser = useAuthStore((s) => s.setUser);
+    const { setSelectedWorkspace, setWorkspaces, setUser } = useAuthStore(
+        (s) => s
+    );
     return useQuery({
         queryKey: ["user"],
         queryFn: async () => {
             const user = await authEndpoints.getMe();
             setUser(user);
+            setWorkspaces(user.workspaces);
+            setSelectedWorkspace(user.currentWorkspace || null);
             return user;
         },
         staleTime: 5 * 60 * 1000,
@@ -19,12 +23,12 @@ export const useUserQuery = () => {
 
 export const useLogoutMutation = () => {
     const queryClient = useQueryClient();
-    const clearUser = useAuthStore((s) => s.clearUser);
+    const clearStore = useAuthStore((s) => s.clearStore);
 
     return useMutation({
         mutationFn: authEndpoints.logout,
         onSuccess: () => {
-            clearUser();
+            clearStore();
             queryClient.removeQueries({ queryKey: ["user"] });
         },
     });
@@ -32,13 +36,13 @@ export const useLogoutMutation = () => {
 
 export const useUpdateUserMutation = () => {
     const queryClient = useQueryClient();
-    const { user, setUser } = useAuthStore((s) => s);
+    const { user, setUser, setSelectedWorkspace } = useAuthStore((s) => s);
 
     return useMutation({
         mutationFn: authEndpoints.updateUser,
         onSuccess: (data) => {
             setUser({ ...user, ...data.data });
-            // console.log("User updated successfully", user, data.data);
+            setSelectedWorkspace(data.data.currentWorkspace || null);
             queryClient.invalidateQueries({ queryKey: ["user", "repos"] });
         },
     });

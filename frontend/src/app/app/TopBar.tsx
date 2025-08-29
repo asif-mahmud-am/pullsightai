@@ -1,22 +1,50 @@
 "use client";
 
+import { useUpdateUserMutation } from "@/api/queries/auth";
 import LogoutHandler from "@/components/auth/LogoutHandler";
 import Dropdown from "@/components/reusable/Dropdown";
 import { Button } from "@/components/ui/button";
+import { ROUTE_CONSTANTS } from "@/lib/constants";
+import showToast from "@/lib/toast";
 import { useAuthStore } from "@/store/authStore";
 import { ChevronDown, LogOutIcon, Plus } from "lucide-react";
 import Image from "next/image";
-import { use } from "react";
+import { redirect } from "next/navigation";
+import { Fragment, use } from "react";
 
 const AppTopBar = () => {
-    const user = useAuthStore((s) => s.user);
+    const { user, workspaces, selectedWorkspace, setSelectedWorkspace } =
+        useAuthStore((s) => s);
+    const {
+        mutateAsync: updateUser,
+        isPending: isUpdatingUser,
+        error: updateUserError,
+    } = useUpdateUserMutation();
 
-    const handleInstall = () => {
-        const apiUrl =
-            process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
-        const baseUrl = `${apiUrl}/github/install`;
-        // Redirect to the GitHub installation URL
-        window.location.href = baseUrl;
+    const onboardedWorkspaces = workspaces?.filter(
+        (workspace) =>
+            !workspace.onboardingStep || workspace.onboardingStep == 0
+    );
+
+    const handleAddNewWorkspace = () => {
+        updateUser({
+            currentWorkspace: null,
+        }).then(() => {
+            redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_1);
+        });
+    };
+
+    const handleWorkspaceChange = async (workspaceId: string) => {
+        if (selectedWorkspace?._id === workspaceId) {
+            return;
+        }
+
+        await updateUser({
+            currentWorkspace: workspaceId,
+        }).then(() => {
+            window.location.reload();
+            // showToast.success("Organization switched successfully!");
+        });
     };
 
     return (
@@ -39,11 +67,7 @@ const AppTopBar = () => {
                         className="justify-between ml-auto bg-[var(--box-800)] flex items-center !h-auto !px-3 rounded-2xl gap-5 w-[214px]"
                     >
                         <div className="text-left">
-                            <div>
-                                {user?.currentWorkspace &&
-                                    typeof user.currentWorkspace !== "string" &&
-                                    user.currentWorkspace.name}
-                            </div>
+                            <div>{selectedWorkspace?.name}</div>
                             <div className="opacity-60 text-xs truncate">
                                 {user?.email || "n/a"}
                             </div>
@@ -55,21 +79,33 @@ const AppTopBar = () => {
                     <div className="text-xs uppercase text-muted px-2">
                         Switch Organization
                     </div>
-                    <div className="my-2">
-                        <div className="py-3 px-2">
-                            {user?.currentWorkspace &&
-                            typeof user.currentWorkspace !== "string"
-                                ? user.currentWorkspace.name
-                                : null}
-                        </div>
-                        <div className="py-3 px-2">Gethookd</div>
+                    <div className="mt-3 mb-3 space-y-1">
+                        {onboardedWorkspaces?.map((ws) => {
+                            if (typeof ws === "string")
+                                return <Fragment key={ws} />;
+                            return (
+                                <div
+                                    key={ws._id}
+                                    className={`py-2 px-3 rounded-xl cursor-pointer hover:bg-neutral-800 transition-colors ${
+                                        selectedWorkspace?._id === ws._id
+                                            ? "bg-neutral-800"
+                                            : ""
+                                    }`}
+                                    onClick={() =>
+                                        handleWorkspaceChange(ws._id)
+                                    }
+                                >
+                                    {ws.name}
+                                </div>
+                            );
+                        })}
                     </div>
                     <div className="text-center">
                         <Button
                             variant="outline"
                             className="!border-primary text-primary"
                             size="xs"
-                            onClick={handleInstall}
+                            onClick={handleAddNewWorkspace}
                         >
                             <Plus />
                             Add new organization

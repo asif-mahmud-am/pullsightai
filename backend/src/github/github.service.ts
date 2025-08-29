@@ -216,7 +216,7 @@ export class GithubService {
         return prList
     }
 
-    async listOrgRepositories(user: any) {
+    async listOrgRepositories(user: any, filter?: string) {
         const userData = await this.dataService.users
             .findOne({ _id: user.sub })
             .populate('currentWorkspace')
@@ -304,6 +304,23 @@ export class GithubService {
                         updatedOn: repo.pushed_at,
                         openIssues: repo.open_issues_count
                     }) as Repository
+            )
+        }
+
+        // Filter repositories based on the filter parameter
+        if (filter === 'available') {
+            // Get repositories that are already added to the current workspace
+            const addedRepos = await this.dataService.repositories.find({
+                workspace: userData.currentWorkspace['_id'],
+                provider: 'github'
+            })
+            
+            // Get the repository IDs that are already added
+            const addedRepoIds = addedRepos.map(repo => repo.id.toString())
+            
+            // Filter out repositories that are already added
+            allRepositories = allRepositories.filter(repo => 
+                !addedRepoIds.includes(repo.id.toString())
             )
         }
 

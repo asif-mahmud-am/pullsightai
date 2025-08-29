@@ -1,4 +1,6 @@
-import React, { FC } from "react";
+"use client";
+
+import { FC } from "react";
 import {
     ArrowRightIcon,
     LoadingIcon,
@@ -6,8 +8,9 @@ import {
     RightBarArrowIcon,
 } from "@/components/reusable/icons";
 import { Button } from "@/components/ui/button";
-import { useUpdateUserMutation } from "@/api/queries/auth";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/authStore";
+import { useUpdateUserMutation } from "@/api/queries/auth";
 
 interface ActionFooterProps {
     buttonText?: string;
@@ -30,7 +33,26 @@ const ActionFooter: FC<ActionFooterProps> = ({
     confirmButtonClassname,
     confirmButtonSubtitle,
 }) => {
-    const { mutateAsync: updateUser } = useUpdateUserMutation();
+    const { workspaces } = useAuthStore();
+    const onboardedWorkspaces = workspaces
+        ?.filter(
+            (workspace) =>
+                !workspace.onboardingStep || workspace.onboardingStep == 0
+        )
+        ?.map((ws) => ws._id);
+
+    const {
+        mutateAsync: updateUser,
+        isPending: isUpdatingUser,
+        error: updateUserError,
+    } = useUpdateUserMutation();
+
+    const handleBackToDashboard = () => {
+        if (!onboardedWorkspaces?.length) return;
+        updateUser({
+            currentWorkspace: onboardedWorkspaces[0],
+        });
+    };
 
     return (
         <div className="fixed left-0 right-0 bottom-6 w-full z-10">
@@ -46,32 +68,47 @@ const ActionFooter: FC<ActionFooterProps> = ({
                         </span>
                     </button>
                 )}
-                <div className="ml-auto gap-3 flex flex-col items-end">
-                    {buttonText && onClick && (
-                        <Button
+                <div className="ml-auto gap-3 flex items-center">
+                    {onboardedWorkspaces && onboardedWorkspaces?.length > 0 && (
+                        <button
                             className={cn(
-                                isEnabled
-                                    ? "!bg-white !text-black hover:!bg-gray-200 cursor-pointer"
-                                    : "bg-[var(--box-800)] text-[var(--subtitle-500)]",
-                                confirmButtonClassname
+                                "text-base pr-3 py-2.5 rounded-2xl flex items-center text-[var(--subtitle-300)] hover:text-[var(--subtitle-100)] cursor-pointer"
                             )}
-                            onClick={onClick}
-                            disabled={!isEnabled}
-                            size={"xl"}
+                            onClick={handleBackToDashboard}
                         >
-                            <span>{buttonText}</span>
-                            {isLoading ? (
-                                <LoadingIcon className="w-5 h-5 ml-2" />
-                            ) : (
-                                <ArrowRightIcon className="w-5 h-5 ml-2" />
-                            )}
-                        </Button>
+                            <ArrowLeftIcon className="w-5 h-5 mr-2" />
+                            <span className="hidden md:block">
+                                Back to Dashboard
+                            </span>
+                        </button>
                     )}
-                    {confirmButtonSubtitle && (
-                        <div className="text-muted text-sm">
-                            {confirmButtonSubtitle}
-                        </div>
-                    )}
+                    <div className="gap-1 flex flex-col items-end">
+                        {buttonText && onClick && (
+                            <Button
+                                className={cn(
+                                    isEnabled
+                                        ? "!bg-white !text-black hover:!bg-gray-200 cursor-pointer"
+                                        : "bg-[var(--box-800)] text-[var(--subtitle-500)]",
+                                    confirmButtonClassname
+                                )}
+                                onClick={onClick}
+                                disabled={!isEnabled}
+                                size={"xl"}
+                            >
+                                <span>{buttonText}</span>
+                                {isLoading ? (
+                                    <LoadingIcon className="w-5 h-5 ml-2" />
+                                ) : (
+                                    <ArrowRightIcon className="w-5 h-5 ml-2" />
+                                )}
+                            </Button>
+                        )}
+                        {confirmButtonSubtitle && (
+                            <div className="text-muted text-sm">
+                                {confirmButtonSubtitle}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

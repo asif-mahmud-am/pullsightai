@@ -93,7 +93,7 @@ export class BitbucketService {
         return existingWorkspace
     }
 
-    async getWorkspaceRepositories(user: any): Promise<Repository[]> {
+    async getWorkspaceRepositories(user: any, filter?: string): Promise<Repository[]> {
         const userData = await this.dataService.users
             .findOne({ _id: user.sub })
             .populate('currentWorkspace')
@@ -103,10 +103,29 @@ export class BitbucketService {
             )
         }
 
-        return await this.bitbucketApiService.getWorkspaceRepositories(
+        const allRepositories = await this.bitbucketApiService.getWorkspaceRepositories(
             userData.accessToken as string,
             userData?.currentWorkspace['slug'] as string
         )
+
+        // Filter repositories based on the filter parameter
+        if (filter === 'available') {
+            // Get repositories that are already added to the current workspace
+            const addedRepos = await this.dataService.repositories.find({
+                workspace: userData.currentWorkspace['_id'],
+                provider: 'bitbucket'
+            })
+            
+            // Get the repository IDs that are already added
+            const addedRepoIds = addedRepos.map(repo => repo.id.toString())
+            
+            // Filter out repositories that are already added
+            return allRepositories.filter(repo => 
+                !addedRepoIds.includes(repo.id.toString())
+            )
+        }
+
+        return allRepositories
     }
 
     async listOrganizationSpecificRepositories(

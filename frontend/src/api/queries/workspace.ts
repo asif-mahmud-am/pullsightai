@@ -60,6 +60,17 @@ export const useUpdateRepositoryMutation = () => {
     });
 };
 
+export const useAddRepositoriesMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: workspaceEndpoints.addRepositories,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["repositories"] });
+        },
+    });
+};
+
 export const useGetWorkspacePullRequestsQuery = ({
     page = 1,
     limit = 10,

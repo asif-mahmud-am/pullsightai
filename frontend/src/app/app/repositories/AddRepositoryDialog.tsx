@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, GitBranch } from "lucide-react";
+import { Search, GitBranch, X } from "lucide-react";
 import {
     useOtherRepositoryQuery,
     useAddRepositoryMutation,
@@ -19,6 +19,7 @@ import { formatDate } from "@/lib/dayjs";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import Badge from "@/components/reusable/Badge";
+import { useAddRepositoriesMutation } from "@/api/queries/workspace";
 
 interface AddRepositoryDialogProps {
     open: boolean;
@@ -100,7 +101,6 @@ const AddRepositoryDialog = ({
     onOpenChange,
 }: AddRepositoryDialogProps) => {
     const [selectedRepos, setSelectedRepos] = useState<Repository[]>([]);
-    const [isAdding, setIsAdding] = useState(false);
     const [columnFilters, setColumnFilters] = useState<
         { id: string; value: unknown }[]
     >([]);
@@ -115,7 +115,7 @@ const AddRepositoryDialog = ({
     });
 
     // Mutation for adding repositories
-    const addRepositoryMutation = useAddRepositoryMutation();
+    const { mutateAsync, isPending } = useAddRepositoriesMutation();
 
     // Handle repository selection
     const handleRepoToggle = (repo: Repository) => {
@@ -138,35 +138,54 @@ const AddRepositoryDialog = ({
             showToast.error("Please select at least one repository");
             return;
         }
+        const repositories = selectedRepos.map((repo) => {
+            return {
+                ...repo,
+                id: repo.id.toString(),
+            };
+        });
 
-        setIsAdding(true);
-
-        try {
-            await addRepositoryMutation.mutateAsync({
-                repositories: selectedRepos.map((repo) => ({
-                    id: repo.id,
-                    name: repo.name,
-                    provider: "github", // Make this dynamic later
-                })),
+        await mutateAsync({
+            repositories,
+        })
+            .then(() => {
+                handleDialogClose();
+                showToast.success(
+                    `Successfully added ${selectedRepos.length} repositor${
+                        selectedRepos.length === 1 ? "y" : "ies"
+                    }`
+                );
+            })
+            .catch((error) => {
+                console.error("Failed to add repositories:", error);
             });
 
-            handleDialogClose();
-            showToast.success(
-                `Successfully added ${selectedRepos.length} repositor${
-                    selectedRepos.length === 1 ? "y" : "ies"
-                }`
-            );
-        } catch (error) {
-            // Error is already handled by the mutation
-            console.error("Failed to add repositories:", error);
-        } finally {
-            setIsAdding(false);
-        }
+        // try {
+        //     await addRepositoryMutation.mutateAsync({
+        //         repositories: selectedRepos.map((repo) => ({
+        //             id: repo.id,
+        //             name: repo.name,
+        //             provider: "github", // Make this dynamic later
+        //         })),
+        //     });
+
+        //     handleDialogClose();
+        //     showToast.success(
+        //         `Successfully added ${selectedRepos.length} repositor${
+        //             selectedRepos.length === 1 ? "y" : "ies"
+        //         }`
+        //     );
+        // } catch (error) {
+        //     // Error is already handled by the mutation
+        //     console.error("Failed to add repositories:", error);
+        // } finally {
+        //     setIsAdding(false);
+        // }
     };
 
     // Handle dialog close
     const handleDialogClose = () => {
-        if (!isAdding) {
+        if (!isPending) {
             onOpenChange(false);
             setSelectedRepos([]);
             setColumnFilters([]);
@@ -185,19 +204,19 @@ const AddRepositoryDialog = ({
                     label: "Cancel",
                     onClick: handleDialogClose,
                     variant: "outline",
-                    disabled: isAdding,
+                    disabled: isPending,
                 },
                 {
-                    label: `Add ${selectedRepos.length} Repository${
+                    label: `Add Repository${
                         selectedRepos.length !== 1 ? "ies" : ""
                     }`,
                     onClick: handleAddRepositories,
                     variant: "default",
-                    loading: isAdding,
+                    loading: isPending,
                     disabled: selectedRepos.length === 0,
                 },
             ]}
-            closeOnOverlayClick={!isAdding}
+            closeOnOverlayClick={!isPending}
         >
             <div className="space-y-4">
                 {/* Search Input */}
@@ -246,16 +265,21 @@ const AddRepositoryDialog = ({
                         </p>
                         <div className="flex flex-wrap gap-1 mt-2">
                             {selectedRepos.map((repo) => (
-                                <Badge key={repo.id} type="faded">
+                                <Badge
+                                    key={repo.id}
+                                    type="faded"
+                                    className="items-center"
+                                >
                                     {repo.name}
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleRepoToggle(repo);
                                         }}
-                                        className="ml-1 hover:text-blue-600"
+                                        className="p-1 cursor-pointer"
+                                        type="button"
                                     >
-                                        ×
+                                        <X height={12} width="auto" />
                                     </button>
                                 </Badge>
                             ))}

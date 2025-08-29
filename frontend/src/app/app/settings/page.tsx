@@ -100,7 +100,7 @@ const SettingsPage = () => {
             {/* Settings Card */}
             <ContentCard className="">
                 {/* Section Header */}
-                <ContentCard.Header className="flex-col items-start">
+                <ContentCard.Header className="px-6 py-6 flex-col items-start border-b">
                     <h3 className="text-base font-semibold text-gray-900 dark:text-white">
                         API Configuration
                     </h3>
@@ -169,6 +169,7 @@ const SettingsPage = () => {
                                 type="submit"
                                 disabled={isPending}
                                 className="min-w-[120px]"
+                                size={"lg"}
                             >
                                 {isPending ? "Saving..." : "Save changes"}
                             </Button>

@@ -2,17 +2,17 @@ import apiClient from "@/lib/axios";
 import { get } from "http";
 
 export const workspaceEndpoints = {
-    updateWorkspaceSettings: (payload: unknown) => {
+    updateWorkspaceSettings: async (payload: unknown) => {
         return apiClient
             .patch("/workspace/update-settings", payload)
             .then((res) => res.data);
     },
-    createSubscription: (payload: unknown) =>
+    createSubscription: async (payload: unknown) =>
         apiClient
             .post("/workspace/subscription", payload)
             .then((res) => res.data),
 
-    getRepositories: ({
+    getRepositories: async ({
         page = 1,
         limit = 10,
         isActive,
@@ -30,13 +30,19 @@ export const workspaceEndpoints = {
             .then((res) => res.data);
     },
 
-    updateRepository: (payload: { id: string; data: unknown }) => {
+    updateRepository: async (payload: { id: string; data: unknown }) => {
         return apiClient
             .patch(`/workspace/repositories/${payload.id}`, payload.data)
             .then((res) => res.data);
     },
 
-    getPullRequests: ({
+    addRepositories: async (payload: unknown) => {
+        return apiClient
+            .post("/workspace/repositories", payload)
+            .then((res) => res.data);
+    },
+
+    getPullRequests: async ({
         page = 1,
         limit = 10,
         repo = null,
@@ -55,7 +61,7 @@ export const workspaceEndpoints = {
             })
             .then((res) => res.data);
     },
-    getTeamMembers: ({
+    getTeamMembers: async ({
         page = 1,
         limit = 10,
     }: {

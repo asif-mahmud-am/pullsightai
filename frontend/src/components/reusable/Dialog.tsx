@@ -10,6 +10,7 @@ import {
     DialogTitle,
     DialogTrigger,
     DialogClose,
+    DialogOverlay,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -83,6 +84,7 @@ const Dialog = ({
         <ShadDialog open={open} onOpenChange={onOpenChange}>
             {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
 
+            <DialogOverlay className="backdrop-blur-xs bg-black/10" />
             <DialogContent
                 className={cn(sizeVariants[size], contentClassName)}
                 showCloseButton={showCloseButton}

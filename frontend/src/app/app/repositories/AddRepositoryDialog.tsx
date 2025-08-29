@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, GitBranch, X } from "lucide-react";
+import { Search, GitBranch, X, RefreshCw } from "lucide-react";
 import {
     useOtherRepositoryQuery,
     useAddRepositoryMutation,
@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import Badge from "@/components/reusable/Badge";
 import { useAddRepositoriesMutation } from "@/api/queries/workspace";
+import Button from "@/components/reusable/Button";
 
 interface AddRepositoryDialogProps {
     open: boolean;
@@ -105,10 +106,14 @@ const AddRepositoryDialog = ({
         { id: string; value: unknown }[]
     >([]);
 
-    const user = useAuthStore((s) => s.user);
+    const { user, selectedWorkspace } = useAuthStore();
 
     // Fetch other repositories for the dialog with pagination
-    const { data, isLoading: isLoadingOtherRepos } = useRepositoryQuery({
+    const {
+        data,
+        isFetching: isLoadingOtherRepos,
+        refetch: refetchRepositories,
+    } = useRepositoryQuery({
         provider: user?.provider || "github", // Default to GitHub if not set
         isEnabled: open,
         filter: "available",
@@ -159,28 +164,6 @@ const AddRepositoryDialog = ({
             .catch((error) => {
                 console.error("Failed to add repositories:", error);
             });
-
-        // try {
-        //     await addRepositoryMutation.mutateAsync({
-        //         repositories: selectedRepos.map((repo) => ({
-        //             id: repo.id,
-        //             name: repo.name,
-        //             provider: "github", // Make this dynamic later
-        //         })),
-        //     });
-
-        //     handleDialogClose();
-        //     showToast.success(
-        //         `Successfully added ${selectedRepos.length} repositor${
-        //             selectedRepos.length === 1 ? "y" : "ies"
-        //         }`
-        //     );
-        // } catch (error) {
-        //     // Error is already handled by the mutation
-        //     console.error("Failed to add repositories:", error);
-        // } finally {
-        //     setIsAdding(false);
-        // }
     };
 
     // Handle dialog close
@@ -197,7 +180,7 @@ const AddRepositoryDialog = ({
             open={open}
             onOpenChange={handleDialogClose}
             title="Add Repositories"
-            description="Select repositories from your connected workspace to analyze Pull Requests"
+            description="Select repositories from your connected workspace to analyze Pull Requests. Here you're seeing list of repositories accessible to PullSight."
             size="lg"
             actions={[
                 {
@@ -219,6 +202,36 @@ const AddRepositoryDialog = ({
             closeOnOverlayClick={!isPending}
         >
             <div className="space-y-4">
+                {selectedWorkspace?.provider == "github" && (
+                    <div className="border rounded-lg p-3 flex gap-3">
+                        <p className="text-sm text-muted-foreground">
+                            Missing repositories? Ensure that PullSight has
+                            access to your GitHub repositories.
+                        </p>
+
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="ml-auto md:ml-0"
+                            onClick={() => refetchRepositories()}
+                            title="Refresh repositories"
+                        >
+                            <RefreshCw className="inline" />
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                const url =
+                                    selectedWorkspace.type == "Organization"
+                                        ? `https://github.com/organizations/${selectedWorkspace.slug}/settings/installations/${selectedWorkspace.installationId}`
+                                        : `https://github.com/settings/installations/${selectedWorkspace.installationId}`;
+                                window.open(url, "_blank");
+                            }}
+                        >
+                            Grant Access
+                        </Button>
+                    </div>
+                )}
                 {/* Search Input */}
                 <Input
                     placeholder="Search repositories..."

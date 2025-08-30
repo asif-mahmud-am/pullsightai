@@ -8,14 +8,17 @@ class ClaudeService(BaseLLMService):
     Claude LLM service for PR summary and code review generation.
     Implements the BaseLLMService interface for easy swapping.
     """
-    def __init__(self):
-        self.client = AsyncAnthropic(api_key=settings.CLAUDE_API_KEY)
+    def __init__(self, api_key=None):
+        self.client = AsyncAnthropic(api_key=api_key or settings.CLAUDE_API_KEY)
+        self.model_name = "claude-opus-4-1-20250805"  # Default model
 
-    async def generate_pr_summary(self, prompt: str) -> str:
+    async def generate_pr_summary(self, prompt: str, model_name: str) -> str:
         summary_usage = {}
+        if model_name is None:
+            model_name = self.model_name
         try:
             response = await self.client.messages.create(
-                model="claude-opus-4-1-20250805",
+                model=model_name,
                 max_tokens=5000,
                 temperature=0.5,
                 system="You are a code review assistant. Summarize the pull request for a developer audience.",
@@ -33,12 +36,14 @@ class ClaudeService(BaseLLMService):
             print(f"Error calling Claude API for summary: {e}")
             return "Could not generate PR summary."
 
-    async def generate_code_review(self, prompt: str) -> str:
+    async def generate_code_review(self, prompt: str, model_name: str) -> str:
         review_usage = {}
+        if model_name is None:
+            model_name = self.model_name
         try:
             # Prompt-only approach: ask Claude to return ONLY a JSON array of review items
             response = await self.client.messages.create(
-                model="claude-opus-4-1-20250805",
+                model=model_name,
                 max_tokens=2048,
                 temperature=0.2,
                 system=(

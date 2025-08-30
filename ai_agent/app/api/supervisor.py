@@ -83,6 +83,14 @@ def validate_pr_payload(payload: PRPayloadV2) -> tuple[bool, str, dict]:
         if missing_fields:
             return False, f"Missing required fields: {', '.join(missing_fields)}", {}
         
+        api_key = pr.get("apiKey")
+        if api_key is None or api_key.strip() == "":
+            api_key = None
+
+        model_name = pr.get("modelName")
+        if model_name is None or model_name.strip() == "":
+            model_name = None
+        
         # Extract and validate data
         extracted_data = {
             "provider": pr.get("provider", "unknown"),
@@ -94,7 +102,9 @@ def validate_pr_payload(payload: PRPayloadV2) -> tuple[bool, str, dict]:
             "prBody": pr.get("prBody", ""),
             "author_name": pr.get("prUser", ""),
             "repo_structure_summary": pr.get("prRepoName", ""),
-            "prFiles": pr.get("prFiles", [])
+            "prFiles": pr.get("prFiles", []),
+            "api_key": api_key,
+            "model_name": model_name
         }
         
         # Validate prFiles structure if present
@@ -129,7 +139,7 @@ async def process_pr_review_background(extracted_data: dict):
     logger.info(f"Configuration: Provider={extracted_data['provider']}, InstallationId={extracted_data['installation_id']}, AnalysisId={extracted_data['pullRequestAnalysisId']}")
     logger.info(f"Files to process: {extracted_data['number_of_files']}")
     
-    llm_service = ClaudeService()
+    llm_service = ClaudeService(api_key=extracted_data.get("api_key"))
     
     # Prepare summary generation with chunking strategy
     if extracted_data["prFiles"]:
@@ -161,7 +171,7 @@ async def process_pr_review_background(extracted_data: dict):
             chunk_variables = prepare_chunk_for_summary(chunk, extracted_data)
             
             try:
-                chunk_summary = await generate_summary_response(chunk_variables, llm_service)
+                chunk_summary = await generate_summary_response(chunk_variables, llm_service, chunk_variables.get("model_name"))
                 summary_usage = chunk_summary.summary_usage or {}
                 logger.info(f"Chunk summary usage: {summary_usage}")
                 model_info = chunk_summary.model_info or ""
@@ -297,7 +307,7 @@ async def process_pr_review_background(extracted_data: dict):
                     try:
                         logger.info(f"Generating review for {file_name} with LLM...")
                         llm_start_time = time.time()
-                        review = await generate_review_response(review_variables, llm_service)
+                        review = await generate_review_response(review_variables, llm_service, extracted_data["model_name"])
                         review_usage = review.review_usage or {}
                         total_input_tokens += review_usage.get("input_tokens", 0)
                         total_output_tokens += review_usage.get("output_tokens", 0)

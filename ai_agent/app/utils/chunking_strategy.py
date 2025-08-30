@@ -129,6 +129,8 @@ def prepare_chunk_for_summary(chunk: Dict, pr_metadata: Dict) -> Dict:
         "prBody": pr_metadata.get("prBody", ""),
         "author_name": pr_metadata.get("author_name", ""),
         "prNumber": pr_metadata.get("prNumber", ""),
+        "api_key": pr_metadata.get("api_key", None),
+        "model_name": pr_metadata.get("model_name", "claude-opus-4-1-20250805"),
         "changed_files": ", ".join(changed_files),
         "repo_structure_summary": pr_metadata.get("repo_structure_summary", ""),
         "pr_diff": pr_diff,

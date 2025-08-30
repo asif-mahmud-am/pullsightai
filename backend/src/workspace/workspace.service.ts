@@ -151,51 +151,55 @@ export class WorkspaceService {
                 }
             })
         )
-        makeSubscriptionDto.members.map(async (member) => {
-            const user = await this.dataService.workspaceMembers.findOne({
-                providerId: member.providerId,
-                provider: userData.provider,
-                workspace: userData?.currentWorkspace!._id
-            })
-            if (!user) {
-                await this.dataService.workspaceMembers.create({
+
+        Promise.all(
+            makeSubscriptionDto.members.map(async (member) => {
+                const user = await this.dataService.workspaceMembers.findOne({
                     providerId: member.providerId,
                     provider: userData.provider,
-                    username: member.username,
-                    role:
-                        userData.providerId == member.providerId
-                            ? MemberRole.OWNER
-                            : MemberRole.OWNER,
-                    user:
-                        userData.providerId == member.providerId
-                            ? userData._id
-                            : null,
-                    workspace: userData?.currentWorkspace!._id,
-                    isActive: true,
-                    invitedAt: new Date()
+                    workspace: userData?.currentWorkspace!._id
                 })
-            } else {
-                await this.dataService.workspaceMembers.updateOne(
-                    { _id: user._id },
-                    {
-                        $set: {
-                            role:
-                                userData.providerId == member.providerId
-                                    ? MemberRole.OWNER
-                                    : MemberRole.OWNER,
-                            isActive: true
+                if (!user) {
+                    await this.dataService.workspaceMembers.create({
+                        providerId: member.providerId,
+                        provider: userData.provider,
+                        username: member.username,
+                        role:
+                            userData.providerId == member.providerId
+                                ? MemberRole.OWNER
+                                : MemberRole.MEMBER,
+                        user:
+                            userData.providerId == member.providerId
+                                ? userData._id
+                                : null,
+                        workspace: userData?.currentWorkspace!._id,
+                        isActive: true,
+                        invitedAt: new Date()
+                    })
+                } else {
+                    await this.dataService.workspaceMembers.updateOne(
+                        { _id: user._id },
+                        {
+                            $set: {
+                                role:
+                                    userData.providerId == member.providerId
+                                        ? MemberRole.OWNER
+                                        : MemberRole.MEMBER,
+                                isActive: true,
+                                invitedAt: new Date()
+                            }
                         }
-                    }
-                )
-            }
-        })
+                    )
+                }
+            })
+        )
         return {}
     }
 
-    async createRepository(createRepositoryDto: CreateRepositoryDto,
+    async createRepository(
+        createRepositoryDto: CreateRepositoryDto,
         user: any
     ) {
-        
         const userData =
             await this.analysisService.getUserDataWithWorkspace(user)
         let repositories = createRepositoryDto.repositories

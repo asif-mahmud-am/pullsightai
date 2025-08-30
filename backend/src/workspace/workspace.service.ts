@@ -8,8 +8,12 @@ import { MemberRole } from 'src/database/schemas/workspace-members.schema'
 import { GitlabService } from 'src/gitlab/gitlab.service'
 import { CreateAndUpdateWorkspaceSettingsDto } from 'src/workspace/dto/create-update-workspace-settings.dto'
 import { MakeSubscriptionDto } from 'src/workspace/dto/make-subscription.dto'
+import { UpdateMemberDto } from 'src/workspace/dto/update-member.dto'
 import { UpdateRepositoryDto } from 'src/workspace/dto/update-repository.dto'
-import { CreateRepositoryDto } from './dto/create-repository.dto'
+import {
+    CreateMembersDto,
+    CreateRepositoryDto
+} from './dto/create-repository.dto'
 
 @Injectable()
 export class WorkspaceService {
@@ -196,6 +200,52 @@ export class WorkspaceService {
         return {}
     }
 
+    async addMembers(createMembersDto: CreateMembersDto, user: any) {
+        const userData =
+            await this.analysisService.getUserDataWithWorkspace(user)
+
+        Promise.all(
+            createMembersDto.members.map(async (member) => {
+                const user = await this.dataService.workspaceMembers.findOne({
+                    providerId: member.providerId,
+                    provider: userData.provider,
+                    workspace: userData?.currentWorkspace!._id
+                })
+                if (!user) {
+                    await this.dataService.workspaceMembers.create({
+                        providerId: member.providerId,
+                        provider: userData.provider,
+                        username: member.username,
+                        role:
+                            userData.providerId == member.providerId
+                                ? MemberRole.OWNER
+                                : MemberRole.MEMBER,
+                        user:
+                            userData.providerId == member.providerId
+                                ? userData._id
+                                : null,
+                        workspace: userData?.currentWorkspace!._id,
+                        isActive: true
+                    })
+                } else {
+                    await this.dataService.workspaceMembers.updateOne(
+                        { _id: user._id },
+                        {
+                            $set: {
+                                role:
+                                    userData.providerId == member.providerId
+                                        ? MemberRole.OWNER
+                                        : MemberRole.MEMBER,
+                                isActive: true
+                            }
+                        }
+                    )
+                }
+            })
+        )
+        return {}
+    }
+
     async createRepository(
         createRepositoryDto: CreateRepositoryDto,
         user: any
@@ -280,6 +330,14 @@ export class WorkspaceService {
             }
         }
         return repository
+    }
+
+    async updateMember(id: string, body: UpdateMemberDto, user) {
+        await this.dataService.workspaceMembers.updateOne(
+            { _id: id },
+            { $set: { ...body } }
+        )
+        return {}
     }
 
     async deleteWebhook(repository: any, accessToken: any) {

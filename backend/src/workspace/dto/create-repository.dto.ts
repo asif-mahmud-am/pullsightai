@@ -1,21 +1,17 @@
 import { Type } from 'class-transformer'
-import {
-    IsArray,
-    IsBoolean,
-    IsDateString,
-    IsNotEmpty,
-    IsNumber,
-    IsOptional,
-    IsString,
-    ValidateNested
-} from 'class-validator'
-import { Types } from 'mongoose'
-import { RepositoryDto } from './make-subscription.dto'
+import { IsArray, ValidateNested } from 'class-validator'
+import { MemberDto, RepositoryDto } from './make-subscription.dto'
 
 export class CreateRepositoryDto {
-
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => RepositoryDto)
     repositories: RepositoryDto[]
+}
+
+export class CreateMembersDto {
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => MemberDto)
+    members: MemberDto[]
 }

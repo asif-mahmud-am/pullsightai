@@ -14,9 +14,13 @@ import { PaginateDto } from 'src/common/dto/paginate.dto'
 import { DATA_RETRIEVED, UPDATED } from 'src/common/utils/response-message.util'
 import { CreateAndUpdateWorkspaceSettingsDto } from 'src/workspace/dto/create-update-workspace-settings.dto'
 import { MakeSubscriptionDto } from 'src/workspace/dto/make-subscription.dto'
+import { UpdateMemberDto } from 'src/workspace/dto/update-member.dto'
 import { UpdateRepositoryDto } from 'src/workspace/dto/update-repository.dto'
+import {
+    CreateMembersDto,
+    CreateRepositoryDto
+} from './dto/create-repository.dto'
 import { WorkspaceService } from './workspace.service'
-import { CreateRepositoryDto } from './dto/create-repository.dto'
 
 @Controller({
     path: 'workspace',
@@ -50,6 +54,21 @@ export class WorkspaceController {
             message: 'Repositories added successfully',
             result: await this.workspaceService.createRepository(
                 createRepositoryDto,
+                req.user
+            )
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Post('members')
+    async createMembers(
+        @Body() createMembersDto: CreateMembersDto,
+        @Req() req: any
+    ) {
+        return {
+            message: 'Repositories added successfully',
+            result: await this.workspaceService.addMembers(
+                createMembersDto,
                 req.user
             )
         }
@@ -115,6 +134,19 @@ export class WorkspaceController {
                 body,
                 req.user
             )
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Patch('members/:id')
+    async updateMembers(
+        @Param('id') id: string,
+        @Body() body: UpdateMemberDto,
+        @Req() req: any
+    ) {
+        return {
+            message: 'Repository updated successfully',
+            result: await this.workspaceService.updateMember(id, body, req.user)
         }
     }
 

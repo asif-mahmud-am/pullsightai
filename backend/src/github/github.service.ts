@@ -314,13 +314,13 @@ export class GithubService {
                 workspace: userData.currentWorkspace['_id'],
                 provider: 'github'
             })
-            
+
             // Get the repository IDs that are already added
-            const addedRepoIds = addedRepos.map(repo => repo.id.toString())
-            
+            const addedRepoIds = addedRepos.map((repo) => repo.id.toString())
+
             // Filter out repositories that are already added
-            allRepositories = allRepositories.filter(repo => 
-                !addedRepoIds.includes(repo.id.toString())
+            allRepositories = allRepositories.filter(
+                (repo) => !addedRepoIds.includes(repo.id.toString())
             )
         }
 
@@ -504,7 +504,11 @@ export class GithubService {
                 pullRequestFormattedData = false
         }
         if (pullRequestFormattedData) {
-            this.analysisService.makeAnalysis(pullRequestFormattedData, prEvent)
+            this.analysisService.makeAnalysis(
+                pullRequestFormattedData,
+                prEvent,
+                isApplicable.repository
+            )
         }
         return {}
     }

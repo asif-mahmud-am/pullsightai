@@ -7,11 +7,11 @@ export type WorkspaceDocument = Workspace & Document
 
 // Enum for Claude model families
 export enum ClaudeModelEnum {
-    CLAUDE_4_1_OPUS = 'claude-4-1-opus-20241022',
-    CLAUDE_4_OPUS = 'claude-4-opus-20241022',
-    CLAUDE_4_SONNET = 'claude-4-sonnet-20241022',
-    CLAUDE_3_7_SONNET = 'claude-3-7-sonnet-20241022',
-    CLAUDE_3_5_HAIKU = 'claude-3-5-haiku-2024102'
+    CLAUDE_4_1_OPUS = 'claude-opus-4-1-20250805',
+    CLAUDE_4_OPUS = 'claude-opus-4-20250514',
+    CLAUDE_4_SONNET = 'claude-sonnet-4-20250514',
+    CLAUDE_3_7_SONNET = 'claude-3-7-sonnet-20250219',
+    CLAUDE_3_5_HAIKU = 'claude-3-5-haiku-20241022'
 }
 
 @Schema({ timestamps: false, versionKey: false, id: false })

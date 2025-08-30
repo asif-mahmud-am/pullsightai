@@ -93,7 +93,10 @@ export class BitbucketService {
         return existingWorkspace
     }
 
-    async getWorkspaceRepositories(user: any, filter?: string): Promise<Repository[]> {
+    async getWorkspaceRepositories(
+        user: any,
+        filter?: string
+    ): Promise<Repository[]> {
         const userData = await this.dataService.users
             .findOne({ _id: user.sub })
             .populate('currentWorkspace')
@@ -103,10 +106,11 @@ export class BitbucketService {
             )
         }
 
-        const allRepositories = await this.bitbucketApiService.getWorkspaceRepositories(
-            userData.accessToken as string,
-            userData?.currentWorkspace['slug'] as string
-        )
+        const allRepositories =
+            await this.bitbucketApiService.getWorkspaceRepositories(
+                userData.accessToken as string,
+                userData?.currentWorkspace['slug'] as string
+            )
 
         // Filter repositories based on the filter parameter
         if (filter === 'available') {
@@ -115,13 +119,13 @@ export class BitbucketService {
                 workspace: userData.currentWorkspace['_id'],
                 provider: 'bitbucket'
             })
-            
+
             // Get the repository IDs that are already added
-            const addedRepoIds = addedRepos.map(repo => repo.id.toString())
-            
+            const addedRepoIds = addedRepos.map((repo) => repo.id.toString())
+
             // Filter out repositories that are already added
-            return allRepositories.filter(repo => 
-                !addedRepoIds.includes(repo.id.toString())
+            return allRepositories.filter(
+                (repo) => !addedRepoIds.includes(repo.id.toString())
             )
         }
 
@@ -260,7 +264,11 @@ export class BitbucketService {
         }
 
         if (pullRequestFormattedData) {
-            this.analysisService.makeAnalysis(pullRequestFormattedData, prEvent)
+            this.analysisService.makeAnalysis(
+                pullRequestFormattedData,
+                prEvent,
+                isApplicable.repository
+            )
         }
         return {}
     }

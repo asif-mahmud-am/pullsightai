@@ -32,7 +32,10 @@ export class GitlabService {
         private readonly analysisService: AnalysisService
     ) {}
 
-    async getAllRepositories(user: any, filter?: string): Promise<Repository[]> {
+    async getAllRepositories(
+        user: any,
+        filter?: string
+    ): Promise<Repository[]> {
         const userData = await this.dataService.users
             .findOne({ _id: user.sub }, 'accessToken currentWorkspace')
             .populate('currentWorkspace', 'slug type')
@@ -41,7 +44,7 @@ export class GitlabService {
                 'Access token is required or workspace not set'
             )
         }
-        
+
         const allRepositories = await this.gitlabApiService.getAllRepositories(
             userData.accessToken,
             userData.currentWorkspace['slug'],
@@ -55,13 +58,13 @@ export class GitlabService {
                 workspace: userData.currentWorkspace['_id'],
                 provider: 'gitlab'
             })
-            
+
             // Get the repository IDs that are already added
-            const addedRepoIds = addedRepos.map(repo => repo.id.toString())
-            
+            const addedRepoIds = addedRepos.map((repo) => repo.id.toString())
+
             // Filter out repositories that are already added
-            return allRepositories.filter(repo => 
-                !addedRepoIds.includes(repo.id.toString())
+            return allRepositories.filter(
+                (repo) => !addedRepoIds.includes(repo.id.toString())
             )
         }
 
@@ -304,7 +307,11 @@ export class GitlabService {
                 pullRequestFormattedData = false
         }
         if (pullRequestFormattedData) {
-            this.analysisService.makeAnalysis(pullRequestFormattedData, prEvent)
+            this.analysisService.makeAnalysis(
+                pullRequestFormattedData,
+                prEvent,
+                isApplicable.repository
+            )
         }
         return {}
     }

@@ -17,6 +17,7 @@ import math
 import logging
 import time
 from logging.handlers import RotatingFileHandler
+from app.utils.filter_files import filter_pr_files
 
 load_dotenv()
 
@@ -90,6 +91,18 @@ def validate_pr_payload(payload: PRPayloadV2) -> tuple[bool, str, dict]:
         model_name = pr.get("modelName")
         if model_name is None or model_name.strip() == "":
             model_name = None
+
+        pr_file_names = []
+        ignored_files = pr.get("ignore", [])
+        for file in pr.get("prFiles", []):
+            pr_file_names.append(file.get("prFileName"))
+
+        pr_files_allowed = filter_pr_files(ignored_files, pr_file_names)
+        pr_files = []
+        for file in pr.get("prFiles", []):
+            if file.get("prFileName") in pr_files_allowed:
+                pr_files.append(file)
+
         
         # Extract and validate data
         extracted_data = {
@@ -102,9 +115,11 @@ def validate_pr_payload(payload: PRPayloadV2) -> tuple[bool, str, dict]:
             "prBody": pr.get("prBody", ""),
             "author_name": pr.get("prUser", ""),
             "repo_structure_summary": pr.get("prRepoName", ""),
-            "prFiles": pr.get("prFiles", []),
+            "prFiles": pr_files,
             "api_key": api_key,
-            "model_name": model_name
+            "model_name": model_name,
+            "minSeverity": pr.get("minSeverity", "Info")
+
         }
         
         # Validate prFiles structure if present
@@ -301,7 +316,8 @@ async def process_pr_review_background(extracted_data: dict):
                         "changed_files": file_info["prFileName"],
                         "repo_structure_summary": extracted_data["repo_structure_summary"],
                         "pr_diff": file_info["prFileDiff"],
-                        "prFileContentBefore": file_info.get("prFileContentBefore", "")
+                        "prFileContentBefore": file_info.get("prFileContentBefore", ""),
+                        "minSeverity": extracted_data["minSeverity"]
                     }
                                         
                     try:

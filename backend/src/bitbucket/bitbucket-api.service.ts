@@ -35,24 +35,33 @@ export class BitbucketApiService {
      */
     async getAllWorkspaces(accessToken: string): Promise<Workspace[]> {
         let allWorkspaces: Workspace[] = []
-        let url = `${this.baseUrl}/workspaces?pagelen=100`
+        let url = `${this.baseUrl}/user/permissions/workspaces?pagelen=100`
         const response = await this.httpService.get(url, {
             headers: this.getAuthHeaders(accessToken)
         })
-        response.values.map((workspace) =>
-            allWorkspaces.push({
-                id: workspace.uuid,
-                name: workspace.name,
-                slug: workspace.slug,
-                provider: 'bitbucket',
-                url: workspace.links.html.href,
-                reposUrl: `${this.baseUrl}/repositories/${workspace.slug}`,
-                avatarUrl: workspace.links.avatar?.href,
-                type: OrgType.ORGANIZATION,
-                nodeId: `BB_${workspace.uuid}`,
-                description: workspace.description,
-                isPrivate: workspace.is_private,
-                createdOn: workspace.created_on
+
+        await Promise.all(
+            response.values.map(async (data) => {
+                const { user } = data
+                let url = `${this.baseUrl}/workspaces/${data.workspace.slug}`
+                const workspace = await this.httpService.get(url, {
+                    headers: this.getAuthHeaders(accessToken)
+                })
+                if (data.permission == 'owner')
+                    allWorkspaces.push({
+                        id: workspace.uuid,
+                        name: workspace.name,
+                        slug: workspace.slug,
+                        provider: 'bitbucket',
+                        url: workspace.links.html.href,
+                        reposUrl: `${this.baseUrl}/repositories/${workspace.slug}`,
+                        avatarUrl: workspace.links.avatar?.href,
+                        type: OrgType.ORGANIZATION,
+                        nodeId: `BB_${workspace.uuid}`,
+                        description: workspace.description,
+                        isPrivate: workspace.is_private,
+                        createdOn: workspace.created_on
+                    })
             })
         )
         return allWorkspaces

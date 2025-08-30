@@ -224,7 +224,7 @@ export class WorkspaceService {
                                 ? userData._id
                                 : null,
                         workspace: userData?.currentWorkspace!._id,
-                        isActive: true
+                        isActive: member.isActive
                     })
                 } else {
                     await this.dataService.workspaceMembers.updateOne(
@@ -235,7 +235,7 @@ export class WorkspaceService {
                                     userData.providerId == member.providerId
                                         ? MemberRole.OWNER
                                         : MemberRole.MEMBER,
-                                isActive: true
+                                isActive: member.isActive
                             }
                         }
                     )

@@ -424,7 +424,7 @@ export class GithubService {
         )
     }
 
-    async getOrgMembers(user: any) {
+    async getOrgMembers(user: any, query: any) {
         const userData =
             await this.analysisService.getUserDataWithWorkspace(user)
 

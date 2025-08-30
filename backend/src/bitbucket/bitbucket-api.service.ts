@@ -280,10 +280,7 @@ export class BitbucketApiService {
     /**
      * Get workspace members for Bitbucket
      */
-    async getOrgMembers(
-        accessToken: string,
-        workspace: string
-    ): Promise<any[] | { error: string; message: string; members: any[] }> {
+    async getOrgMembers(accessToken: string, workspace: string) {
         let allMembers: any[] = []
         let url = `${this.baseUrl}/workspaces/${workspace}/members?pagelen=100`
 

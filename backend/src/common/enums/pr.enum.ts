@@ -28,3 +28,11 @@ export function mapPREventToState(event: PREvent): PRState {
             return PRState.OPEN
     }
 }
+
+export enum Severity {
+    INFO = 'info',
+    MINOR = 'minor',
+    MAJOR = 'major',
+    CRITICAL = 'critical',
+    BLOCKER = 'blocker'
+}

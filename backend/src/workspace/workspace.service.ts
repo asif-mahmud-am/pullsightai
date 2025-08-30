@@ -114,7 +114,6 @@ export class WorkspaceService {
         const userData =
             await this.analysisService.getUserDataWithWorkspace(user)
         let repositories = makeSubscriptionDto.repositories
-        console.log('userData', userData)
 
         // update workspace onboarding step
         await this.dataService.workspaces.updateOne(
@@ -327,6 +326,19 @@ export class WorkspaceService {
             )
             if (repository && accessToken) {
                 await this.deleteWebhook(repository, accessToken.accessToken)
+            }
+        }
+        if (body.isActive === true) {
+            const userData = await this.dataService.users
+                .findOne(
+                    { _id: user.sub, provider: user.provider },
+                    'accessToken currentWorkspace provider'
+                )
+                .populate('currentWorkspace')
+            if (repository && userData) {
+                const webhookData = await this.setWebhook(userData, repository)
+                repository.webhookToken = webhookData.webhookToken
+                await repository.save()
             }
         }
         return repository

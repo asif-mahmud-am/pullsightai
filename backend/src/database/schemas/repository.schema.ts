@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { Document, Types } from 'mongoose'
 import * as mongoosePaginate from 'mongoose-paginate-v2'
 import * as uniqueValidator from 'mongoose-unique-validator'
+import { Severity } from 'src/common/enums/pr.enum'
 
 export type RepositoryDocument = Repository & Document
 
@@ -47,6 +48,12 @@ export class Repository {
 
     @Prop({ required: true, default: true })
     isActive: boolean
+
+    @Prop({ required: false, default: [] })
+    ignore: string[]
+
+    @Prop({ default: Severity.INFO })
+    minSeverity: string
 
     @Prop({
         required: true,

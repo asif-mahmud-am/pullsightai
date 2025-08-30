@@ -193,7 +193,9 @@ export class AnalysisService {
                     {
                         $set: {
                             status: Status.COMPLETED,
-                            completedAt: new Date()
+                            completedAt: new Date(),
+                            prReviewModelInfo: postReviewDto.modelInfo,
+                            prReviewUsageInfo: postReviewDto.usageInfo
                         }
                     },
                     { new: true }
@@ -260,10 +262,10 @@ export class AnalysisService {
                         modelInfo: postSummery.modelInfo,
                         usageInfo: postSummery.usageInfo,
                         estimatedCodeReviewEffort:
-                            postSummery?.reviewInfo
+                            postSummery?.summary_info
                                 ?.estimated_code_review_effort,
                         potentialIssueCount:
-                            postSummery?.reviewInfo?.potential_issue_count
+                            postSummery?.summary_info?.potential_issue_count
                     }
                 },
                 { new: true }

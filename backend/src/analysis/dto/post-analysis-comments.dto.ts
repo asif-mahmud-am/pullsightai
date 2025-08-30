@@ -52,6 +52,14 @@ export class PullRequestAnalysisCommentsDto {
     comments: CommentDto[]
 
     @IsOptional()
+    @IsObject()
+    modelInfo?: any
+
+    @IsOptional()
+    @IsObject()
+    usageInfo?: any
+
+    @IsOptional()
     @IsNumber()
     completed: number
 }

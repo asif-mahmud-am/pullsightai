@@ -129,7 +129,9 @@ export const useUpdateTeamMemberMutation = () => {
     return useMutation({
         mutationFn: workspaceEndpoints.updateTeamMember,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["teamMembers"] });
+            queryClient.invalidateQueries({
+                queryKey: ["teamMembers"],
+            });
         },
     });
 };

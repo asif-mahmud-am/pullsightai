@@ -1,4 +1,4 @@
-import { Organization } from "@/types/organization";
+import { Organization, WorkspaceSetting } from "@/types/organization";
 import { User } from "@/types/user";
 import { create } from "zustand";
 
@@ -14,6 +14,7 @@ interface AuthActions {
     setUser: (user: User) => void;
     setSelectedWorkspace: (workspace: Organization | null) => void;
     setWorkspaces: (workspaces: Organization[] | null) => void;
+    updateWorkspaceSettings: (settings: Partial<WorkspaceSetting>) => void;
     clearStore: () => void;
 }
 
@@ -30,6 +31,24 @@ export const useAuthStore = create<AuthStore>((set) => ({
         set({ selectedWorkspace: workspace }),
     setWorkspaces: (workspaces: Organization[] | null): void =>
         set({ workspaces }),
+    updateWorkspaceSettings: (settings: Partial<WorkspaceSetting>): void =>
+        set((state) => ({
+            user: state.user
+                ? {
+                      ...state.user,
+                      currentWorkspace: state.user.currentWorkspace
+                          ? {
+                                ...state.user.currentWorkspace,
+                                workspaceSetting: {
+                                    ...state.user.currentWorkspace
+                                        .workspaceSetting,
+                                    ...settings,
+                                },
+                            }
+                          : state.user.currentWorkspace,
+                  }
+                : state.user,
+        })),
     clearStore: (): void =>
         set({
             user: null,

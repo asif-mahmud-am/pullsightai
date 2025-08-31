@@ -19,6 +19,7 @@ import {
     XAxis,
     YAxis,
 } from "recharts";
+import { useAuthStore } from "@/store/authStore";
 
 interface Props {
     className?: string;
@@ -35,6 +36,7 @@ const TimeMoneySavedCard = ({
     repo,
     breakdown,
 }: Props) => {
+    const { selectedWorkspace } = useAuthStore();
     const { data, isFetching } = useDashboardTimeMoneySavedQuery({
         from: fromDate,
         to: toDate,
@@ -46,7 +48,10 @@ const TimeMoneySavedCard = ({
             <ContentCard.Header className="flex-wrap sm:flex-nowrap gap-y-4 min-h-[61px]">
                 <h3 className="text-muted font-semibold">Time & Money Saved</h3>
                 <div className="text-sm text-neutral-500 border px-3 py-2 rounded-md">
-                    Hourly rate: $<span className="text-neutral-300">50</span>
+                    Hourly rate: $
+                    <span className="text-neutral-300">
+                        {selectedWorkspace?.workspaceSetting?.hourlyRate || 0}
+                    </span>
                 </div>
             </ContentCard.Header>
             <ContentCard.Body isLoading={isFetching}>
@@ -62,7 +67,12 @@ const TimeMoneySavedCard = ({
                             Money Saved
                         </div>
                         <div className="text-3xl">
-                            ${numToHip(data?.data?.totalMoneySaved || 0)}
+                            $
+                            {numToHip(
+                                (data?.data?.totalTimeSaved || 0) *
+                                    (selectedWorkspace?.workspaceSetting
+                                        ?.hourlyRate || 0)
+                            )}
                         </div>
                     </div>
                     {/* <div className="pr-9">

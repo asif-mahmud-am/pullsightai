@@ -46,7 +46,7 @@ export class WorkspaceService {
         // Update only the WorkspaceSetting subdocument
         await this.dataService.workspaces.updateOne(
             { _id: userWorkspace._id },
-            { $set: { workSpaceSetting: createAndUpdateWorkspaceSettingsDto } }
+            { $set: { workspaceSetting: createAndUpdateWorkspaceSettingsDto } }
         )
 
         // Return the updated workspace settings

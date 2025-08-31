@@ -24,7 +24,7 @@ export const useOrganizationMembersQuery = ({
     }
 
     return useQuery<User[], Error>({
-        queryKey: [provider, "members"],
+        queryKey: ["teamMembers"],
         queryFn: async () => {
             const response = await queryFn();
             if (!response?.data) {

@@ -11,8 +11,8 @@ def load_prompt():
 def fill_prompt(template: str, variables: dict) -> str:
     return template.format(**variables)
 
-async def generate_review_response(variables: dict, llm_service):
+async def generate_review_response(variables: dict, llm_service, model_name: str) -> PRReviewResponse:
     prompt_yaml = load_prompt()
     prompt = fill_prompt(prompt_yaml['review'], variables)
-    review, review_usage, model_info = await llm_service.generate_code_review(prompt)
+    review, review_usage, model_info = await llm_service.generate_code_review(prompt, model_name=model_name)
     return PRReviewResponse(prNumber=str(variables.get('prNumber', "0")), pr_line=1, pr_review_and_suggestion=review, review_usage=review_usage, model_info=model_info) 

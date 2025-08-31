@@ -16,13 +16,13 @@ def sort_files_by_path(files: List[Dict]) -> List[Dict]:
     """
     return sorted(files, key=lambda x: x["prFileName"])
 
-def create_summary_chunks(files: List[Dict], max_chunk_tokens: int = 200000, max_file_tokens: int = 100000) -> List[Dict]:
+def create_chunks(files: List[Dict], max_chunk_tokens: int = 150000, max_file_tokens: int = 100000) -> List[Dict]:
     """
-    Create chunks of files for summary generation based on token limits.
+    Create chunks of files for both summary and review generation based on token limits.
     
     Args:
         files (List[Dict]): List of file dictionaries
-        max_chunk_tokens (int): Maximum tokens per chunk (default: 200000)
+        max_chunk_tokens (int): Maximum tokens per chunk (default: 150000)
         max_file_tokens (int): Maximum tokens per file (default: 100000)
     
     Returns:
@@ -35,7 +35,7 @@ def create_summary_chunks(files: List[Dict], max_chunk_tokens: int = 200000, max
     current_chunk = {
         "files": [],
         "total_tokens": 0,
-        "chunk_index": 1
+        "chunk_index": 0
     }
     
     ignored_files = []
@@ -48,11 +48,10 @@ def create_summary_chunks(files: List[Dict], max_chunk_tokens: int = 200000, max
         
         # Check if file is too large
         if is_file_too_large(file_diff, max_file_tokens):
-            logger.warning(f"File {file_name} exceeds {max_file_tokens} tokens, ignoring for summary")
+            logger.warning(f"File {file_name} exceeds {max_file_tokens} tokens, ignoring for processing")
             ignored_files.append({
                 "fileName": file_name,
                 "reason": f"File exceeds {max_file_tokens} token limit"
-                # "token_count": estimate_tokens_for_file(file_diff)
             })
             continue
 
@@ -64,25 +63,25 @@ def create_summary_chunks(files: List[Dict], max_chunk_tokens: int = 200000, max
             # Current chunk is full, save it and start a new one
             if current_chunk["files"]:
                 chunks.append(current_chunk)
-                logger.info(f"Created chunk {current_chunk['chunk_index']} with {len(current_chunk['files'])} files, {current_chunk['total_tokens']} tokens")
+                logger.info(f"Created chunk {current_chunk['chunk_index'] + 1} with {len(current_chunk['files'])} files, {current_chunk['total_tokens']} tokens")
             
             # Start new chunk
             current_chunk = {
                 "files": [file_info],
                 "total_tokens": file_tokens,
-                "chunk_index": len(chunks) + 1
+                "chunk_index": len(chunks)
             }
-            logger.debug(f"Started new chunk {current_chunk['chunk_index']} with file {file_name}")
+            logger.debug(f"Started new chunk {current_chunk['chunk_index'] + 1} with file {file_name}")
         else:
             # Add file to current chunk
             current_chunk["files"].append(file_info)
             current_chunk["total_tokens"] += file_tokens
-            logger.debug(f"Added file {file_name} to chunk {current_chunk['chunk_index']}, total tokens: {current_chunk['total_tokens']}")
+            logger.debug(f"Added file {file_name} to chunk {current_chunk['chunk_index'] + 1}, total tokens: {current_chunk['total_tokens']}")
     
     # Add the last chunk if it has files
     if current_chunk["files"]:
         chunks.append(current_chunk)
-        logger.info(f"Created final chunk {current_chunk['chunk_index']} with {len(current_chunk['files'])} files, {current_chunk['total_tokens']} tokens")
+        logger.info(f"Created final chunk {current_chunk['chunk_index'] + 1} with {len(current_chunk['files'])} files, {current_chunk['total_tokens']} tokens")
     
     # Log summary
     total_files_processed = sum(len(chunk["files"]) for chunk in chunks)
@@ -95,6 +94,35 @@ def create_summary_chunks(files: List[Dict], max_chunk_tokens: int = 200000, max
         logger.warning(f"Ignored files: {[f['fileName'] for f in ignored_files]}")
     
     return chunks, ignored_files
+
+def create_summary_chunks(files: List[Dict], max_chunk_tokens: int = 200000, max_file_tokens: int = 100000) -> List[Dict]:
+    """
+    Create chunks of files for summary generation based on token limits.
+    This is a wrapper around create_chunks for backward compatibility.
+    
+    Args:
+        files (List[Dict]): List of file dictionaries
+        max_chunk_tokens (int): Maximum tokens per chunk (default: 200000)
+        max_file_tokens (int): Maximum tokens per file (default: 100000)
+    
+    Returns:
+        List[Dict]: List of chunks, each containing files and metadata
+    """
+    return create_chunks(files, max_chunk_tokens, max_file_tokens)
+
+def create_review_chunks(files: List[Dict], max_chunk_tokens: int = 150000, max_file_tokens: int = 100000) -> List[Dict]:
+    """
+    Create chunks of files for review generation based on token limits.
+    
+    Args:
+        files (List[Dict]): List of file dictionaries
+        max_chunk_tokens (int): Maximum tokens per chunk (default: 150000)
+        max_file_tokens (int): Maximum tokens per file (default: 100000)
+    
+    Returns:
+        List[Dict]: List of chunks, each containing files and metadata
+    """
+    return create_chunks(files, max_chunk_tokens, max_file_tokens)
 
 def prepare_chunk_for_summary(chunk: Dict, pr_metadata: Dict) -> Dict:
     """
@@ -124,5 +152,41 @@ def prepare_chunk_for_summary(chunk: Dict, pr_metadata: Dict) -> Dict:
         "changed_files": ", ".join(changed_files),
         "repo_structure_summary": pr_metadata.get("repo_structure_summary", ""),
         "pr_diff": pr_diff,
+        "chunk_info": f"Chunk {chunk['chunk_index'] + 1} of multiple chunks"
+    }
+
+def prepare_chunk_for_review(chunk: Dict, pr_metadata: Dict) -> Dict:
+    """
+    Prepare a chunk for review generation by creating the necessary variables.
+    
+    Args:
+        chunk (Dict): Chunk containing files and metadata
+        pr_metadata (Dict): PR metadata (title, body, etc.)
+    
+    Returns:
+        Dict: Variables ready for review generation
+    """
+    changed_files = []
+    pr_diff = ""
+    pr_file_content_before = ""
+    
+    for file_info in chunk["files"]:
+        changed_files.append(file_info["prFileName"])
+        pr_diff += f"\n\n--- File: {file_info['prFileName']} ---\n{file_info['prFileDiff']}"
+        
+        # Collect file content before changes if available
+        if file_info.get("prFileContentBefore"):
+            pr_file_content_before += f"\n\n--- File: {file_info['prFileName']} (Before Changes) ---\n{file_info['prFileContentBefore']}"
+    
+    return {
+        "prTitle": pr_metadata.get("prTitle", ""),
+        "prBody": pr_metadata.get("prBody", ""),
+        "author_name": pr_metadata.get("author_name", ""),
+        "prNumber": pr_metadata.get("prNumber", ""),
+        "changed_files": ", ".join(changed_files),
+        "repo_structure_summary": pr_metadata.get("repo_structure_summary", ""),
+        "prFileContentBefore": pr_file_content_before,
+        "pr_diff": pr_diff,
+        "minSeverity": pr_metadata.get("minSeverity", "Info"),
         "chunk_info": f"Chunk {chunk['chunk_index'] + 1} of multiple chunks"
     } 

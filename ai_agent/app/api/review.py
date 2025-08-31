@@ -15,4 +15,27 @@ async def generate_review_response(variables: dict, llm_service, model_name: str
     prompt_yaml = load_prompt()
     prompt = fill_prompt(prompt_yaml['review'], variables)
     review, review_usage, model_info = await llm_service.generate_code_review(prompt, model_name=model_name)
-    return PRReviewResponse(prNumber=str(variables.get('prNumber', "0")), pr_line=1, pr_review_and_suggestion=review, review_usage=review_usage, model_info=model_info) 
+    return PRReviewResponse(prNumber=str(variables.get('prNumber', "0")), pr_line=1, pr_review_and_suggestion=review, review_usage=review_usage, model_info=model_info)
+
+async def generate_chunked_review_response(chunk_variables: dict, llm_service, model_name: str) -> PRReviewResponse:
+    """
+    Generate review response for a chunk of files.
+    
+    Args:
+        chunk_variables (dict): Variables prepared for the chunk
+        llm_service: LLM service instance
+        model_name (str): Model name to use for review generation
+    
+    Returns:
+        PRReviewResponse: Review response for the chunk
+    """
+    prompt_yaml = load_prompt()
+    prompt = fill_prompt(prompt_yaml['review'], chunk_variables)
+    review, review_usage, model_info = await llm_service.generate_code_review(prompt, model_name=model_name)
+    return PRReviewResponse(
+        prNumber=str(chunk_variables.get('prNumber', "0")), 
+        pr_line=1, 
+        pr_review_and_suggestion=review, 
+        review_usage=review_usage, 
+        model_info=model_info
+    ) 

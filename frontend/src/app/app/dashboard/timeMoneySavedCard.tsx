@@ -43,7 +43,7 @@ const TimeMoneySavedCard = ({
     });
     return (
         <ContentCard className={cn(``, className)}>
-            <ContentCard.Header className="flex-wrap sm:flex-nowrap gap-y-4">
+            <ContentCard.Header className="flex-wrap sm:flex-nowrap gap-y-4 min-h-[61px]">
                 <h3 className="text-muted font-semibold">Time & Money Saved</h3>
                 <div className="text-sm text-neutral-500 border px-3 py-2 rounded-md">
                     Hourly rate: $<span className="text-neutral-300">50</span>
@@ -62,7 +62,7 @@ const TimeMoneySavedCard = ({
                             Money Saved
                         </div>
                         <div className="text-3xl">
-                            ${numToHip((data?.data?.totalTimeSaved || 0) * 50)}
+                            ${numToHip(data?.data?.totalMoneySaved || 0)}
                         </div>
                     </div>
                     {/* <div className="pr-9">
@@ -87,9 +87,27 @@ const TimeMoneySavedCard = ({
                         <XAxis
                             dataKey="date"
                             tickLine={false}
-                            tickMargin={10}
                             axisLine={false}
-                            tickFormatter={(value) => formatDate(value, "DD")}
+                            tickMargin={15}
+                            height={40}
+                            tickFormatter={(value) =>
+                                formatDate(
+                                    value,
+                                    breakdown == "year"
+                                        ? "YYYY"
+                                        : breakdown == "month"
+                                        ? "MMM YY"
+                                        : "DD MMM"
+                                )
+                            }
+                            angle={-45}
+                            padding={{ right: 20 }}
+                        />
+                        <YAxis
+                            width={35}
+                            tickLine={false}
+                            axisLine={false}
+                            tickMargin={10}
                         />
                         <ChartTooltip
                             cursor={false}

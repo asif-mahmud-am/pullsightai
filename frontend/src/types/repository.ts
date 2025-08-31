@@ -8,6 +8,8 @@ export interface Repository {
         avatarUrl: string;
     };
     slug: string;
+    ignore: string[];
+    minSeverity: "info" | "minor" | "major" | "critical" | "blocker";
     createdOn?: string;
     createdAt: string;
     updatedAt: string;

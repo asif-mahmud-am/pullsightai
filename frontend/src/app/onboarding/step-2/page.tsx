@@ -43,6 +43,10 @@ const Step2Page = () => {
     });
 
     const onStepComplete = () => {
+        if (repositories?.length === 0) {
+            router.push(ROUTE_CONSTANTS.ONBOARDING_STEP_5);
+            return;
+        }
         if (!selectedRepo) return;
         router.push(
             ROUTE_CONSTANTS.ONBOARDING_STEP_3 + `?repoId=${selectedRepo.slug}`
@@ -146,7 +150,11 @@ const Step2Page = () => {
 
             {/* Footer with action button */}
             <ActionFooter
-                buttonText="Select Repository"
+                buttonText={
+                    repositories?.length === 0
+                        ? "Skip pr analysis"
+                        : "Select Repository"
+                }
                 isEnabled={Boolean(selectedRepo) && !isFetching}
                 onClick={onStepComplete}
                 isLoading={isFetching}

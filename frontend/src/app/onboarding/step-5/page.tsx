@@ -62,7 +62,13 @@ const Step5Page = () => {
                             ? user.currentWorkspace
                             : "",
                 }).then(() => {
-                    redirect(ROUTE_CONSTANTS.APP_DASHBOARD);
+                    // Redirect to dashboard with congratulations flag
+                    const dashboardUrl = new URL(
+                        ROUTE_CONSTANTS.APP_DASHBOARD,
+                        window.location.origin
+                    );
+                    dashboardUrl.searchParams.set("showCongrats", "true");
+                    window.location.href = dashboardUrl.toString();
                 });
             })
             .catch((error) => {

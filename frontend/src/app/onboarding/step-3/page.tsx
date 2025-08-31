@@ -52,8 +52,9 @@ const Step3Page = () => {
     });
 
     const onStepComplete = () => {
-        // if (pullRequests?.length === 0)
-        //     redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_5 + `?repoId=${repoId}`);
+        if (pullRequests?.length === 0) {
+            redirect(ROUTE_CONSTANTS.ONBOARDING_STEP_5 + `?repoId=${repoId}`);
+        }
         if (!selectedPR) return;
         // You can add your API call or navigation logic here
 
@@ -202,7 +203,11 @@ const Step3Page = () => {
 
             {/* Footer with action button */}
             <ActionFooter
-                buttonText={false ? "Analyzing..." : "Analyze Pull Request"}
+                buttonText={
+                    pullRequests?.length === 0
+                        ? "Skip pr analysis"
+                        : "Analyze Pull Request"
+                }
                 isEnabled={
                     // pullRequests?.length == 0 ||
                     Boolean(selectedPR) && !isFetching

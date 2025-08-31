@@ -17,11 +17,11 @@ import {
 const AppSideBar = () => {
     return (
         <header className="w-[260px] p-5 fixed h-[calc(100vh-88px)] left-0 bottom-0 top-[88px]">
-            <SidebarMenu>
+            <SidebarMenu className="max-w-[200px]">
                 <SidebarMenuItem>
                     <NavLink
-                        className="inline-flex items-center font-medium gap-3 pl-3 pr-4 py-3.5 rounded-xl"
-                        activeClassName="bg-white text-gray-800"
+                        className="flex items-center font-medium gap-3 pl-3 pr-4 py-3.5 rounded-xl hover:bg-white/10 transition"
+                        activeClassName="!bg-white text-gray-800"
                         href={ROUTE_CONSTANTS.APP_DASHBOARD}
                     >
                         <PanelsTopLeft className="h-4 w-4" />
@@ -30,8 +30,8 @@ const AppSideBar = () => {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                     <NavLink
-                        className="inline-flex items-center font-medium gap-3 pl-3 pr-4 py-3.5 rounded-xl"
-                        activeClassName="bg-white text-gray-800"
+                        className="flex items-center font-medium gap-3 pl-3 pr-4 py-3.5 rounded-xl hover:bg-white/10 transition"
+                        activeClassName="!bg-white text-gray-800"
                         href={ROUTE_CONSTANTS.APP_REPOSITORIES}
                         prefetch
                     >
@@ -41,8 +41,8 @@ const AppSideBar = () => {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                     <NavLink
-                        className="inline-flex items-center font-medium gap-3 pl-3 pr-4 py-3.5 rounded-xl"
-                        activeClassName="bg-white text-gray-800"
+                        className="flex items-center font-medium gap-3 pl-3 pr-4 py-3.5 rounded-xl hover:bg-white/10 transition"
+                        activeClassName="!bg-white text-gray-800"
                         href={ROUTE_CONSTANTS.APP_PULL_REQUESTS}
                         prefetch
                     >
@@ -52,8 +52,8 @@ const AppSideBar = () => {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                     <NavLink
-                        className="inline-flex items-center font-medium gap-3 pl-3 pr-4 py-3.5 rounded-xl"
-                        activeClassName="bg-white text-gray-800"
+                        className="flex items-center font-medium gap-3 pl-3 pr-4 py-3.5 rounded-xl hover:bg-white/10 transition"
+                        activeClassName="!bg-white text-gray-800"
                         href={ROUTE_CONSTANTS.APP_TEAM_MEMBERS}
                         prefetch
                     >
@@ -63,8 +63,8 @@ const AppSideBar = () => {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                     <NavLink
-                        className="inline-flex items-center font-medium gap-3 pl-3 pr-4 py-3.5 rounded-xl"
-                        activeClassName="bg-white text-gray-800"
+                        className="flex items-center font-medium gap-3 pl-3 pr-4 py-3.5 rounded-xl hover:bg-white/10 transition"
+                        activeClassName="!bg-white text-gray-800"
                         href={ROUTE_CONSTANTS.APP_SETTINGS}
                         prefetch
                     >

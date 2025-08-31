@@ -27,13 +27,14 @@ const claudeModels = [
 ];
 
 const SettingsPage = () => {
-    const { user } = useAuthStore((s) => s);
+    const { selectedWorkspace } = useAuthStore((s) => s);
 
     const [useOwnApiKey, setUseOwnApiKey] = useState(false);
     const [apiKey, setApiKey] = useState("");
     const [selectedModel, setSelectedModel] = useState(
         "claude-4-1-opus-20241022"
     );
+    const [hourlyRate, setHourlyRate] = useState("50");
 
     const {
         mutateAsync: updateWorkspaceSettings,
@@ -45,12 +46,21 @@ const SettingsPage = () => {
         e.preventDefault();
 
         // Validation
-        const newErrors: { apiKey?: string; model?: string } = {};
+        const newErrors: {
+            apiKey?: string;
+            model?: string;
+            hourlyRate?: string;
+        } = {};
         if (useOwnApiKey && !apiKey.trim()) {
             newErrors.apiKey = "API Key is required when using own API key";
         }
         if (useOwnApiKey && !selectedModel) {
             newErrors.model = "Please select a model";
+        }
+
+        const numericHourlyRate = parseFloat(hourlyRate);
+        if (isNaN(numericHourlyRate) || numericHourlyRate <= 0) {
+            newErrors.hourlyRate = "Please enter a valid hourly rate";
         }
 
         if (Object.keys(newErrors).length > 0) {
@@ -62,6 +72,7 @@ const SettingsPage = () => {
             useOwnApiKey,
             apiKey: useOwnApiKey ? apiKey : null,
             model: useOwnApiKey ? selectedModel : null,
+            hourlyRate: numericHourlyRate,
         };
 
         await updateWorkspaceSettings(payload)
@@ -83,13 +94,14 @@ const SettingsPage = () => {
     };
 
     useEffect(() => {
-        if (user?.currentWorkspace?.workspaceSetting) {
-            const setting: any = user.currentWorkspace.workspaceSetting;
+        if (selectedWorkspace?.workspaceSetting) {
+            const setting: any = selectedWorkspace.workspaceSetting;
             setUseOwnApiKey(!!setting?.apiKey);
             setApiKey(setting?.apiKey || "");
             setSelectedModel(setting?.model || "claude-4-1-opus-20241022");
+            setHourlyRate(setting?.hourlyRate?.toString() || "50");
         }
-    }, [user]);
+    }, [selectedWorkspace]);
 
     return (
         <div className="max-w-4xl mx-auto">
@@ -108,11 +120,11 @@ const SettingsPage = () => {
                 {/* Section Header */}
                 <ContentCard.Header className="px-6 py-6 flex-col items-start border-b">
                     <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                        API Configuration
+                        Workspace Configuration
                     </h3>
                     <p className="mt-1 text-sm text-gray-500 dark:text-neutral-400">
-                        Configure your Claude API settings for personalized
-                        usage.
+                        Configure your Claude API settings and hourly rate for
+                        personalized usage.
                     </p>
                 </ContentCard.Header>
 
@@ -161,6 +173,23 @@ const SettingsPage = () => {
                                 />
                             </div>
                         )}
+
+                        {/* Hourly Rate Configuration */}
+                        <div className="pt-6 border-t border-gray-200 dark:border-gray-800">
+                            <Input
+                                label="Hourly Rate"
+                                type="number"
+                                value={hourlyRate}
+                                onValueChange={setHourlyRate}
+                                placeholder="50"
+                                description="Your hourly rate used to calculate money saved from automated PR reviews"
+                                // error={errors.hourlyRate}
+                                required
+                                min="0"
+                                step="0.01"
+                                className=""
+                            />
+                        </div>
 
                         {/* Action Buttons */}
                         <div className="flex justify-end pt-6 border-t gap-x-3 border-gray-200 dark:border-gray-800">

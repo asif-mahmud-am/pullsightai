@@ -1,5 +1,12 @@
 import { Provider } from "./user";
 
+export interface WorkspaceSetting {
+    hourlyRate?: number;
+    useOwnApiKey?: boolean;
+    apiKey?: string;
+    model?: string;
+}
+
 export interface Organization {
     _id: string;
     id: string;
@@ -16,6 +23,6 @@ export interface Organization {
     createdOn?: string;
     createdAt?: string;
     updatedAt?: string;
-    workspaceSetting?: unknown;
+    workspaceSetting?: WorkspaceSetting;
     onboardingStep?: number;
 }

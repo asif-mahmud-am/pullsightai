@@ -23,6 +23,7 @@ export interface TeamMember {
     avatarUrl: string;
     isActive?: boolean; // Active status
     invitedAt?: string; // Invitation date
+    joinedAt?: string; // Joining date
     createdAt?: string; // Creation date
     updatedAt?: string; // Update date
 }

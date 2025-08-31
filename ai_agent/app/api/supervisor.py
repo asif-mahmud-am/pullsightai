@@ -281,6 +281,9 @@ async def process_pr_review_background(extracted_data: dict):
             logger.error(f"Exception while posting summary: {str(e)}")
 
     # Process reviews in batches
+    total_input_tokens = 0
+    total_output_tokens = 0
+    
     logger.info("Starting review generation process...")
     async with httpx.AsyncClient() as client:
         if extracted_data["prFiles"]:

@@ -13,6 +13,9 @@ export interface Author {
 
 @Schema({ timestamps: true, versionKey: false })
 export class PullRequestAnalysisComment {
+    @Prop({ required: true, type: String })
+    repositorySlug: string
+
     @Prop({ required: true, type: String, index: true })
     filePath: string
 

@@ -480,7 +480,8 @@ export class GithubService {
             return {
                 ...member,
                 _id: savedMember?._id ?? null,
-                isActive: Boolean(savedMember?.isActive)
+                isActive: Boolean(savedMember?.isActive),
+                joinedAt: savedMember?.joinedAt
             }
         })
 

@@ -8,6 +8,9 @@ import { formatDate } from "@/lib/dayjs";
 import { useState } from "react";
 import ConfirmDialog from "@/components/reusable/ConfirmDialog";
 import { useUpdateRepositoryMutation } from "@/api/queries/workspace";
+import { Button } from "@/components/ui/button";
+import { Settings } from "lucide-react";
+import RepositorySettingsModal from "./RepositorySettingsModal";
 
 interface RepositoryStatusSwitchProps {
     isActive: boolean;
@@ -19,11 +22,11 @@ const RepositoryStatusSwitch = ({
     repositoryId,
 }: RepositoryStatusSwitchProps) => {
     const [showConfirm, setShowConfirm] = useState(false);
-    const updateRepository = useUpdateRepositoryMutation();
+    const { mutateAsync } = useUpdateRepositoryMutation();
 
     const handleConfirm = async () => {
         try {
-            await updateRepository.mutateAsync({
+            await mutateAsync({
                 id: repositoryId,
                 data: { isActive: !isActive },
             });
@@ -51,6 +54,34 @@ const RepositoryStatusSwitch = ({
                 onConfirm={handleConfirm}
                 confirmText={isActive ? "Deactivate" : "Activate"}
                 variant={isActive ? "destructive" : "default"}
+            />
+        </>
+    );
+};
+
+interface RepositorySettingsActionProps {
+    repository: Repository;
+}
+
+const RepositorySettingsAction = ({
+    repository,
+}: RepositorySettingsActionProps) => {
+    const [showSettings, setShowSettings] = useState(false);
+
+    return (
+        <>
+            <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSettings(true)}
+                className="h-8 w-8 p-0"
+            >
+                <Settings className="h-4 w-4" />
+            </Button>
+            <RepositorySettingsModal
+                repository={repository}
+                open={showSettings}
+                onOpenChange={setShowSettings}
             />
         </>
     );
@@ -111,5 +142,14 @@ export const columns: ColumnDef<Repository>[] = [
                 </span> // fallback if empty
             );
         },
+    },
+    {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => {
+            return <RepositorySettingsAction repository={row.original} />;
+        },
+        enableSorting: false,
+        enableHiding: false,
     },
 ];

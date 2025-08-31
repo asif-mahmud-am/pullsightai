@@ -64,14 +64,21 @@ export const workspaceEndpoints = {
     getTeamMembers: async ({
         page = 1,
         limit = 10,
+        isActive,
     }: {
         page?: number;
         limit?: number;
+        isActive?: boolean;
     }) => {
         return apiClient
             .get("/workspace/team-members", {
-                params: { page, limit },
+                params: { page, limit, isActive },
             })
+            .then((res) => res.data);
+    },
+    updateTeamMember: async (payload: { id: string; data: unknown }) => {
+        return apiClient
+            .patch(`/workspace/members/${payload.id}`, payload.data)
             .then((res) => res.data);
     },
 };

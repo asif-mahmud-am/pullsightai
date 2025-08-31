@@ -21,7 +21,7 @@ export function getAuthUrl(
     return queryParams ? `${baseUrl}?${queryParams}` : baseUrl;
 }
 
-export const numToHip = (num: number, toFixed: number = 0) => {
+export const numToHip = (num: number, toFixed: number = 1) => {
     // for like k, m, b
     if (num >= 1e9) return (num / 1e9).toFixed(toFixed) + "b";
     if (num >= 1e6) return (num / 1e6).toFixed(toFixed) + "m";

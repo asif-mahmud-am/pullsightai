@@ -13,11 +13,17 @@ import { useAuthStore } from "@/store/authStore";
 import showToast from "@/lib/toast";
 
 const claudeModels = [
-    { value: "claude-4-1-opus-20241022", label: "Claude 4.1 Opus" },
-    { value: "claude-4-opus-20241022", label: "Claude 4 Opus" },
-    { value: "claude-4-sonnet-20241022", label: "Claude 4 Sonnet" },
-    { value: "claude-3-7-sonnet-20241022", label: "Claude 3.7 Sonnet" },
-    { value: "claude-3-5-haiku-20241022", label: "Claude 3.5 Haiku" },
+    { value: "claude-4-1-opus-20241022", label: "Claude 4.1 Opus - 20241022" },
+    { value: "claude-4-opus-20241022", label: "Claude 4 Opus - 20241022" },
+    { value: "claude-4-sonnet-20241022", label: "Claude 4 Sonnet - 20241022" },
+    {
+        value: "claude-3-7-sonnet-20241022",
+        label: "Claude 3.7 Sonnet - 20241022",
+    },
+    {
+        value: "claude-3-5-haiku-20241022",
+        label: "Claude 3.5 Haiku - 20241022",
+    },
 ];
 
 const SettingsPage = () => {
@@ -89,10 +95,10 @@ const SettingsPage = () => {
         <div className="max-w-4xl mx-auto">
             {/* Header */}
             <div className="mb-8">
-                <h1 className="text-3xl font-semibold text-neutral-900 dark:text-white">
+                <h1 className="text-2xl font-semibold text-neutral-900 dark:text-white">
                     Settings
                 </h1>
-                <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
                     Manage your account settings and API configuration.
                 </p>
             </div>
@@ -152,13 +158,6 @@ const SettingsPage = () => {
                                     onChange={setSelectedModel}
                                     // error={errors.model}
                                     required
-                                />
-
-                                <Alert
-                                    variant="info"
-                                    icon={<Info />}
-                                    title="About Claude Models"
-                                    description="Claude 3.5 Sonnet offers the best balance of intelligence and speed. Choose Haiku for faster responses or Opus for the most complex tasks."
                                 />
                             </div>
                         )}

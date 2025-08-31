@@ -32,10 +32,13 @@ const PrAnalysisCard = ({
     });
     return (
         <ContentCard className={cn(``, className)}>
-            <ContentCard.Header className="flex-wrap sm:flex-nowrap gap-y-4">
+            <ContentCard.Header className="flex-wrap sm:flex-nowrap gap-y-4 min-h-[61px]">
                 <h3 className="text-muted font-semibold">PRs</h3>
             </ContentCard.Header>
-            <ContentCard.Body isLoading={isFetching}>
+            <ContentCard.Body
+                isLoading={isFetching}
+                className="flex-1 flex flex-col"
+            >
                 <div className="flex divide-x gap-9 py-5">
                     <div className="pr-9">
                         <div className="opacity-50 text-xs mb-1">Opened</div>
@@ -57,7 +60,7 @@ const PrAnalysisCard = ({
                     </div>
                 </div>
                 <ChartContainer
-                    className="border py-3 pr-3 rounded-xl"
+                    className="border py-3 pr-3 rounded-xl flex-1"
                     config={{
                         total: {
                             label: "Total",
@@ -78,13 +81,26 @@ const PrAnalysisCard = ({
                             dataKey="date"
                             tickLine={false}
                             axisLine={false}
-                            tickMargin={8}
-                            tickFormatter={(value) => formatDate(value, "DD")}
+                            tickMargin={15}
+                            height={40}
+                            tickFormatter={(value) =>
+                                formatDate(
+                                    value,
+                                    breakdown == "year"
+                                        ? "YYYY"
+                                        : breakdown == "month"
+                                        ? "MMM YY"
+                                        : "DD MMM"
+                                )
+                            }
+                            angle={-45}
+                            padding={{ right: 20 }}
                         />
                         <YAxis
                             tickLine={false}
                             axisLine={false}
-                            tickMargin={8}
+                            tickMargin={10}
+                            width={35}
                         />
                         <ChartTooltip
                             cursor={false}

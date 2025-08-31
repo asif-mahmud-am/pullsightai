@@ -15,9 +15,14 @@ export interface User {
 }
 
 export interface TeamMember {
+    _id?: string; // ID for updates
     username: string;
     provider: Provider;
     providerId: string;
     displayName: string;
     avatarUrl: string;
+    isActive?: boolean; // Active status
+    invitedAt?: string; // Invitation date
+    createdAt?: string; // Creation date
+    updatedAt?: string; // Update date
 }

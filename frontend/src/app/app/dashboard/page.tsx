@@ -9,6 +9,8 @@ import TimeMoneySavedCard from "./timeMoneySavedCard";
 import { useGetWorkspaceRepositoriesQuery } from "@/api/queries/workspace";
 import Select from "@/components/reusable/Select";
 import { Repository } from "@/types/repository";
+import OnboardingCongratsModal from "./OnboardingCongratsModal";
+import { useSearchParams, useRouter } from "next/navigation";
 
 const DashboardPage = () => {
     const [fromDate, setFromDate] = useState<string | null>(null);
@@ -16,11 +18,27 @@ const DashboardPage = () => {
     const [repo, setRepo] = useState<string | null>(null);
     const [breakdown, setBreakdown] = useState<string>("day");
     const [selectedPeriod, setSelectedPeriod] = useState<string>("7");
+    const [showCongrats, setShowCongrats] = useState(false);
+
+    const searchParams = useSearchParams();
+    const router = useRouter();
 
     const { data: repoData } = useGetWorkspaceRepositoriesQuery({
         isEnabled: true,
         limit: 100,
     });
+
+    // Check for congratulations flag and show modal once
+    useEffect(() => {
+        const congratsParam = searchParams.get("showCongrats");
+        if (congratsParam === "true") {
+            setShowCongrats(true);
+            // Clean up the URL parameter immediately to prevent showing again
+            const url = new URL(window.location.href);
+            url.searchParams.delete("showCongrats");
+            router.replace(url.pathname + url.search);
+        }
+    }, [searchParams, router]);
 
     const handlePeriodChange = (value: string) => {
         setSelectedPeriod(value);
@@ -112,6 +130,12 @@ const DashboardPage = () => {
                     breakdown={breakdown || undefined}
                 />
             </div>
+
+            {/* Onboarding Congratulations Modal */}
+            <OnboardingCongratsModal
+                open={showCongrats}
+                onOpenChange={setShowCongrats}
+            />
         </div>
     );
 };

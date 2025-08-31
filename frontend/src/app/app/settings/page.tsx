@@ -159,13 +159,6 @@ const SettingsPage = () => {
                                     // error={errors.model}
                                     required
                                 />
-
-                                <Alert
-                                    variant="info"
-                                    icon={<Info />}
-                                    title="About Claude Models"
-                                    description="Claude 3.5 Sonnet offers the best balance of intelligence and speed. Choose Haiku for faster responses or Opus for the most complex tasks."
-                                />
                             </div>
                         )}
 

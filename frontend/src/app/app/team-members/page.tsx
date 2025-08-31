@@ -6,21 +6,28 @@ import DataTable from "@/components/reusable/DataTable";
 import usePagination from "@/hooks/usePagination";
 import { useState } from "react";
 import { columns } from "./tableColumns";
+import { useOrganizationMembersQuery } from "@/api/queries/member";
+import { useAuthStore } from "@/store/authStore";
 
 const TeamActivityPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
 
-    const { data, isFetching } = useGetWorkspaceTeamMembersQuery({
-        page: currentPage,
-        limit: 10,
-        isEnabled: true,
+    const user = useAuthStore((s) => s.user);
+    const provider = user?.provider || "github";
+
+    // const { data, isFetching } = useGetWorkspaceTeamMembersQuery({
+    //     page: currentPage,
+    //     limit: 10,
+    //     isEnabled: true,
+    // });
+    const {
+        data = [],
+        isFetching,
+        error,
+    } = useOrganizationMembersQuery({
+        provider,
     });
 
-    const { Pagination } = usePagination({
-        totalPages: data?.data?.totalPages || 1,
-        currentPage,
-        onPageChange: setCurrentPage,
-    });
     return (
         <div className="">
             {/* Header */}
@@ -38,9 +45,8 @@ const TeamActivityPage = () => {
                     <DataTable
                         columns={columns}
                         isLoading={isFetching}
-                        data={data?.data?.docs || []}
+                        data={data || []}
                     />
-                    <Pagination />
                 </ContentCard.Body>
             </ContentCard>
         </div>

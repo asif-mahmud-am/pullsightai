@@ -76,9 +76,9 @@ export const workspaceEndpoints = {
             })
             .then((res) => res.data);
     },
-    updateTeamMember: async (payload: { id: string; data: unknown }) => {
+    updateTeamMember: async (data: unknown) => {
         return apiClient
-            .patch(`/workspace/members/${payload.id}`, payload.data)
+            .post(`/workspace/members/`, data)
             .then((res) => res.data);
     },
 };

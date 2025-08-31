@@ -209,8 +209,8 @@ const Step3Page = () => {
                         : "Analyze Pull Request"
                 }
                 isEnabled={
-                    // pullRequests?.length == 0 ||
-                    Boolean(selectedPR) && !isFetching
+                    pullRequests?.length == 0 ||
+                    (Boolean(selectedPR) && !isFetching)
                 }
                 isLoading={isFetching}
                 onClick={onStepComplete}

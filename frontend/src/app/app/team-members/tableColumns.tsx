@@ -11,23 +11,22 @@ import { TeamMember } from "@/types/user";
 
 interface TeamMemberStatusSwitchProps {
     isActive: boolean;
-    memberId: string;
+    member: TeamMember;
     memberName: string;
 }
 
 const TeamMemberStatusSwitch = ({
     isActive,
-    memberId,
+    member,
     memberName,
 }: TeamMemberStatusSwitchProps) => {
     const [showConfirm, setShowConfirm] = useState(false);
-    const updateTeamMember = useUpdateTeamMemberMutation();
+    const { mutateAsync } = useUpdateTeamMemberMutation();
 
     const handleConfirm = async () => {
         try {
-            await updateTeamMember.mutateAsync({
-                id: memberId,
-                data: { isActive: !isActive },
+            await mutateAsync({
+                members: [{ ...member, isActive: !isActive }],
             });
             setShowConfirm(false);
         } catch (error) {
@@ -64,13 +63,12 @@ export const columns: ColumnDef<TeamMember>[] = [
         header: "Status",
         cell: ({ row }) => {
             const active = row.getValue("isActive") as boolean;
-            const memberId = row.original._id || row.original.providerId; // Fallback to providerId if _id not available
             const memberName =
                 row.original.displayName || row.original.username;
             return (
                 <TeamMemberStatusSwitch
                     isActive={active ?? true} // Default to active if not specified
-                    memberId={memberId}
+                    member={row.original}
                     memberName={memberName}
                 />
             );
@@ -92,13 +90,13 @@ export const columns: ColumnDef<TeamMember>[] = [
         },
     },
     {
-        accessorKey: "invitedAt",
-        header: "Invited",
+        accessorKey: "joinedAt",
+        header: "Joined",
         cell: ({ row }) => {
-            const invitedAt = row.getValue("invitedAt") as string | undefined;
+            const joinedAt = row.getValue("joinedAt") as string | undefined;
             return (
                 <span className="text-gray-400">
-                    {formatDate(invitedAt || "")}
+                    {joinedAt ? formatDate(joinedAt || "") : "N/A"}
                 </span>
             );
         },

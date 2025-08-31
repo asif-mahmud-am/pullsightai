@@ -233,7 +233,8 @@ export class AnalysisService {
                         pullRequestAnalysisId:
                             Types.ObjectId.createFromHexString(
                                 postReviewDto.pullRequestAnalysisId
-                            )
+                            ),
+                        repositorySlug: analysis.repositorySlug
                     }
                 )
             })

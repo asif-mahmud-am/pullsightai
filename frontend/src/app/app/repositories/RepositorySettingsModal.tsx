@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Settings, Save, X } from "lucide-react";
 import Dialog from "@/components/reusable/Dialog";
 import { Button } from "@/components/ui/button";
@@ -44,9 +44,16 @@ const RepositorySettingsModal = ({
     const { mutateAsync, isPending } = useUpdateRepositoryMutation();
 
     const handleSave = async () => {
+        // ignore will be array of strings
         await mutateAsync({
             id: repository._id,
-            data: settings,
+            data: {
+                ...settings,
+                ignore: settings?.ignore
+                    ?.split("\n")
+                    ?.map((line) => line.trim())
+                    ?.filter(Boolean),
+            },
         });
     };
 
@@ -60,6 +67,13 @@ const RepositorySettingsModal = ({
             });
         }
     };
+
+    useEffect(() => {
+        setSettings({
+            minSeverity: repository.minSeverity,
+            ignore: repository.ignore?.join("\n"),
+        });
+    }, [repository, open]);
 
     return (
         <Dialog
@@ -125,7 +139,7 @@ const RepositorySettingsModal = ({
                     </p>
                     <Textarea
                         id="ignored-files"
-                        placeholder={`# Example patterns:\n*.min.js\ndist/\nnode_modules/\n**/*.test.ts\nvendor/\n.env*`}
+                        placeholder={`*.min.js\ndist/\nnode_modules/\n**/*.test.ts\nvendor/\n.env*`}
                         value={settings.ignore}
                         onChange={(e) =>
                             setSettings((prev) => ({
@@ -138,8 +152,7 @@ const RepositorySettingsModal = ({
                         className="font-mono text-sm"
                     />
                     <p className="text-xs text-gray-400">
-                        Use gitignore-style patterns. Lines starting with # are
-                        treated as comments.
+                        Use gitignore-style patterns.
                     </p>
                 </div>
             </div>

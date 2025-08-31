@@ -103,19 +103,33 @@ export const useGetWorkspacePullRequestsQuery = ({
 export const useGetWorkspaceTeamMembersQuery = ({
     page = 1,
     limit = 10,
+    isActive,
     isEnabled = true,
 }: {
     page?: number;
     limit?: number;
+    isActive?: boolean;
     isEnabled?: boolean;
 }) => {
     return useQuery({
-        queryKey: ["teamMembers", { page, limit }],
+        queryKey: ["teamMembers", { page, limit, isActive }],
         queryFn: () =>
             workspaceEndpoints.getTeamMembers({
                 page,
                 limit,
+                isActive,
             }),
         enabled: isEnabled,
+    });
+};
+
+export const useUpdateTeamMemberMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: workspaceEndpoints.updateTeamMember,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["teamMembers"] });
+        },
     });
 };

@@ -23,5 +23,5 @@ export class PullRequestAnalysisDto {
     usageInfo?: any
 
     @IsOptional()
-    reviewInfo: any
+    summary_info: any
 }

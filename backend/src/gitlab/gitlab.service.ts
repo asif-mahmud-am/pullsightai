@@ -32,7 +32,10 @@ export class GitlabService {
         private readonly analysisService: AnalysisService
     ) {}
 
-    async getAllRepositories(user: any, filter?: string): Promise<Repository[]> {
+    async getAllRepositories(
+        user: any,
+        filter?: string
+    ): Promise<Repository[]> {
         const userData = await this.dataService.users
             .findOne({ _id: user.sub }, 'accessToken currentWorkspace')
             .populate('currentWorkspace', 'slug type')
@@ -41,7 +44,7 @@ export class GitlabService {
                 'Access token is required or workspace not set'
             )
         }
-        
+
         const allRepositories = await this.gitlabApiService.getAllRepositories(
             userData.accessToken,
             userData.currentWorkspace['slug'],
@@ -55,13 +58,13 @@ export class GitlabService {
                 workspace: userData.currentWorkspace['_id'],
                 provider: 'gitlab'
             })
-            
+
             // Get the repository IDs that are already added
-            const addedRepoIds = addedRepos.map(repo => repo.id.toString())
-            
+            const addedRepoIds = addedRepos.map((repo) => repo.id.toString())
+
             // Filter out repositories that are already added
-            return allRepositories.filter(repo => 
-                !addedRepoIds.includes(repo.id.toString())
+            return allRepositories.filter(
+                (repo) => !addedRepoIds.includes(repo.id.toString())
             )
         }
 
@@ -304,7 +307,11 @@ export class GitlabService {
                 pullRequestFormattedData = false
         }
         if (pullRequestFormattedData) {
-            this.analysisService.makeAnalysis(pullRequestFormattedData, prEvent)
+            this.analysisService.makeAnalysis(
+                pullRequestFormattedData,
+                prEvent,
+                isApplicable.repository
+            )
         }
         return {}
     }
@@ -350,11 +357,38 @@ export class GitlabService {
         )
     }
 
-    async getOrgMembers(user: any) {
+    async getOrgMembers(user: any, query: any) {
         const userData =
             await this.analysisService.getUserDataWithWorkspace(user)
 
-        return await this.gitlabApiService.getOrgMembers(userData)
+        const members = await this.gitlabApiService.getOrgMembers(userData)
+        const savedMembers = await this.dataService.workspaceMembers.find({
+            workspace: userData.currentWorkspace?._id
+        })
+
+        // Create a Map for O(1) lookup instead of O(n) for each member
+        const savedMembersMap = new Map(
+            savedMembers.map((saved: any) => [saved.providerId, saved])
+        )
+
+        // Update member list with saved member information
+        const updatedMembers = members.map((member: any) => {
+            const savedMember = savedMembersMap.get(member.providerId)
+            return {
+                ...member,
+                _id: savedMember?._id ?? null,
+                isActive: Boolean(savedMember?.isActive)
+            }
+        })
+
+        // Apply filter if requested
+        if (query.isActive !== undefined) {
+            const isActiveFilter = query.isActive === 'true'
+            return updatedMembers.filter(
+                (member) => member.isActive === isActiveFilter
+            )
+        }
+        return updatedMembers
     }
 
     async removeWebhook(

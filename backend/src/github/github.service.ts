@@ -314,13 +314,13 @@ export class GithubService {
                 workspace: userData.currentWorkspace['_id'],
                 provider: 'github'
             })
-            
+
             // Get the repository IDs that are already added
-            const addedRepoIds = addedRepos.map(repo => repo.id.toString())
-            
+            const addedRepoIds = addedRepos.map((repo) => repo.id.toString())
+
             // Filter out repositories that are already added
-            allRepositories = allRepositories.filter(repo => 
-                !addedRepoIds.includes(repo.id.toString())
+            allRepositories = allRepositories.filter(
+                (repo) => !addedRepoIds.includes(repo.id.toString())
             )
         }
 
@@ -424,7 +424,7 @@ export class GithubService {
         )
     }
 
-    async getOrgMembers(user: any) {
+    async getOrgMembers(user: any, query: any) {
         const userData =
             await this.analysisService.getUserDataWithWorkspace(user)
 
@@ -432,12 +432,13 @@ export class GithubService {
         const octokit = await this.githubEventService.initOctokitApp(
             Number(workspace.installationId)
         )
+        let members
         if (workspace.type === 'User') {
             const { data: user } = await octokit.rest.users.getByUsername({
                 username: workspace.slug
             })
 
-            return [
+            members = [
                 {
                     provider: 'github',
                     providerId: user.id.toString(),
@@ -446,20 +447,51 @@ export class GithubService {
                     displayName: user.name || user.login
                 }
             ]
+        } else {
+            const org = workspace.slug
+            const membersData = await octokit.paginate(
+                octokit.orgs.listMembers,
+                {
+                    org: org,
+                    per_page: 100
+                }
+            )
+            members = membersData.map((member) => ({
+                provider: 'github',
+                providerId: member.id.toString(),
+                username: member.login,
+                avatarUrl: member.avatar_url,
+                displayName: member.login
+            }))
         }
 
-        const org = workspace.slug
-        const members = await octokit.paginate(octokit.orgs.listMembers, {
-            org: org,
-            per_page: 100
+        const savedMembers = await this.dataService.workspaceMembers.find({
+            workspace: userData.currentWorkspace?._id
         })
-        return members.map((member) => ({
-            provider: 'github',
-            providerId: member.id.toString(),
-            username: member.login,
-            avatarUrl: member.avatar_url,
-            displayName: member.login
-        }))
+
+        // Create a Map for O(1) lookup instead of O(n) for each member
+        const savedMembersMap = new Map(
+            savedMembers.map((saved: any) => [saved.providerId, saved])
+        )
+
+        // Update member list with saved member information
+        const updatedMembers = members.map((member: any) => {
+            const savedMember = savedMembersMap.get(member.providerId)
+            return {
+                ...member,
+                _id: savedMember?._id ?? null,
+                isActive: Boolean(savedMember?.isActive)
+            }
+        })
+
+        // Apply filter if requested
+        if (query.isActive !== undefined) {
+            const isActiveFilter = query.isActive === 'true'
+            return updatedMembers.filter(
+                (member) => member.isActive === isActiveFilter
+            )
+        }
+        return updatedMembers
     }
 
     async processGithubEvent(event: any, payload: any) {
@@ -473,11 +505,7 @@ export class GithubService {
         if (!isApplicable) {
             return {}
         }
-        // await this.dataService.eventLogs.create({
-        //     eventName: event,
-        //     provider: 'github',
-        //     eventPayload: payload
-        // })
+
         let pullRequestFormattedData: StructuredPRData | boolean
         let prEvent
         switch (event) {
@@ -504,7 +532,11 @@ export class GithubService {
                 pullRequestFormattedData = false
         }
         if (pullRequestFormattedData) {
-            this.analysisService.makeAnalysis(pullRequestFormattedData, prEvent)
+            this.analysisService.makeAnalysis(
+                pullRequestFormattedData,
+                prEvent,
+                isApplicable.repository
+            )
         }
         return {}
     }

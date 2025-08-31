@@ -1,7 +1,6 @@
 import logging
 from typing import List, Dict, Tuple
 from .token_counter import estimate_tokens_for_file, is_file_too_large
-from .filter_files import filter_pr_files
 
 logger = logging.getLogger(__name__)
 
@@ -53,15 +52,6 @@ def create_summary_chunks(files: List[Dict], max_chunk_tokens: int = 200000, max
             ignored_files.append({
                 "fileName": file_name,
                 "reason": f"File exceeds {max_file_tokens} token limit"
-                # "token_count": estimate_tokens_for_file(file_diff)
-            })
-            continue
-
-        if filter_pr_files(file_name):
-            logger.warning(f"File {file_name} is ignored, ignoring for summary")
-            ignored_files.append({
-                "fileName": file_name,
-                "reason": "File is ignored"
                 # "token_count": estimate_tokens_for_file(file_diff)
             })
             continue
@@ -129,6 +119,8 @@ def prepare_chunk_for_summary(chunk: Dict, pr_metadata: Dict) -> Dict:
         "prBody": pr_metadata.get("prBody", ""),
         "author_name": pr_metadata.get("author_name", ""),
         "prNumber": pr_metadata.get("prNumber", ""),
+        "api_key": pr_metadata.get("api_key", None),
+        "model_name": pr_metadata.get("model_name", "claude-opus-4-1-20250805"),
         "changed_files": ", ".join(changed_files),
         "repo_structure_summary": pr_metadata.get("repo_structure_summary", ""),
         "pr_diff": pr_diff,

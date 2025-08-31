@@ -50,21 +50,30 @@ export class AnalysisService {
             'and providerId:',
             providerId
         )
-        const repository = await this.dataService.repositories.findOne({
-            slug: repositorySlug,
-            'author.username': workspaceSlug,
-            provider: provider,
-            isActive: true
-        })
+        const repository = await this.dataService.repositories
+            .findOne({
+                slug: repositorySlug,
+                'author.username': workspaceSlug,
+                provider: provider,
+                isActive: true
+            })
+            .populate('workspace')
         if (!repository) {
-            console.log('Repository not found or does not match the criteria')
             return false
         }
-        return await this.dataService.workspaceMembers.countDocuments({
-            provider: provider,
-            providerId: providerId,
-            workspace: repository.workspace
-        })
+        const workspaceMemberCount =
+            await this.dataService.workspaceMembers.countDocuments({
+                provider: provider,
+                providerId: providerId,
+                workspace: repository.workspace,
+                isActive: true
+            })
+        if (!workspaceMemberCount) {
+            return false
+        }
+        return {
+            repository
+        }
     }
 
     async getAndSavePullRequestFormattedData(
@@ -139,7 +148,8 @@ export class AnalysisService {
 
     async makeAnalysis(
         pullRequestFormattedData: StructuredPRData,
-        event: PREvent
+        event: PREvent,
+        repository?: any
     ) {
         const savedPullRequestFormattedData =
             await this.getAndSavePullRequestFormattedData(
@@ -178,7 +188,11 @@ export class AnalysisService {
         }
         return {
             pullRequestAnalysisId: pullRequestAnalysis['_id'],
-            pullRequest: savedPullRequestFormattedData
+            pullRequest: savedPullRequestFormattedData,
+            apiKey: repository?.workspace?.workspaceSetting?.apiKey,
+            modelName: repository?.workspace?.workspaceSetting?.modelName,
+            minSeverity: repository?.minSeverity,
+            ignore: repository?.ignore
         }
     }
 
@@ -193,7 +207,9 @@ export class AnalysisService {
                     {
                         $set: {
                             status: Status.COMPLETED,
-                            completedAt: new Date()
+                            completedAt: new Date(),
+                            prReviewModelInfo: postReviewDto.modelInfo,
+                            prReviewUsageInfo: postReviewDto.usageInfo
                         }
                     },
                     { new: true }
@@ -260,10 +276,10 @@ export class AnalysisService {
                         modelInfo: postSummery.modelInfo,
                         usageInfo: postSummery.usageInfo,
                         estimatedCodeReviewEffort:
-                            postSummery?.reviewInfo
+                            postSummery?.summary_info
                                 ?.estimated_code_review_effort,
                         potentialIssueCount:
-                            postSummery?.reviewInfo?.potential_issue_count
+                            postSummery?.summary_info?.potential_issue_count
                     }
                 },
                 { new: true }

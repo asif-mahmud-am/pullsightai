@@ -42,10 +42,13 @@ const IssueAnalysisCard = ({
     });
     return (
         <ContentCard className={cn(``, className)}>
-            <ContentCard.Header className="flex-wrap sm:flex-nowrap gap-y-4">
+            <ContentCard.Header className="flex-wrap sm:flex-nowrap gap-y-4 min-h-[61px]">
                 <h3 className="text-muted font-semibold">Issues</h3>
             </ContentCard.Header>
-            <ContentCard.Body isLoading={isFetching}>
+            <ContentCard.Body
+                isLoading={isFetching}
+                className="flex-1 flex flex-col"
+            >
                 <div className="flex divide-x gap-9 py-5">
                     <div className="pr-9">
                         <div className="opacity-50 text-xs mb-1">Total</div>
@@ -58,9 +61,9 @@ const IssueAnalysisCard = ({
                         <div className="text-3xl">0%</div>
                     </div> */}
                 </div>
-                <div className="border rounded-xl">
+                <div className="border rounded-xl flex-1">
                     {data?.data?.total < 1 ? (
-                        <div className="text-center text-muted py-20">
+                        <div className="text-center text-muted p-6 h-full flex items-center justify-center">
                             No issues data found for the selected period.
                         </div>
                     ) : (
@@ -111,10 +114,41 @@ const IssueAnalysisCard = ({
                                     outerRadius={70}
                                 />
                                 <ChartLegend
-                                    content={
-                                        <ChartLegendContent nameKey="name" />
-                                    }
-                                    className="-translate-y-2 flex-wrap gap-2 *:basis-1/4 *:justify-center"
+                                    content={({ payload }) => (
+                                        <div className="flex flex-wrap gap-2 justify-center mt-4">
+                                            {payload?.map((entry, index) => {
+                                                const count =
+                                                    entry.payload?.value || 0;
+                                                const percentage = data?.data
+                                                    ?.total
+                                                    ? Math.round(
+                                                          (count /
+                                                              data.data.total) *
+                                                              100
+                                                      )
+                                                    : 0;
+                                                return (
+                                                    <div
+                                                        key={`legend-${index}`}
+                                                        className="flex items-center gap-2 text-xs"
+                                                    >
+                                                        <div
+                                                            className="w-2 h-2 rounded-full"
+                                                            style={{
+                                                                backgroundColor:
+                                                                    entry.color,
+                                                            }}
+                                                        />
+                                                        <span className="capitalize">
+                                                            {entry.value} (
+                                                            {percentage}%)
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                    className="-translate-y-2"
                                 />
                             </PieChart>
                         </ChartContainer>

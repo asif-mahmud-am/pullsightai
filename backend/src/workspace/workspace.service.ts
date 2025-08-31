@@ -8,8 +8,12 @@ import { MemberRole } from 'src/database/schemas/workspace-members.schema'
 import { GitlabService } from 'src/gitlab/gitlab.service'
 import { CreateAndUpdateWorkspaceSettingsDto } from 'src/workspace/dto/create-update-workspace-settings.dto'
 import { MakeSubscriptionDto } from 'src/workspace/dto/make-subscription.dto'
+import { UpdateMemberDto } from 'src/workspace/dto/update-member.dto'
 import { UpdateRepositoryDto } from 'src/workspace/dto/update-repository.dto'
-import { CreateRepositoryDto } from './dto/create-repository.dto'
+import {
+    CreateMembersDto,
+    CreateRepositoryDto
+} from './dto/create-repository.dto'
 
 @Injectable()
 export class WorkspaceService {
@@ -110,7 +114,6 @@ export class WorkspaceService {
         const userData =
             await this.analysisService.getUserDataWithWorkspace(user)
         let repositories = makeSubscriptionDto.repositories
-        console.log('userData', userData)
 
         // update workspace onboarding step
         await this.dataService.workspaces.updateOne(
@@ -151,51 +154,101 @@ export class WorkspaceService {
                 }
             })
         )
-        makeSubscriptionDto.members.map(async (member) => {
-            const user = await this.dataService.workspaceMembers.findOne({
-                providerId: member.providerId,
-                provider: userData.provider,
-                workspace: userData?.currentWorkspace!._id
-            })
-            if (!user) {
-                await this.dataService.workspaceMembers.create({
+
+        Promise.all(
+            makeSubscriptionDto.members.map(async (member) => {
+                const user = await this.dataService.workspaceMembers.findOne({
                     providerId: member.providerId,
                     provider: userData.provider,
-                    username: member.username,
-                    role:
-                        userData.providerId == member.providerId
-                            ? MemberRole.OWNER
-                            : MemberRole.OWNER,
-                    user:
-                        userData.providerId == member.providerId
-                            ? userData._id
-                            : null,
-                    workspace: userData?.currentWorkspace!._id,
-                    isActive: true,
-                    invitedAt: new Date()
+                    workspace: userData?.currentWorkspace!._id
                 })
-            } else {
-                await this.dataService.workspaceMembers.updateOne(
-                    { _id: user._id },
-                    {
-                        $set: {
-                            role:
-                                userData.providerId == member.providerId
-                                    ? MemberRole.OWNER
-                                    : MemberRole.OWNER,
-                            isActive: true
+                if (!user) {
+                    await this.dataService.workspaceMembers.create({
+                        providerId: member.providerId,
+                        provider: userData.provider,
+                        username: member.username,
+                        role:
+                            userData.providerId == member.providerId
+                                ? MemberRole.OWNER
+                                : MemberRole.MEMBER,
+                        user:
+                            userData.providerId == member.providerId
+                                ? userData._id
+                                : null,
+                        workspace: userData?.currentWorkspace!._id,
+                        isActive: true,
+                        invitedAt: new Date()
+                    })
+                } else {
+                    await this.dataService.workspaceMembers.updateOne(
+                        { _id: user._id },
+                        {
+                            $set: {
+                                role:
+                                    userData.providerId == member.providerId
+                                        ? MemberRole.OWNER
+                                        : MemberRole.MEMBER,
+                                isActive: true,
+                                invitedAt: new Date()
+                            }
                         }
-                    }
-                )
-            }
-        })
+                    )
+                }
+            })
+        )
         return {}
     }
 
-    async createRepository(createRepositoryDto: CreateRepositoryDto,
+    async addMembers(createMembersDto: CreateMembersDto, user: any) {
+        const userData =
+            await this.analysisService.getUserDataWithWorkspace(user)
+
+        Promise.all(
+            createMembersDto.members.map(async (member) => {
+                const user = await this.dataService.workspaceMembers.findOne({
+                    providerId: member.providerId,
+                    provider: userData.provider,
+                    workspace: userData?.currentWorkspace!._id
+                })
+                if (!user) {
+                    await this.dataService.workspaceMembers.create({
+                        providerId: member.providerId,
+                        provider: userData.provider,
+                        username: member.username,
+                        role:
+                            userData.providerId == member.providerId
+                                ? MemberRole.OWNER
+                                : MemberRole.MEMBER,
+                        user:
+                            userData.providerId == member.providerId
+                                ? userData._id
+                                : null,
+                        workspace: userData?.currentWorkspace!._id,
+                        isActive: member.isActive
+                    })
+                } else {
+                    await this.dataService.workspaceMembers.updateOne(
+                        { _id: user._id },
+                        {
+                            $set: {
+                                role:
+                                    userData.providerId == member.providerId
+                                        ? MemberRole.OWNER
+                                        : MemberRole.MEMBER,
+                                isActive: member.isActive
+                            }
+                        }
+                    )
+                }
+            })
+        )
+        return {}
+    }
+
+    async createRepository(
+        createRepositoryDto: CreateRepositoryDto,
         user: any
     ) {
-        
         const userData =
             await this.analysisService.getUserDataWithWorkspace(user)
         let repositories = createRepositoryDto.repositories
@@ -275,7 +328,28 @@ export class WorkspaceService {
                 await this.deleteWebhook(repository, accessToken.accessToken)
             }
         }
+        if (body.isActive === true) {
+            const userData = await this.dataService.users
+                .findOne(
+                    { _id: user.sub, provider: user.provider },
+                    'accessToken currentWorkspace provider'
+                )
+                .populate('currentWorkspace')
+            if (repository && userData) {
+                const webhookData = await this.setWebhook(userData, repository)
+                repository.webhookToken = webhookData.webhookToken
+                await repository.save()
+            }
+        }
         return repository
+    }
+
+    async updateMember(id: string, body: UpdateMemberDto, user) {
+        await this.dataService.workspaceMembers.updateOne(
+            { _id: id },
+            { $set: { ...body } }
+        )
+        return {}
     }
 
     async deleteWebhook(repository: any, accessToken: any) {

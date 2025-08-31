@@ -42,6 +42,18 @@ export class AuthService {
                 tokenExpiresAt,
                 raw: profile._raw
             })
+            const invitation = await this.dataService.workspaceMembers.findOne({
+                provider: provider,
+                providerId: profile.id
+            })
+            if (invitation) {
+                invitation.joinedAt = new Date()
+                invitation.user = user._id as any
+                invitation.save()
+                user.currentWorkspace = invitation.workspace
+                user.workspaces = [invitation.workspace]
+                await user.save()
+            }
         } else {
             user.displayName = profile.displayName
             user.email = profile.emails?.[0]?.value
@@ -70,22 +82,21 @@ export class AuthService {
             })
             .populate([
                 {
-                    path: 'currentWorkspace',
+                    path: 'currentWorkspace'
                 },
                 {
-                    path: 'workspaces',
+                    path: 'workspaces'
                 }
             ])
     }
 
     async updateProfile(user: any, updateProfileDto: UpdateOnboardingStepDto) {
-        
         let updateOperation: any = {}
-        
+
         if (updateProfileDto.currentWorkspace === null) {
             // Use $unset to remove the field from MongoDB document
             updateOperation = {
-                $unset: { currentWorkspace: "" },
+                $unset: { currentWorkspace: '' },
                 $set: { ...updateProfileDto }
             }
             delete updateOperation.$set.currentWorkspace

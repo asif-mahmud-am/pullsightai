@@ -35,7 +35,10 @@ export class BitbucketController {
 
     @UseGuards(AuthGuard('jwt-cookie'))
     @Get('org-repos')
-    async getWorkspaceRepositories(@Req() req: any, @Query('filter') filter?: string) {
+    async getWorkspaceRepositories(
+        @Req() req: any,
+        @Query('filter') filter?: string
+    ) {
         return {
             message: 'Workspace repositories fetched successfully',
             result: await this.bitbucketService.getWorkspaceRepositories(
@@ -102,10 +105,10 @@ export class BitbucketController {
 
     @UseGuards(AuthGuard('jwt-cookie'))
     @Get('org-members')
-    async getMembers(@Req() req: any) {
+    async getMembers(@Req() req: any, @Query() query: any) {
         return {
             message: 'Organization members fetched successfully',
-            result: await this.bitbucketService.getOrgMembers(req.user)
+            result: await this.bitbucketService.getOrgMembers(req.user, query)
         }
     }
 

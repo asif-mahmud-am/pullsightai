@@ -43,6 +43,12 @@ export class PullRequestAnalysis {
     @Prop({ type: Object, default: null })
     usageInfo: any
 
+    @Prop({ type: Object, default: null })
+    prReviewModelInfo: any
+
+    @Prop({ type: Object, default: null })
+    prReviewUsageInfo: any
+
     @Prop({ type: String, enum: Status, default: Status.INPROGRESS })
     status: Status
 

@@ -53,7 +53,10 @@ export class GitlabController {
     async getAllRepositories(@Req() req, @Query('filter') filter?: string) {
         return {
             message: 'All repositories fetched successfully',
-            result: await this.gitlabService.getAllRepositories(req.user, filter)
+            result: await this.gitlabService.getAllRepositories(
+                req.user,
+                filter
+            )
         }
     }
 
@@ -103,10 +106,10 @@ export class GitlabController {
 
     @UseGuards(AuthGuard('jwt-cookie'))
     @Get('org-members')
-    async getMembers(@Req() req: any) {
+    async getMembers(@Req() req: any, @Query() query: any) {
         return {
             message: 'Organization members fetched successfully',
-            result: await this.gitlabService.getOrgMembers(req.user)
+            result: await this.gitlabService.getOrgMembers(req.user, query)
         }
     }
 }

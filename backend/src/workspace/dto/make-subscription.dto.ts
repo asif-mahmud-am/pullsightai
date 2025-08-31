@@ -19,6 +19,10 @@ export class MemberDto {
     @IsString()
     @IsNotEmpty()
     username: string
+
+    @IsOptional()
+    @IsBoolean()
+    isActive: boolean = true
 }
 
 export class AuthorDto {

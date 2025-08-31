@@ -129,7 +129,7 @@ export class GitlabApiService {
     async getAllGroups(accessToken: string): Promise<Workspace[]> {
         const userProfile = await this.getUserProfile(accessToken)
         const groups = await this.httpService.get(
-            `${this.baseUrl}/groups?per_page=100&order_by=name&sort=asc`,
+            `${this.baseUrl}/groups?owned=true&per_page=100&order_by=name&sort=asc`,
             {
                 headers: this.getAuthHeaders(accessToken)
             }

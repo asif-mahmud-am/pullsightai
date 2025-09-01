@@ -59,6 +59,7 @@ export class AnalysisService {
             })
             .populate('workspace')
         if (!repository) {
+            console.log('Repository not found or inactive')
             return false
         }
         const workspaceMemberCount =
@@ -69,6 +70,10 @@ export class AnalysisService {
                 isActive: true
             })
         if (!workspaceMemberCount) {
+            console.log(
+                'No active workspace member found for providerId:',
+                providerId
+            )
             return false
         }
         return {

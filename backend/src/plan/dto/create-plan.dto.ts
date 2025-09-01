@@ -36,9 +36,8 @@ export class CreatePlanDto {
     @Min(0)
     tokenLimitPerDev: number
 
-    @IsNumber()
-    @Min(1)
-    noOfDays: number
+    @IsString()
+    billingCycle: string
 
     @IsArray()
     @ValidateNested({ each: true })

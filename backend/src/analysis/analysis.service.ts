@@ -66,7 +66,7 @@ export class AnalysisService {
             await this.dataService.workspaceMembers.countDocuments({
                 provider: provider,
                 providerId: providerId,
-                workspace: repository.workspace,
+                workspace: repository.workspace!['_id'],
                 isActive: true
             })
         if (!workspaceMemberCount) {

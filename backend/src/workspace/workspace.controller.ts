@@ -66,7 +66,7 @@ export class WorkspaceController {
         @Req() req: any
     ) {
         return {
-            message: 'Repositories added successfully',
+            message: 'Members added successfully',
             result: await this.workspaceService.addMembers(
                 createMembersDto,
                 req.user

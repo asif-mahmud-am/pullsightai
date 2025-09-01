@@ -223,27 +223,21 @@ export class BitbucketService {
     }
 
     async processBitbucketEvent(event: any, payload: any) {
-        console.log(`Processing Bitbucket event: ${event} ------->>`, payload)
-        // await this.dataService.eventLogs.create({
-        //     eventName: event,
-        //     provider: 'bitbucket',
-        //     eventPayload: event
-        // })
-        const isApplicable =
-            await this.analysisService.checkApplicableForAnalysis(
-                payload.repository.full_name.split('/')[1],
-                payload.repository.owner.username,
-                'bitbucket',
-                payload.actor.uuid
-            )
-        if (!isApplicable) {
-            return {}
-        }
-
+        let isApplicable
         let pullRequestFormattedData: StructuredPRData | boolean
         let prEvent
         switch (event) {
             case 'pullrequest:created':
+                isApplicable =
+                    await this.analysisService.checkApplicableForAnalysis(
+                        payload.repository.full_name.split('/')[1],
+                        payload.repository.owner.username,
+                        'bitbucket',
+                        payload.actor.uuid
+                    )
+                if (!isApplicable) {
+                    return {}
+                }
                 prEvent = PREvent.CREATED
                 pullRequestFormattedData =
                     await this.bitbucketEventsService.handleBitbucketPullRequest(
@@ -252,6 +246,16 @@ export class BitbucketService {
                     )
                 break
             case 'pullrequest:updated':
+                isApplicable =
+                    await this.analysisService.checkApplicableForAnalysis(
+                        payload.repository.full_name.split('/')[1],
+                        payload.repository.owner.username,
+                        'bitbucket',
+                        payload.actor.uuid
+                    )
+                if (!isApplicable) {
+                    return {}
+                }
                 prEvent = PREvent.UPDATED
                 pullRequestFormattedData =
                     await this.bitbucketEventsService.handleBitbucketPullRequest(

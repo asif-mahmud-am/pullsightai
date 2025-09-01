@@ -29,6 +29,10 @@ export class AuthService {
         }
         const expiry = defaultExpiry[provider] || 7200 // Default to 2 hours
         const tokenExpiresAt = new Date(Date.now() + expiry * 1000)
+        const invitation = await this.dataService.workspaceMembers.findOne({
+            provider: provider,
+            providerId: profile.id
+        })
         if (!user) {
             user = await this.dataService.users.create({
                 provider,
@@ -40,19 +44,11 @@ export class AuthService {
                 accessToken,
                 refreshToken,
                 tokenExpiresAt,
-                raw: profile._raw
-            })
-            const invitation = await this.dataService.workspaceMembers.findOne({
-                provider: provider,
-                providerId: profile.id
+                raw: profile._raw,
+                workspaces: []
             })
             if (invitation) {
-                invitation.joinedAt = new Date()
-                invitation.user = user._id as any
-                invitation.save()
                 user.currentWorkspace = invitation.workspace
-                user.workspaces = [invitation.workspace]
-                await user.save()
             }
         } else {
             user.displayName = profile.displayName
@@ -61,8 +57,14 @@ export class AuthService {
             user.accessToken = accessToken
             user.refreshToken = refreshToken
             user.tokenExpiresAt = tokenExpiresAt
-            await user.save()
         }
+        if (invitation && !invitation.joinedAt) {
+            invitation.joinedAt = new Date()
+            invitation.user = user._id as any
+            invitation.save()
+            user.workspaces?.push(invitation.workspace)
+        }
+        await user.save()
         return await this.getProfile(user._id)
     }
 

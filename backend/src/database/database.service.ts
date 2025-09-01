@@ -5,6 +5,8 @@ import {
     EventLog,
     EventLogDocument
 } from 'src/database/schemas/event-log.schema'
+import { Pack, PackDocument } from 'src/database/schemas/pack.schema'
+import { Plan, PlanDocument } from 'src/database/schemas/plan.schema'
 import {
     PullRequestAnalysisComment,
     PullRequestAnalysisCommentDocument
@@ -41,6 +43,8 @@ export class DatabaseService {
     eventLogs: PaginateModel<EventLogDocument>
     pullRequests: PaginateModel<PullRequestDocument>
     workspaceMembers: PaginateModel<WorkspaceMemberDocument>
+    plans: PaginateModel<PlanDocument>
+    packs: PaginateModel<PackDocument>
     constructor(
         @InjectModel(User.name)
         private UserRepository: PaginateModel<UserDocument>,
@@ -57,7 +61,11 @@ export class DatabaseService {
         @InjectModel(PullRequest.name)
         private PullRequestRepository: PaginateModel<PullRequestDocument>,
         @InjectModel(WorkspaceMember.name)
-        private TeamMemberRepository: PaginateModel<WorkspaceMemberDocument>
+        private TeamMemberRepository: PaginateModel<WorkspaceMemberDocument>,
+        @InjectModel(Plan.name)
+        private PlanRepository: PaginateModel<PlanDocument>,
+        @InjectModel(Pack.name)
+        private PackRepository: PaginateModel<PackDocument>
     ) {}
     onApplicationBootstrap() {
         this.users = this.UserRepository
@@ -69,5 +77,7 @@ export class DatabaseService {
         this.eventLogs = this.EventLogRepository
         this.pullRequests = this.PullRequestRepository
         this.workspaceMembers = this.TeamMemberRepository
+        this.plans = this.PlanRepository
+        this.packs = this.PackRepository
     }
 }

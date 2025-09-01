@@ -175,6 +175,10 @@ export class WorkspaceService {
                             userData.providerId == member.providerId
                                 ? userData._id
                                 : null,
+                        joinedAt:
+                            userData.providerId == member.providerId
+                                ? new Date()
+                                : null,
                         workspace: userData?.currentWorkspace!._id,
                         isActive: true,
                         invitedAt: new Date()

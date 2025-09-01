@@ -330,54 +330,59 @@ async def process_pr_review_background(extracted_data: dict):
                     
                     chunk_duration = time.time() - chunk_start_time
                     logger.info(f"Completed processing review chunk {chunk_index + 1} in {chunk_duration:.2f}s")
+
+                    review_usage = {
+                        "input_tokens": total_input_tokens,
+                        "output_tokens": total_output_tokens
+                    }
+
+                    logger.info(f"Total review usage: {review_usage}")
+                    logger.info(f"Total comments generated: {len(all_comments)}")
+
+                    model_information = {"model_name": model_info} if model_info else {}
                     
+                    # Post this chunk's comments immediately
+                    review_payload = {
+                        "pullRequestAnalysisId": extracted_data["pullRequestAnalysisId"],
+                        "comments": chunk_comments,
+                        "modelInfo": {"model_name": model_info} if model_info else {},
+                        "usageInfo": review_usage,
+                        "completed": 1 if chunk_index == total_chunks - 1 else 0
+                    }
+
+                    print(review_payload)
+
+                    logger.info(f"Posting {len(chunk_comments)} comments for chunk {chunk_index + 1} to backend...")
+
+                    try:
+                        post_start_time = time.time()
+                        response = await client.post(BACKEND_REVIEW_ENDPOINT, json=review_payload)
+                        post_duration = time.time() - post_start_time
+                        
+                        if response.status_code == 200:
+                            logger.info(f"Review comments for chunk {chunk_index + 1} posted successfully in {post_duration:.2f}s")
+                        else:
+                            # Truncate response for cleaner logs
+                            response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
+                            logger.error(f"Failed to post review comments for chunk {chunk_index + 1}. Status: {response.status_code}, Response: {response_text}")
+                    
+                    except Exception as e:
+                        logger.error(f"Exception while posting review comments: {str(e)}")
+
+                    post_duration = time.time() - post_start_time
+        
                 except Exception as e:
                     logger.error(f"Failed to process review chunk {chunk_index + 1}: {str(e)}")
                     continue
-            
-            # Determine if this is the final review batch
-            is_final_review = True  # Since we're processing all chunks at once
-            
-            review_usage = {
-                "input_tokens": total_input_tokens,
-                "output_tokens": total_output_tokens
-            }
-
-            logger.info(f"Total review usage: {review_usage}")
-            logger.info(f"Total comments generated: {len(all_comments)}")
-
-            model_information = {"model_name": model_info} if model_info else {}
-
-            review_payload = {
-                "pullRequestAnalysisId": extracted_data["pullRequestAnalysisId"],
-                "comments": all_comments,
-                "modelInfo": model_information,
-                "usageInfo": review_usage,
-                "completed": 1  # Always complete since we process all chunks
-            }
-            
-            logger.info(f"Posting {len(all_comments)} comments to backend...")
-
-            try:
-                post_start_time = time.time()
-                response = await client.post(BACKEND_REVIEW_ENDPOINT, json=review_payload)
-                post_duration = time.time() - post_start_time
-                
-                if response.status_code == 200:
-                    logger.info(f"Review comments posted successfully in {post_duration:.2f}s")
-                else:
-                    # Truncate response for cleaner logs
-                    response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
-                    logger.error(f"Failed to post review comments. Status: {response.status_code}, Response: {response_text}")
-                    
-            except Exception as e:
-                logger.error(f"Exception while posting review comments: {str(e)}")
         else:
             logger.warning("No prFiles found for review processing")
 
     total_duration = time.time() - start_time
     logger.info(f"Background PR review process completed successfully in {total_duration:.2f}s")
     logger.info("=" * 80)
+
+
+    
 
 @supervisor.post("/ai_agent")
 async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: BackgroundTasks):
@@ -413,4 +418,3 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
         "prNumber": extracted_data["prNumber"],
         "filesCount": extracted_data["number_of_files"]
     }
-    

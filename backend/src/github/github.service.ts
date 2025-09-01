@@ -496,17 +496,7 @@ export class GithubService {
     }
 
     async processGithubEvent(event: any, payload: any) {
-        const isApplicable =
-            await this.analysisService.checkApplicableForAnalysis(
-                payload.repository.name,
-                payload.repository.owner.login,
-                'github',
-                payload.sender.id.toString()
-            )
-        if (!isApplicable) {
-            return {}
-        }
-
+        let isApplicable
         let pullRequestFormattedData: StructuredPRData | boolean
         let prEvent
         switch (event) {
@@ -514,6 +504,16 @@ export class GithubService {
                 if (
                     ['opened', 'synchronize', 'edited'].includes(payload.action)
                 ) {
+                    isApplicable =
+                        await this.analysisService.checkApplicableForAnalysis(
+                            payload.repository.name,
+                            payload.repository.owner.login,
+                            'github',
+                            payload.sender.id.toString()
+                        )
+                    if (!isApplicable) {
+                        return {}
+                    }
                     prEvent =
                         payload.action == 'opened'
                             ? PREvent.CREATED

@@ -265,24 +265,7 @@ export class GitlabService {
     async processGitlabEvent(event: any, payload: any) {
         const providerId =
             payload.user_id || payload.object_attributes.author_id
-
-        const isApplicable =
-            await this.analysisService.checkApplicableForAnalysis(
-                payload.project.path_with_namespace,
-                payload.project.namespace.path ||
-                    payload.project.path_with_namespace.split('/')[0],
-                'gitlab',
-                providerId.toString()
-            )
-        if (!isApplicable) {
-            return {}
-        }
-
-        // await this.dataService.eventLogs.create({
-        //     eventName: event,
-        //     provider: 'gitlab',
-        //     eventPayload: payload
-        // })
+        let isApplicable
         let pullRequestFormattedData: StructuredPRData | boolean = false
         let prEvent
         switch (event) {
@@ -292,6 +275,19 @@ export class GitlabService {
                         payload.object_attributes.action
                     )
                 ) {
+                    isApplicable =
+                        await this.analysisService.checkApplicableForAnalysis(
+                            payload.project.path_with_namespace,
+                            payload.project.namespace.path ||
+                                payload.project.path_with_namespace.split(
+                                    '/'
+                                )[0],
+                            'gitlab',
+                            providerId.toString()
+                        )
+                    if (!isApplicable) {
+                        return {}
+                    }
                     prEvent =
                         payload.object_attributes.action == 'open'
                             ? PREvent.CREATED

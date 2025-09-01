@@ -13,6 +13,11 @@ class Feature {
     description: string
 }
 
+export enum BillingCycle {
+    MONTHLY = 'monthly',
+    YEARLY = 'yearly'
+}
+
 @Schema({ timestamps: true, versionKey: false })
 export class Plan {
     @Prop({ required: false })
@@ -30,8 +35,8 @@ export class Plan {
     @Prop({ required: true, min: 0 })
     tokenLimitPerDev: number
 
-    @Prop({ required: true, min: 1 })
-    noOfDays: number
+    @Prop({ required: true, default: BillingCycle.MONTHLY })
+    billingCycle: BillingCycle
 
     @Prop({ type: [Feature], default: [] })
     features: Feature[]

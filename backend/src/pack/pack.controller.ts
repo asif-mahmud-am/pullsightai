@@ -1,0 +1,58 @@
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    Patch,
+    Post,
+    UseGuards
+} from '@nestjs/common'
+import { AuthGuard } from '@nestjs/passport'
+import { CreatePackDto } from './dto/create-pack.dto'
+import { UpdatePackDto } from './dto/update-pack.dto'
+import { PackService } from './pack.service'
+
+@Controller({
+    path: 'pack',
+    version: '1'
+})
+@UseGuards(AuthGuard('jwt-cookie'))
+export class PackController {
+    constructor(private readonly packService: PackService) {}
+
+    @Post()
+    async create(@Body() createPackDto: CreatePackDto) {
+        return {
+            message: 'Pack created successfully',
+            result: await this.packService.create(createPackDto)
+        }
+    }
+
+    @Get()
+    async findAll() {
+        return {
+            message: 'Packs retrieved successfully',
+            result: await this.packService.findAll()
+        }
+    }
+
+    @Patch(':id')
+    async update(
+        @Param('id') id: string,
+        @Body() updatePackDto: UpdatePackDto
+    ) {
+        return {
+            message: 'Pack updated successfully',
+            result: await this.packService.update(id, updatePackDto)
+        }
+    }
+
+    @Delete(':id')
+    async remove(@Param('id') id: string) {
+        return {
+            message: 'Pack deleted successfully',
+            result: await this.packService.remove(id)
+        }
+    }
+}

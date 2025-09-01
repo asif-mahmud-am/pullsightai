@@ -3,6 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config'
 import { MongooseModule } from '@nestjs/mongoose'
 import { DatabaseService } from 'src/database/database.service'
 import { EventLogSchema } from 'src/database/schemas/event-log.schema'
+import { PackSchema } from 'src/database/schemas/pack.schema'
+import { PlanSchema } from 'src/database/schemas/plan.schema'
 import { PullRequestAnalysisCommentSchema } from 'src/database/schemas/pull-request-analysis-comment.schema'
 import { PullRequestAnalysisSchema } from 'src/database/schemas/pull-request-analysis.schema'
 import { PullRequestSchema } from 'src/database/schemas/pull-request.schema'
@@ -35,7 +37,12 @@ import { WorkspaceSchema } from 'src/database/schemas/workspace.schema'
             { name: 'Repository', schema: RepositorySchema },
             { name: 'EventLog', schema: EventLogSchema },
             { name: 'PullRequest', schema: PullRequestSchema },
-            { name: 'WorkspaceMember', schema: WorkspaceMemberSchema }
+            { name: 'WorkspaceMember', schema: WorkspaceMemberSchema },
+            {
+                name: 'Pack',
+                schema: PackSchema
+            },
+            { name: 'Plan', schema: PlanSchema }
         ])
     ],
     controllers: [],

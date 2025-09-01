@@ -16,6 +16,7 @@ import { GithubModule } from './github/github.module'
 import { GitlabModule } from './gitlab/gitlab.module'
 import { WorkspaceModule } from './workspace/workspace.module'
 import { NotificationModule } from './notification/notification.module';
+import { PlanModule } from './plan/plan.module';
 
 @Module({
     imports: [
@@ -32,7 +33,8 @@ import { NotificationModule } from './notification/notification.module';
         WorkspaceModule,
         DashboardModule,
         MailModule,
-        NotificationModule
+        NotificationModule,
+        PlanModule
     ],
     controllers: [AppController],
     providers: [

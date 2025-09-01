@@ -58,7 +58,7 @@ export class AuthService {
             user.refreshToken = refreshToken
             user.tokenExpiresAt = tokenExpiresAt
         }
-        if (invitation && !invitation.joinedAt) {
+        if (invitation && !invitation.user) {
             invitation.joinedAt = new Date()
             invitation.user = user._id as any
             invitation.save()

@@ -1,12 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { workspaceEndpoints } from "../endpoints/workspace";
+import { useAuthStore } from "@/store/authStore";
 
 export const useUpdateWorkspaceSettingsMutation = () => {
     const queryClient = useQueryClient();
+    const { selectedWorkspace, setSelectedWorkspace } = useAuthStore();
 
     return useMutation({
         mutationFn: workspaceEndpoints.updateWorkspaceSettings,
-        onSuccess: () => {
+        onSuccess: (data) => {
+            setSelectedWorkspace({
+                ...selectedWorkspace,
+                ...data?.data,
+            });
             queryClient.invalidateQueries({ queryKey: ["workspace"] });
         },
     });

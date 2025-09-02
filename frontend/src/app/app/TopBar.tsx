@@ -6,8 +6,9 @@ import Dropdown from "@/components/reusable/Dropdown";
 import { Button } from "@/components/ui/button";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
 import showToast from "@/lib/toast";
+import { useAppStore } from "@/store/appStore";
 import { useAuthStore } from "@/store/authStore";
-import { ChevronDown, LogOutIcon, Plus } from "lucide-react";
+import { ChevronDown, LogOutIcon, Plus, X } from "lucide-react";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { Fragment, use } from "react";
@@ -15,6 +16,7 @@ import { Fragment, use } from "react";
 const AppTopBar = () => {
     const { user, workspaces, selectedWorkspace, setSelectedWorkspace } =
         useAuthStore((s) => s);
+    const { toggleSidebar, isSidebarOpen } = useAppStore();
     const {
         mutateAsync: updateUser,
         isPending: isUpdatingUser,
@@ -24,6 +26,18 @@ const AppTopBar = () => {
     const onboardedWorkspaces = workspaces?.filter(
         (workspace) =>
             !workspace.onboardingStep || workspace.onboardingStep == 0
+    );
+
+    // Custom 3x3 Grid Icon Component
+    const GridIcon = () => (
+        <div className="w-4 h-4 grid grid-cols-3 gap-[2px]">
+            {Array.from({ length: 9 }).map((_, i) => (
+                <div
+                    key={i}
+                    className="w-[3px] h-[3px] bg-current rounded-[1px]"
+                />
+            ))}
+        </div>
     );
 
     const handleAddNewWorkspace = () => {
@@ -48,15 +62,44 @@ const AppTopBar = () => {
     };
 
     return (
-        <div className="h-[88px] flex items-center border-b gap-x-4 px-5 fixed top-0 left-0 right-0 z-50 bg-background">
+        <div className="xl:h-[88px] h-[60px] flex items-center border-b gap-x-4 xl:px-5 pr-3 pl-1 fixed top-0 left-0 right-0 z-50 bg-background">
+            <Button
+                variant="ghost"
+                className="xl:hidden relative px-3"
+                onClick={toggleSidebar}
+            >
+                <div className="relative w-4 h-4">
+                    {/* Grid Icon */}
+                    <div
+                        className={`absolute inset-0 transition-all duration-300 ${
+                            isSidebarOpen
+                                ? "opacity-0 rotate-90 scale-75"
+                                : "opacity-100 rotate-0 scale-100"
+                        }`}
+                    >
+                        <GridIcon />
+                    </div>
+
+                    {/* Cross Icon */}
+                    <div
+                        className={`absolute -left-0.5 -top-0.5 transition-all duration-300 ${
+                            isSidebarOpen
+                                ? "opacity-100 rotate-0 scale-100"
+                                : "opacity-0 rotate-90 scale-75"
+                        }`}
+                    >
+                        <X className="!h-5 !w-5" />
+                    </div>
+                </div>
+            </Button>
             <Image
                 src="/images/logo-icon.svg"
                 alt="pull sight logo"
                 width={23}
                 height={37}
-                className="h-auto w-auto"
+                className="xl:h-auto w-auto h-[30px]"
             />
-            <span className="text-base font-medium">
+            <span className="text-base font-medium hidden md:inline">
                 Welcome back, {user?.displayName} 👋
             </span>
 
@@ -64,15 +107,17 @@ const AppTopBar = () => {
                 <Dropdown.Trigger>
                     <Button
                         variant="ghost"
-                        className="justify-between ml-auto bg-[var(--box-800)] flex items-center !h-auto !px-3 rounded-2xl gap-5 w-[214px]"
+                        className="justify-between ml-auto bg-[var(--box-800)] flex items-center !h-auto !px-3 rounded-2xl gap-3 xl:gap-5 w-[150px] xl:w-[214px]"
                     >
-                        <div className="text-left">
-                            <div>{selectedWorkspace?.name}</div>
+                        <div className="text-left flex-shrink-0 min-w-0 flex-1">
+                            <div className="truncate">
+                                {selectedWorkspace?.name}
+                            </div>
                             <div className="opacity-60 text-xs truncate">
                                 {user?.email || "n/a"}
                             </div>
                         </div>
-                        <ChevronDown />
+                        <ChevronDown className="flex-shrink-0" />
                     </Button>
                 </Dropdown.Trigger>
                 <Dropdown.Content className="py-3 px-1 w-[214px] flex flex-col">

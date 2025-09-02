@@ -50,19 +50,19 @@ const TimeMoneySavedCard = ({
                 <div className="text-sm text-neutral-500 border px-3 py-2 rounded-md">
                     Hourly rate: $
                     <span className="text-neutral-300">
-                        {selectedWorkspace?.workspaceSetting?.hourlyRate || 0}
+                        {selectedWorkspace?.workspaceSetting?.hourlyRate || 50}
                     </span>
                 </div>
             </ContentCard.Header>
             <ContentCard.Body isLoading={isFetching}>
-                <div className="flex divide-x gap-9 py-5">
-                    <div className="pr-9">
+                <div className="flex divide-x gap-5 lg:gap-9 pb-5 lg:py-5">
+                    <div className="pr-5 lg:pr-9">
                         <div className="opacity-50 text-xs mb-1">Hours</div>
                         <div className="text-3xl">
                             {data?.data?.totalTimeSaved || 0}
                         </div>
                     </div>
-                    <div className="pr-9">
+                    <div className="pr-5 lg:pr-9">
                         <div className="opacity-50 text-xs mb-1">
                             Money Saved
                         </div>
@@ -71,11 +71,11 @@ const TimeMoneySavedCard = ({
                             {numToHip(
                                 (data?.data?.totalTimeSaved || 0) *
                                     (selectedWorkspace?.workspaceSetting
-                                        ?.hourlyRate || 0)
+                                        ?.hourlyRate || 50)
                             )}
                         </div>
                     </div>
-                    {/* <div className="pr-9">
+                    {/* <div className="pr-5 lg:pr-9">
                         <div className="opacity-50 text-xs mb-1">ROI</div>
                         <div className="text-3xl">3.2x</div>
                     </div> */}

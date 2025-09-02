@@ -110,8 +110,8 @@ export const columns: ColumnDef<Repository>[] = [
         accessorKey: "name",
         header: "Repository name",
         meta: {
-            headerClassName: "w-3/5 max-w-md min-w-48",
-            cellClassName: "w-3/5 max-w-md min-w-48",
+            headerClassName: "min-w-48 flex-1",
+            cellClassName: "min-w-48 flex-1",
         },
         cell: ({ row }) => {
             const name = row.getValue("name") as string;
@@ -126,8 +126,8 @@ export const columns: ColumnDef<Repository>[] = [
         accessorKey: "author",
         header: "Author",
         meta: {
-            headerClassName: "",
-            cellClassName: "",
+            headerClassName: "w-32",
+            cellClassName: "w-32",
         },
         cell: ({ row }) => {
             const author =
@@ -148,8 +148,8 @@ export const columns: ColumnDef<Repository>[] = [
         accessorKey: "updatedOn",
         header: "Updated",
         meta: {
-            headerClassName: "",
-            cellClassName: "",
+            headerClassName: "w-28",
+            cellClassName: "w-28",
         },
         cell: ({ row }) => {
             const updated = row.getValue("updatedOn") as string | undefined;

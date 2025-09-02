@@ -62,8 +62,8 @@ export const columns: ColumnDef<TeamMember>[] = [
         accessorKey: "isActive",
         header: "",
         meta: {
-            cellClassName: "w-12",
-            headerClassName: "w-12",
+            cellClassName: "w-16",
+            headerClassName: "w-16",
         },
         cell: ({ row }) => {
             const active = row.getValue("isActive") as boolean;
@@ -81,21 +81,32 @@ export const columns: ColumnDef<TeamMember>[] = [
     {
         accessorKey: "username",
         header: "Author",
+        meta: {
+            cellClassName: "min-w-48 flex-1",
+            headerClassName: "min-w-48 flex-1",
+        },
         cell: ({ row }) => {
             const username = row.original?.username as string | undefined;
+            const displayName = row.original?.displayName as string | undefined;
             const avatarUrl = row.original?.avatarUrl as string | undefined;
             return (
-                <Avatar
-                    src={avatarUrl || ""}
-                    name={username || "Unknown"}
-                    size="sm"
-                />
+                <div className="flex items-center gap-3">
+                    <Avatar
+                        src={avatarUrl || ""}
+                        name={displayName || username || "Unknown"}
+                        size="sm"
+                    />
+                </div>
             );
         },
     },
     {
         accessorKey: "joinedAt",
         header: "Joined",
+        meta: {
+            cellClassName: "w-28",
+            headerClassName: "w-28",
+        },
         cell: ({ row }) => {
             const joinedAt = row.getValue("joinedAt") as string | undefined;
             return (

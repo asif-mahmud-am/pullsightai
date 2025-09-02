@@ -1,4 +1,5 @@
 export interface PullRequest {
+    _id?: string;
     provider: string;
     prId: number;
     prNumber: number;

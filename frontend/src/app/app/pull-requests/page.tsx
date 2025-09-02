@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { columns } from "./tableColumns";
-import DataTable from "@/components/reusable/DataTable";
 import { List, Grid, Info } from "lucide-react";
 import { PullRequest } from "@/types/pullRequest";
 import { Repository } from "@/types/repository";
@@ -16,6 +14,7 @@ import Tabs from "@/components/reusable/Tabs";
 import Select from "@/components/reusable/Select";
 import ContentCard from "@/components/reusable/ContentCard";
 import { TeamMember } from "@/types/user";
+import ResponsivePullRequestList from "./ResponsivePullRequestList";
 
 const PullRequestsPage = () => {
     const [tab, setTab] = useState<"all" | "activePrs" | "myPrs" | "">("all");
@@ -83,7 +82,7 @@ const PullRequestsPage = () => {
                         </Tabs> */}
                         <div></div>
 
-                        <div className="flex items-center gap-6">
+                        <div className="flex flex-wrap md:flex-nowrap items-center gap-x-6 gap-y-2">
                             {/* Author filter */}
                             <Select
                                 options={[
@@ -144,8 +143,7 @@ const PullRequestsPage = () => {
                         </div> */}
                         </div>
                     </div>
-                    <DataTable
-                        columns={columns}
+                    <ResponsivePullRequestList
                         data={data?.data?.docs || []}
                         isLoading={isFetching}
                     />

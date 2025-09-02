@@ -2,12 +2,12 @@
 
 import { useGetWorkspaceTeamMembersQuery } from "@/api/queries/workspace";
 import ContentCard from "@/components/reusable/ContentCard";
-import DataTable from "@/components/reusable/DataTable";
 import usePagination from "@/hooks/usePagination";
 import { useState } from "react";
-import { columns } from "./tableColumns";
 import { useOrganizationMembersQuery } from "@/api/queries/member";
 import { useAuthStore } from "@/store/authStore";
+import ResponsiveTeamMemberList from "./ResponsiveTeamMemberList";
+import { TeamMember } from "@/types/user";
 
 const TeamActivityPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
@@ -21,12 +21,16 @@ const TeamActivityPage = () => {
     //     isEnabled: true,
     // });
     const {
-        data = [],
+        data: _data = [],
         isFetching,
         error,
     } = useOrganizationMembersQuery({
         provider,
     });
+
+    const data = _data.sort((a: TeamMember, b: TeamMember) =>
+        a.isActive === b.isActive ? 0 : a.isActive ? -1 : 1
+    );
 
     return (
         <div className="">
@@ -42,10 +46,9 @@ const TeamActivityPage = () => {
                     </h2>
                 </ContentCard.Header>
                 <ContentCard.Body>
-                    <DataTable
-                        columns={columns}
-                        isLoading={isFetching}
+                    <ResponsiveTeamMemberList
                         data={data || []}
+                        isLoading={isFetching}
                     />
                 </ContentCard.Body>
             </ContentCard>

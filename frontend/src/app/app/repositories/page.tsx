@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { columns } from "./tableColumns";
-import DataTable from "@/components/reusable/DataTable";
 import { Plus } from "lucide-react";
 import { useGetWorkspaceRepositoriesQuery } from "@/api/queries/workspace";
 import usePagination from "@/hooks/usePagination";
@@ -10,6 +8,7 @@ import Tabs from "@/components/reusable/Tabs";
 import ContentCard from "@/components/reusable/ContentCard";
 import { Button } from "@/components/ui/button";
 import AddRepositoryDialog from "./AddRepositoryDialog";
+import ResponsiveRepositoryList from "./ResponsiveRepositoryList";
 
 const RepositoriesPage = () => {
     const [tab, setTab] = useState<"all" | "active">("all");
@@ -37,7 +36,7 @@ const RepositoriesPage = () => {
     return (
         <div className="">
             {/* Header */}
-            <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2 mb-3">
                 <h2 className="text-2xl font-semibold">Repositories</h2>
                 <Button
                     variant="outline"
@@ -104,10 +103,9 @@ const RepositoriesPage = () => {
                             </button>
                         </div> */}
                     </div>
-                    <DataTable
-                        columns={columns}
-                        isLoading={isFetching}
+                    <ResponsiveRepositoryList
                         data={data?.data?.docs || []}
+                        isLoading={isFetching}
                     />
                     <Pagination />
                 </ContentCard.Body>

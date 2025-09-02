@@ -44,8 +44,8 @@ class ClaudeService(BaseLLMService):
             # Prompt-only approach: ask Claude to return ONLY a JSON array of review items
             response = await self.client.messages.create(
                 model=model_name,
-                max_tokens=2048,
-                temperature=0.2,
+                max_tokens=5000,
+                temperature=0.3,
                 system=(
                     "You are a code review assistant. Provide actionable, line-by-line feedback on code changes. "
                     "Output must be ONLY a JSON array (no prose) with items containing: lineStart, lineEnd, issue, "

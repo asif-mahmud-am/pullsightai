@@ -90,6 +90,11 @@ const RepositorySettingsAction = ({
 export const columns: ColumnDef<Repository>[] = [
     {
         accessorKey: "isActive",
+        header: "",
+        meta: {
+            headerClassName: "w-20",
+            cellClassName: "w-20",
+        },
         cell: ({ row }) => {
             const active = row.getValue("isActive") as boolean;
             const repositoryId = row.original._id;
@@ -104,18 +109,26 @@ export const columns: ColumnDef<Repository>[] = [
     {
         accessorKey: "name",
         header: "Repository name",
+        meta: {
+            headerClassName: "w-3/5 max-w-md min-w-48",
+            cellClassName: "w-3/5 max-w-md min-w-48",
+        },
         cell: ({ row }) => {
             const name = row.getValue("name") as string;
             return (
-                <span className="text-white hover:underline cursor-pointer">
+                <div className="text-white hover:underline cursor-pointer min-w-0 truncate">
                     {name}
-                </span>
+                </div>
             );
         },
     },
     {
         accessorKey: "author",
         header: "Author",
+        meta: {
+            headerClassName: "",
+            cellClassName: "",
+        },
         cell: ({ row }) => {
             const author =
                 (row.getValue("author") as {
@@ -134,6 +147,10 @@ export const columns: ColumnDef<Repository>[] = [
     {
         accessorKey: "updatedOn",
         header: "Updated",
+        meta: {
+            headerClassName: "",
+            cellClassName: "",
+        },
         cell: ({ row }) => {
             const updated = row.getValue("updatedOn") as string | undefined;
             return (
@@ -145,7 +162,11 @@ export const columns: ColumnDef<Repository>[] = [
     },
     {
         id: "actions",
-        header: "Actions",
+        header: "",
+        meta: {
+            headerClassName: "w-16",
+            cellClassName: "w-16",
+        },
         cell: ({ row }) => {
             return <RepositorySettingsAction repository={row.original} />;
         },

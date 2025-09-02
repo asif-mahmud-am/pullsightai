@@ -62,6 +62,7 @@ const DataTable = <TData,>({
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         onRowSelectionChange: setRowSelection,
+        columnResizeMode: "onChange",
         state: {
             rowSelection,
             columnFilters: filters,
@@ -113,7 +114,7 @@ const DataTable = <TData,>({
                 .rows.map((row) => row.original);
             onSelectionChange(selectedRows);
         }
-    }, [rowSelection]);
+    }, [rowSelection, onSelectionChange, table]);
 
     return (
         <div
@@ -123,17 +124,22 @@ const DataTable = <TData,>({
                 className
             )}
         >
-            <Table>
+            <Table className="w-full">
                 <TableHeader
                     className={cn("bg-card", noBorder && "[&_tr]:border-b-0")}
                 >
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow key={headerGroup.id}>
                             {headerGroup.headers.map((header) => {
+                                const meta = header.column.columnDef
+                                    .meta as any;
                                 return (
                                     <TableHead
                                         key={header.id}
-                                        className="px-5 py-3 text-muted text-xs"
+                                        className={cn(
+                                            "px-5 py-3 text-muted text-xs",
+                                            meta?.headerClassName
+                                        )}
                                     >
                                         {header.isPlaceholder
                                             ? null
@@ -153,19 +159,26 @@ const DataTable = <TData,>({
                         table.getRowModel().rows.map((row) => (
                             <TableRow
                                 key={row.id}
-                                className={cn(noBorder && "border-0")}
+                                className={cn("", noBorder && "border-0")}
                             >
-                                {row.getVisibleCells().map((cell) => (
-                                    <TableCell
-                                        key={cell.id}
-                                        className="px-5 py-3"
-                                    >
-                                        {flexRender(
-                                            cell.column.columnDef.cell,
-                                            cell.getContext()
-                                        )}
-                                    </TableCell>
-                                ))}
+                                {row.getVisibleCells().map((cell) => {
+                                    const meta = cell.column.columnDef
+                                        .meta as any;
+                                    return (
+                                        <TableCell
+                                            key={cell.id}
+                                            className={cn(
+                                                "px-5 py-3",
+                                                meta?.cellClassName
+                                            )}
+                                        >
+                                            {flexRender(
+                                                cell.column.columnDef.cell,
+                                                cell.getContext()
+                                            )}
+                                        </TableCell>
+                                    );
+                                })}
                             </TableRow>
                         ))
                     ) : (

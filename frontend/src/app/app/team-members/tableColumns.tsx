@@ -60,7 +60,11 @@ const TeamMemberStatusSwitch = ({
 export const columns: ColumnDef<TeamMember>[] = [
     {
         accessorKey: "isActive",
-        header: "Status",
+        header: "",
+        meta: {
+            cellClassName: "w-12",
+            headerClassName: "w-12",
+        },
         cell: ({ row }) => {
             const active = row.getValue("isActive") as boolean;
             const memberName =

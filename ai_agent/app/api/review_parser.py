@@ -122,14 +122,14 @@ def parse_review_response(review_text: str, file_name: str):
 
     return comments
 
-def parse_chunked_review_response(review_text: str, chunk_files: List[Dict]) -> List[Dict]:
+def parse_chunked_review_response(review_text: str, chunk_files: List[Dict], minSeverity: str) -> List[Dict]:
     """
     Parse LLM review output for a chunk of files to the UI-ready Comments format.
     
     Args:
         review_text (str): The LLM review response text
         chunk_files (List[Dict]): List of files in the chunk with their metadata
-    
+        minSeverity (str): The minimum severity to comment on
     Returns:
         List[Dict]: List of comments ready for the UI
     """
@@ -180,6 +180,12 @@ def parse_chunked_review_response(review_text: str, chunk_files: List[Dict]) -> 
     
     for item in review_items:
         if not isinstance(item, dict):
+            continue
+
+        # only comment on issues with severity greater than or equal to the minSeverity
+        severity_levels = ["Info", "Minor", "Major", "Critical", "Blocker"]
+        severity_index = severity_levels.index(minSeverity)
+        if severity_levels.index(item.get("severity", "Info")) < severity_index:
             continue
 
         # Get severity and validate it's one of the allowed values

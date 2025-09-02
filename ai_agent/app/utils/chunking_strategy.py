@@ -187,6 +187,6 @@ def prepare_chunk_for_review(chunk: Dict, pr_metadata: Dict) -> Dict:
         "repo_structure_summary": pr_metadata.get("repo_structure_summary", ""),
         "prFileContentBefore": pr_file_content_before,
         "pr_diff": pr_diff,
-        "minSeverity": pr_metadata.get("minSeverity", "Info"),
+        # "minSeverity": pr_metadata.get("minSeverity", "Info"),
         "chunk_info": f"Chunk {chunk['chunk_index'] + 1} of multiple chunks"
     } 

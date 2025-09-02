@@ -146,6 +146,13 @@ async def process_pr_review_background(extracted_data: dict):
     """
     start_time = time.time()
     
+    # Initialize token counters for summary and review separately
+    summary_input_tokens = 0
+    summary_output_tokens = 0
+    review_input_tokens = 0
+    review_output_tokens = 0
+    model_info = ""
+    
     logger.info("=" * 80)
     logger.info("Starting background PR review process")
     logger.info(f"PR Details: Number={extracted_data['prNumber']}, Title={extracted_data['prTitle'][:50]}...")
@@ -174,8 +181,6 @@ async def process_pr_review_background(extracted_data: dict):
         chunk_summaries = []
         total_time_estimation = 0
         total_issue_count = 0
-        total_input_tokens = 0
-        total_output_tokens = 0
         summary_info = {}
         for chunk in chunks:
             logger.info(f"Generating summary for chunk {chunk['chunk_index'] + 1}/{len(chunks)} with {len(chunk['files'])} files")
@@ -193,8 +198,8 @@ async def process_pr_review_background(extracted_data: dict):
                 logger.info(f"Summary info: {summary_info}")
                 total_time_estimation += summary_info["estimated_code_review_time"]
                 total_issue_count += summary_info["potential_issue_count"]
-                total_input_tokens += summary_usage["input_tokens"]
-                total_output_tokens += summary_usage["output_tokens"]
+                summary_input_tokens += summary_usage["input_tokens"]
+                summary_output_tokens += summary_usage["output_tokens"]
                 logger.info(f"Successfully generated summary for chunk {chunk['chunk_index'] + 1}")
             except Exception as e:
                 logger.error(f"Failed to generate summary for chunk {chunk['chunk_index'] + 1}: {str(e)}")
@@ -215,8 +220,8 @@ async def process_pr_review_background(extracted_data: dict):
                 
                 aggregated_summary, summary_usage, model_info = await aggregate_chunk_summaries(chunk_summaries, extracted_data, llm_service, summary_info)
                 summary_info = extract_summary_info(aggregated_summary)
-                total_input_tokens += summary_usage["input_tokens"]
-                total_output_tokens += summary_usage["output_tokens"]
+                summary_input_tokens += summary_usage["input_tokens"]
+                summary_output_tokens += summary_usage["output_tokens"]
                 logger.info(f"Summary info: {summary_info}")
                 summary = type('Summary', (), {'pr_summary': aggregated_summary})()
                 logger.info("Successfully aggregated chunk summaries")
@@ -247,8 +252,8 @@ async def process_pr_review_background(extracted_data: dict):
     logger.info("PR summary generation completed successfully")
 
     summary_usage = {
-            "input_tokens": total_input_tokens,
-            "output_tokens": total_output_tokens
+            "input_tokens": summary_input_tokens,
+            "output_tokens": summary_output_tokens
         }
     logger.info(f"Total summary usage: {summary_usage}")
     # Post summary to backend
@@ -285,7 +290,7 @@ async def process_pr_review_background(extracted_data: dict):
             # Create chunks for review generation
             review_chunks, ignored_review_files = create_review_chunks(
                 files=extracted_data["prFiles"],
-                max_chunk_tokens=5000,  # LLM limit for reviews
+                max_chunk_tokens=150000,  # LLM limit for reviews
                 max_file_tokens=100000    # File size limit
             )
             
@@ -297,8 +302,6 @@ async def process_pr_review_background(extracted_data: dict):
             total_chunks = len(review_chunks)
             logger.info(f"Processing {extracted_data['number_of_files']} files in {total_chunks} review chunks")
             
-            total_input_tokens = 0
-            total_output_tokens = 0
             all_comments = []
             
             for chunk_index, chunk in enumerate(review_chunks):
@@ -313,8 +316,8 @@ async def process_pr_review_background(extracted_data: dict):
                     llm_start_time = time.time()
                     review = await generate_chunked_review_response(chunk_variables, llm_service, extracted_data["model_name"])
                     review_usage = review.review_usage or {}
-                    total_input_tokens += review_usage.get("input_tokens", 0)
-                    total_output_tokens += review_usage.get("output_tokens", 0)
+                    review_input_tokens += review_usage.get("input_tokens", 0)
+                    review_output_tokens += review_usage.get("output_tokens", 0)
                     logger.info(f"Review usage for chunk {chunk_index + 1}: {review_usage}")
                     model_info = review.model_info or ""
                     llm_duration = time.time() - llm_start_time
@@ -322,7 +325,7 @@ async def process_pr_review_background(extracted_data: dict):
                     
                     logger.info(f"Parsing review response for chunk {chunk_index + 1}...")
                     parse_start_time = time.time()
-                    chunk_comments = parse_chunked_review_response(review.pr_review_and_suggestion, chunk["files"])
+                    chunk_comments = parse_chunked_review_response(review.pr_review_and_suggestion, chunk["files"],minSeverity=extracted_data["minSeverity"])
                     parse_duration = time.time() - parse_start_time
                     
                     logger.info(f"Parsed {len(chunk_comments)} comments for chunk {chunk_index + 1} in {parse_duration:.2f}s")
@@ -332,8 +335,8 @@ async def process_pr_review_background(extracted_data: dict):
                     logger.info(f"Completed processing review chunk {chunk_index + 1} in {chunk_duration:.2f}s")
 
                     review_usage = {
-                        "input_tokens": total_input_tokens,
-                        "output_tokens": total_output_tokens
+                        "input_tokens": review_input_tokens,
+                        "output_tokens": review_output_tokens
                     }
 
                     logger.info(f"Total review usage: {review_usage}")

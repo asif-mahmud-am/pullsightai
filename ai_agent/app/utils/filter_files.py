@@ -3,7 +3,7 @@ import fnmatch
 
 IGNORED_EXTENSIONS = {
     ".lock", ".log", ".tmp", ".bak", ".iml", ".zip", ".tar", ".gz",
-    ".png", ".jpg", ".jpeg", ".gif", ".pdf", ".svg", ".ico", ".mp4", ".mp3"
+    ".png", ".jpg", ".jpeg", ".gif", ".pdf", ".svg", ".ico", ".mp4", ".mp3",".json"
 }
 
 IGNORED_FILES = {

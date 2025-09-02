@@ -114,7 +114,7 @@ const DataTable = <TData,>({
                 .rows.map((row) => row.original);
             onSelectionChange(selectedRows);
         }
-    }, [rowSelection, onSelectionChange, table]);
+    }, [rowSelection]);
 
     return (
         <div

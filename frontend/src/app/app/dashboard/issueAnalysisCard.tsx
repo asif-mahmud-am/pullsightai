@@ -92,9 +92,19 @@ const IssueAnalysisCard = ({
                                 <Pie
                                     data={[
                                         {
-                                            name: "warning",
-                                            value: data?.data?.warning || 0,
+                                            name: "info",
+                                            value: data?.data?.info || 0,
+                                            fill: "#39D5F7",
+                                        },
+                                        {
+                                            name: "minor",
+                                            value: data?.data?.minor || 0,
                                             fill: "#FFB455",
+                                        },
+                                        {
+                                            name: "major",
+                                            value: data?.data?.major || 0,
+                                            fill: "#A254F5",
                                         },
                                         {
                                             name: "critical",
@@ -102,9 +112,9 @@ const IssueAnalysisCard = ({
                                             fill: "#F85661",
                                         },
                                         {
-                                            name: "info",
-                                            value: data?.data?.info || 0,
-                                            fill: "#A254F5",
+                                            name: "blocker",
+                                            value: data?.data?.blocker || 0,
+                                            fill: "#960002",
                                         },
                                     ]}
                                     dataKey="value"

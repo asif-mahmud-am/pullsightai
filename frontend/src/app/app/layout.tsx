@@ -3,15 +3,18 @@ import { AuthGuardServer } from "@/components/auth/AuthGuardServer";
 import { ReactNode } from "react";
 import AppSideBar from "./SideBar";
 import AppTopBar from "./TopBar";
+import { useAppStore } from "@/store/appStore";
 
 const AppLayout = ({ children }: { children: ReactNode }) => {
     return (
         <AuthGuardServer>
             <AuthGuardClient>
                 <AppTopBar />
-                <div className="flex min-h-[calc(100vh-88px)] pt-[88px] pl-[260px]">
+                <div
+                    className={`flex min-h-[calc(100vh-88px)] xl:pt-[88px] xl:pl-[260px] pt-[60px] max-w-screen overflow-hidden `}
+                >
                     <AppSideBar />
-                    <main className="flex-1 py-5 px-5">{children}</main>
+                    <main className="flex-1 py-5 px-3 lg:px-5">{children}</main>
                 </div>
             </AuthGuardClient>
         </AuthGuardServer>

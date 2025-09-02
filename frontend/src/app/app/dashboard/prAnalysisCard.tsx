@@ -39,20 +39,20 @@ const PrAnalysisCard = ({
                 isLoading={isFetching}
                 className="flex-1 flex flex-col"
             >
-                <div className="flex divide-x gap-9 py-5">
-                    <div className="pr-9">
+                <div className="flex divide-x gap-5 lg:gap-9 pb-5 lg:py-5">
+                    <div className="pr-5 lg:pr-9">
                         <div className="opacity-50 text-xs mb-1">Opened</div>
                         <div className="text-3xl">
                             {data?.data?.opened || 0}
                         </div>
                     </div>
-                    <div className="pr-9">
+                    <div className="pr-5 lg:pr-9">
                         <div className="opacity-50 text-xs mb-1">Merged</div>
                         <div className="text-3xl">
                             {data?.data?.merged || 0}
                         </div>
                     </div>
-                    <div className="pr-9">
+                    <div className="pr-5 lg:pr-9">
                         <div className="opacity-50 text-xs mb-1">Declined</div>
                         <div className="text-3xl">
                             {data?.data?.declined || 0}

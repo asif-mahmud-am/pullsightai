@@ -135,11 +135,11 @@ const RepositorySettingsModal = ({
                     </Label>
                     <p className="text-sm text-gray-500">
                         Specify files and folders to exclude from analysis (one
-                        per line, supports glob patterns like *.min.js)
+                        per line)
                     </p>
                     <Textarea
                         id="ignored-files"
-                        placeholder={`*.min.js\ndist/\nnode_modules/\n**/*.test.ts\nvendor/\n.env*`}
+                        placeholder={``}
                         value={settings.ignore}
                         onChange={(e) =>
                             setSettings((prev) => ({
@@ -152,7 +152,10 @@ const RepositorySettingsModal = ({
                         className="font-mono text-sm"
                     />
                     <p className="text-xs text-gray-400">
-                        Use gitignore-style patterns.
+                        For directories, use a trailing slash (e.g. `dist/`){" "}
+                        <br />
+                        For files, use gitignore-style patterns (e.g.
+                        `*.min.js`)
                     </p>
                 </div>
             </div>

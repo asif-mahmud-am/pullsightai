@@ -20,6 +20,14 @@ import {
     PullRequestDocument
 } from 'src/database/schemas/pull-request.schema'
 import {
+    PurchasedPack,
+    PurchasedPackDocument
+} from 'src/database/schemas/purchasedPack.schema'
+import {
+    PurchasedPlan,
+    PurchasedPlanDocument
+} from 'src/database/schemas/purchasedPlan.schema'
+import {
     Repository,
     RepositoryDocument
 } from 'src/database/schemas/repository.schema'
@@ -45,6 +53,8 @@ export class DatabaseService {
     workspaceMembers: PaginateModel<WorkspaceMemberDocument>
     plans: PaginateModel<PlanDocument>
     packs: PaginateModel<PackDocument>
+    purchasedPlans: PaginateModel<PurchasedPlanDocument>
+    purchasedPacks: PaginateModel<PurchasedPackDocument>
     constructor(
         @InjectModel(User.name)
         private UserRepository: PaginateModel<UserDocument>,
@@ -65,7 +75,11 @@ export class DatabaseService {
         @InjectModel(Plan.name)
         private PlanRepository: PaginateModel<PlanDocument>,
         @InjectModel(Pack.name)
-        private PackRepository: PaginateModel<PackDocument>
+        private PackRepository: PaginateModel<PackDocument>,
+        @InjectModel(PurchasedPlan.name)
+        private PurchasedPlanRepository: PaginateModel<PurchasedPlanDocument>,
+        @InjectModel(PurchasedPack.name)
+        private PurchasedPackRepository: PaginateModel<PurchasedPackDocument>
     ) {}
     onApplicationBootstrap() {
         this.users = this.UserRepository
@@ -79,5 +93,7 @@ export class DatabaseService {
         this.workspaceMembers = this.TeamMemberRepository
         this.plans = this.PlanRepository
         this.packs = this.PackRepository
+        this.purchasedPlans = this.PurchasedPlanRepository
+        this.purchasedPacks = this.PurchasedPackRepository
     }
 }

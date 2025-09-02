@@ -66,7 +66,7 @@ export class PullRequestAnalysis {
         type: Types.ObjectId,
         ref: 'PullRequest',
         set: (value) =>
-            Types.ObjectId.isValid(value)
+            value instanceof Types.ObjectId
                 ? value
                 : Types.ObjectId.createFromHexString(value)
     })

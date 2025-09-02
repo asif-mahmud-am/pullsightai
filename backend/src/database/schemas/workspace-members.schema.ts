@@ -28,7 +28,7 @@ export class WorkspaceMember {
         type: Types.ObjectId,
         ref: 'Workspace',
         set: (value) =>
-            Types.ObjectId.isValid(value)
+            value instanceof Types.ObjectId
                 ? value
                 : Types.ObjectId.createFromHexString(value)
     })

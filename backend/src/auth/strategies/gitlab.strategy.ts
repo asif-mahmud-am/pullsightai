@@ -24,7 +24,7 @@ export class GitlabStrategy extends PassportStrategy(Strategy, 'gitlab') {
         refreshToken: string,
         profile: Profile
     ) {
-        if (profile?.emails?.length === 0) {
+        if (!profile.emails) {
             try {
                 // Fetch user emails from GitLab API
                 const emailResponse = await axios.get(

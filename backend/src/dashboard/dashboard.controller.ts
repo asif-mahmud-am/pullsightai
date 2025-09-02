@@ -1,7 +1,7 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query } from '@nestjs/common';
-import { DashboardService } from './dashboard.service';
-import { DashboardFilterDto, IssueAnalysisCardFilterDto, TimeAndMoneySaveCardFilterDto } from './dto/dashboardFilter.dto';
+import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { DashboardService } from './dashboard.service';
+import { DashboardFilterDto, IssueAnalysisCardFilterDto, IssueCardFilterDto, TimeAndMoneySaveCardFilterDto } from './dto/dashboardFilter.dto';
 
 @Controller({
     path: 'api/dashboard',
@@ -36,6 +36,15 @@ export class DashboardController {
     return {
       message: 'Time and Money save card data fetched successfully',
       result: await this.dashboardService.getTimeAndMoneySaveCard(req.user, timeAndMoneySaveCardFilterDto)
+    };
+  }
+
+  @UseGuards(AuthGuard('jwt-cookie'))
+  @Get('issue-card')
+  async issueCard(@Req() req, @Query() issueCardFilterDto: IssueCardFilterDto) {
+    return {
+      message: 'issue card data fetched successfully',
+      result: await this.dashboardService.issueCard(req.user, issueCardFilterDto)
     };
   }
 }

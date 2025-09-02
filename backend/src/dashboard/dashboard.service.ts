@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { DatabaseService } from 'src/database/database.service'
 import {
     IssueAnalysisCardFilterDto,
+    IssueCardFilterDto,
     PrAnalysisCardFilterDto,
     TimeAndMoneySaveCardFilterDto
 } from './dto/dashboardFilter.dto'
@@ -227,20 +228,26 @@ export class DashboardService {
 
         // Transform aggregation result to required format
         const totals = {
-            critical: 0,
-            warning: 0,
+            major: 0,
+            minor: 0,
             info: 0,
+            critical: 0,
+            blocker: 0,
             total: 0
         }
 
         prAnalysisReviewSeveritys.forEach((item) => {
             const state = item._id?.toLowerCase()
-            if (state === 'Critical' || state === 'critical') {
-                totals.critical = item.count
-            } else if (state === 'Warning' || state === 'warning') {
-                totals.warning = item.count
+            if (state === 'Major' || state === 'major') {
+                totals.major = item.count
+            } else if (state === 'Minor' || state === 'minor') {
+                totals.minor = item.count
             } else if (state === 'Info' || state === 'info') {
                 totals.info = item.count
+            } else if (state === 'Critical' || state === 'critical') {
+                totals.critical = item.count
+            } else if (state === 'Blocker' || state === 'blocker') {
+                totals.blocker = item.count
             }
             totals.total += item.count
         })
@@ -378,6 +385,88 @@ export class DashboardService {
             totalLinesReviewed,
             totalPRsAnalyzed: prAnalyses.length
         }
+    }
+
+    async issueCard(user: any, issueCardFilterDto: IssueCardFilterDto) {
+        const findUser = await this.dataService.users.findOne(
+            { _id: user.sub, provider: user.provider },
+            'currentWorkspace'
+        )
+
+        if (!findUser || !findUser.currentWorkspace) {
+            return {}
+        }
+
+        const findWorkspace = await this.dataService.workspaces.findOne(
+            { _id: findUser.currentWorkspace },
+            'slug'
+        )
+
+        if (!findWorkspace) {
+            return {}
+        }
+
+        // Build query for pullRequestAnalysis with repo filter
+        const analysisQuery: any = { workspaceSlug: findWorkspace.slug }
+        if (issueCardFilterDto.repo) {
+            analysisQuery.repositorySlug = issueCardFilterDto.repo
+        }
+
+        const pullRequestAnalysisIds =
+            await this.dataService.pullRequestAnalysis.find(
+                analysisQuery,
+                '_id'
+            )
+
+        if (!pullRequestAnalysisIds || pullRequestAnalysisIds.length === 0) {
+            return {}
+        }
+
+        // Set default date range if not provided (last 30 days)
+        const toDate = issueCardFilterDto.to
+            ? new Date(issueCardFilterDto.to)
+            : new Date()
+        const fromDate = issueCardFilterDto.from
+            ? new Date(issueCardFilterDto.from)
+            : new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+
+        // Build the base query for filtering by pullRequestAnalysisIds from workspace and date range
+        const baseQuery: any = {
+            pullRequestAnalysisId: {
+                $in: pullRequestAnalysisIds.map((item) => item._id)
+            },
+            createdAt: {
+                $gte: fromDate,
+                $lte: toDate
+            }
+        }
+
+        const findPullRequestComments =
+            await this.dataService.pullRequestAnalysisComments
+                .find(baseQuery)
+                .populate({
+                    path: 'pullRequestAnalysisId',
+                    populate: {
+                        path: 'pullRequest',
+                        match: {
+                            ...(issueCardFilterDto.prUser && {
+                                prUser: issueCardFilterDto.prUser
+                            }),
+                            ...(issueCardFilterDto.prState && {
+                                prState: issueCardFilterDto.prState
+                            })
+                        }
+                    }
+                })
+                .exec()
+
+        // Filter out comments where pullRequest doesn't match the criteria
+        const filteredComments = findPullRequestComments.filter((comment) => {
+            const analysis = comment.pullRequestAnalysisId as any
+            return analysis?.pullRequest !== null
+        })
+
+        return filteredComments
     }
 
     private async getTimeSeriesData(

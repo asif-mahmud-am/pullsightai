@@ -1,8 +1,8 @@
-import { IsDateString, IsOptional, IsIn } from "class-validator";
+import { IsDateString, IsIn, IsOptional } from 'class-validator'
 
 export class DashboardFilterDto {
     @IsOptional()
-    repo: string;
+    repo: string
 
     @IsOptional()
     @IsDateString()
@@ -22,3 +22,12 @@ export class PrAnalysisCardFilterDto extends DashboardFilterDto {}
 export class IssueAnalysisCardFilterDto extends DashboardFilterDto {}
 
 export class TimeAndMoneySaveCardFilterDto extends DashboardFilterDto {}
+
+export class IssueCardFilterDto extends DashboardFilterDto {
+    @IsOptional()
+    prUser: string
+
+    @IsOptional()
+    @IsIn(['open', 'merged', 'declined'])
+    prState: string
+}

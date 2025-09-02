@@ -116,7 +116,7 @@ export class Workspace {
         type: Types.ObjectId,
         ref: 'User',
         set: (value) =>
-            Types.ObjectId.isValid(value)
+            value instanceof Types.ObjectId
                 ? value
                 : Types.ObjectId.createFromHexString(value)
     })
@@ -127,7 +127,7 @@ export class Workspace {
         type: Types.ObjectId,
         ref: 'Team',
         set: (value) =>
-            Types.ObjectId.isValid(value)
+            value instanceof Types.ObjectId
                 ? value
                 : Types.ObjectId.createFromHexString(value)
     })

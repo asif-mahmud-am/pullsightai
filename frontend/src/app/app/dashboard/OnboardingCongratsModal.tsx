@@ -88,7 +88,7 @@ const OnboardingCongratsModal = ({
                     </p>
 
                     {/* Invite Link */}
-                    <div className="flex items-center gap-2 p-3 bg-white dark:bg-gray-800 rounded-md border">
+                    <div className="flex flex-wrap items-center gap-2 p-3 bg-white dark:bg-gray-800 rounded-md border min-w-0">
                         <code className="flex-1 text-sm font-mono text-gray-700 dark:text-gray-300 truncate">
                             {inviteLink}
                         </code>
@@ -96,7 +96,7 @@ const OnboardingCongratsModal = ({
                             size="sm"
                             variant="outline"
                             onClick={handleCopyLink}
-                            className="shrink-0"
+                            className="shrink-0 ml-auto"
                         >
                             {copied ? (
                                 <Check className="h-4 w-4 text-green-600" />

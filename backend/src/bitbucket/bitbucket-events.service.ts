@@ -112,7 +112,7 @@ export class BitbucketEventsService {
                 prUser: pullRequest.author?.nickname,
                 prUserAvatar: pullRequest.author?.links?.avatar?.href || '',
                 owner: workspace || 'unknown',
-                repo: repository.name || repository.slug,
+                repo: repository.slug || repository.name,
                 prNumber: pullRequest.id.toString(),
                 installationId: 'bitbucket_integration', // Bitbucket doesn't have installation concept
                 prRepoName: repository.full_name,

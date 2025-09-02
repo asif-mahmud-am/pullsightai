@@ -42,7 +42,9 @@ import { WorkspaceSchema } from 'src/database/schemas/workspace.schema'
                 name: 'Pack',
                 schema: PackSchema
             },
-            { name: 'Plan', schema: PlanSchema }
+            { name: 'Plan', schema: PlanSchema },
+            { name: 'PurchasedPlan', schema: PlanSchema },
+            { name: 'PurchasedPack', schema: PackSchema }
         ])
     ],
     controllers: [],

@@ -46,6 +46,26 @@ export class PaymentsService {
         }
     }
 
+    async createOneTimePayment(createPaymentDto: CreatePaymentDto) {
+        if (createPaymentDto.gateway == Gateway.STRIPE) {
+            const responseData =
+                await this.stripeService.createOneTimeCheckout(createPaymentDto)
+            await this.dataServices.transactions.create({
+                ...createPaymentDto,
+                transactionId: responseData.transactionId,
+                paymentStatus: responseData.paymentStatus,
+                storeAmount: responseData.storeAmount,
+                amount: responseData.amount
+            })
+            return {
+                url: responseData.url,
+                transactionId: responseData.transactionId
+            }
+        } else {
+            throw new BadGatewayException('Payment gateway not supported')
+        }
+    }
+
     async updateSubscription(createPaymentDto: CreatePaymentDto) {
         if (createPaymentDto.gateway == Gateway.STRIPE) {
             const updateSubscriptionInvoice =
@@ -185,7 +205,34 @@ export class PaymentsService {
         return workspace
     }
 
-    async purchasePackComplete(transaction: any) {}
+    async purchasePackComplete(transaction: any) {
+        const purchasedPack =
+            await this.dataServices.purchasedPacks.findByIdAndUpdate(
+                {
+                    _id: transaction.serviceBookingId
+                },
+                {
+                    isActive: true,
+                    paymentStatus: PaymentStatus.PAID,
+                    amount: transaction.amount
+                },
+                { new: true }
+            )
+        console.log('Purchased pack updated:', purchasedPack)
+        const workspace = await this.dataServices.workspaces.findOneAndUpdate(
+            {
+                _id: purchasedPack?.workspace
+            },
+            {
+                currentPack: purchasedPack?._id
+            },
+            {
+                new: true
+            }
+        )
+        console.log('workspace pack updated:', workspace)
+        return workspace
+    }
 
     async findOne(transactionId: string) {
         const transaction = await this.dataServices.transactions

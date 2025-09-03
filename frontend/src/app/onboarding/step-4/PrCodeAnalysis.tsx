@@ -8,6 +8,7 @@ import {
     GitPullRequest,
     GitMerge,
     ExternalLink,
+    Loader,
 } from "lucide-react";
 import { PRAnalysisData } from "@/types/prAnalysis";
 import { humanizeDate } from "@/lib/dayjs";
@@ -17,6 +18,7 @@ import Avatar from "@/components/reusable/Avatar";
 import MdPreview from "@/components/reusable/MdPreview";
 import Image from "next/image";
 import Badge from "@/components/reusable/Badge";
+import { cn } from "@/lib/utils";
 
 interface Props {
     analysisData: PRAnalysisData;
@@ -34,16 +36,20 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
         ? analysis.comments.filter(Boolean)
         : [];
 
-    const getSeverityVariant = (severity: string) => {
+    const getSeverityClassname = (severity: string) => {
         switch (severity) {
+            case "blocker":
+                return "bg-red-900/30 text-red-300 border-red-700";
             case "critical":
-                return "destructive";
-            case "warning":
-                return "warning";
+                return "bg-orange-900/30 text-orange-300 border-orange-700";
+            case "major":
+                return "bg-yellow-900/30 text-yellow-300 border-yellow-700";
+            case "minor":
+                return "bg-blue-900/30 text-blue-300 border-blue-700";
             case "info":
-                return "info";
+                return "bg-green-900/30 text-green-300 border-green-700";
             default:
-                return "default";
+                return "bg-yellow-900/30 text-yellow-300 border-yellow-700";
         }
     };
 
@@ -127,17 +133,37 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                                 PullSight AI
                             </span>
                             <Badge className="bg-blue-900/30 text-blue-300 border-blue-700">
-                                Code Analysis Complete
+                                Code Analysis{" "}
+                                {analysis.status == "inprogress"
+                                    ? "In Progress..."
+                                    : "Complete"}
                             </Badge>
                         </div>
 
                         <div className="text-gray-300 text-sm mb-3">
-                            <MdPreview content={analysis.summary} />
+                            {analysis.status == "inprogress" ? (
+                                <div className="p-5 flex items-center justify-center">
+                                    <Loader className="animate-spin" />
+                                </div>
+                            ) : (
+                                <MdPreview content={analysis.summary} />
+                            )}
                         </div>
 
                         <div className="flex items-center gap-4 text-xs text-gray-400">
                             <span className="flex items-center gap-1">
-                                <AlertCircle className="w-3 h-3 text-red-400" />
+                                <AlertCircle className="w-3 h-3 text-red-500" />
+                                {
+                                    validComments.filter(
+                                        (c) =>
+                                            c.severity.toLocaleLowerCase() ===
+                                            "blocker"
+                                    ).length
+                                }{" "}
+                                Blocker
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <AlertTriangle className="w-3 h-3 text-orange-500" />
                                 {
                                     validComments.filter(
                                         (c) =>
@@ -148,18 +174,29 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                                 Critical
                             </span>
                             <span className="flex items-center gap-1">
-                                <AlertTriangle className="w-3 h-3 text-yellow-400" />
+                                <AlertTriangle className="w-3 h-3 text-yellow-500" />
                                 {
                                     validComments.filter(
                                         (c) =>
                                             c.severity.toLocaleLowerCase() ===
-                                            "warning"
+                                            "major"
                                     ).length
                                 }{" "}
-                                Warnings
+                                Major
                             </span>
                             <span className="flex items-center gap-1">
-                                <Info className="w-3 h-3 text-blue-400" />
+                                <Info className="w-3 h-3 text-blue-500" />
+                                {
+                                    validComments.filter(
+                                        (c) =>
+                                            c.severity.toLocaleLowerCase() ===
+                                            "minor"
+                                    ).length
+                                }{" "}
+                                Minor
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <Info className="w-3 h-3 text-green-400" />
                                 {
                                     validComments.filter(
                                         (c) =>
@@ -188,11 +225,13 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                         />
                         <div className="flex-1">
                             <Badge
-                                variant={getSeverityVariant(
-                                    comment.severity?.toLowerCase()
-                                )}
                                 type="faded"
-                                className="mr-2"
+                                className={cn(
+                                    "mr-2",
+                                    getSeverityClassname(
+                                        comment.severity?.toLowerCase()
+                                    )
+                                )}
                             >
                                 Severity:{" "}
                                 <span className="capitalize">

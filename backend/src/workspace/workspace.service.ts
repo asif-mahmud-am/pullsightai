@@ -401,7 +401,7 @@ export class WorkspaceService {
                 page,
                 limit,
                 sort: { _id: -1 },
-                select: 'provider prTitle prUser prUserAvatar owner repo prNumber prUrl prId prCreatedAt prUpdatedAt  prMergedAt prState'
+                select: 'provider prTitle prUser prUserAvatar owner repo prNumber prUrl prId prCreatedAt prUpdatedAt  prMergedAt prState issueCount'
             }
         )
     }

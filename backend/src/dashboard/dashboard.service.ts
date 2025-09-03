@@ -441,76 +441,50 @@ export class DashboardService {
             return comment.pullRequest !== null
         })
 
-        // Group comments by pull request to avoid duplicates and format the response
-        const prMap = new Map()
+        // Return individual severity rows instead of grouping by PR
         const currentDate = new Date()
-
-        filteredComments.forEach((comment: any) => {
+        const issueCardData = filteredComments.map((comment: any) => {
             const pullRequest = comment.pullRequest
 
-            if (!pullRequest || !pullRequest._id) return
+            // Calculate days open
+            const createdDate = new Date(pullRequest.createdAt)
+            const daysOpen = Math.floor(
+                (currentDate.getTime() - createdDate.getTime()) /
+                    (1000 * 60 * 60 * 24)
+            )
 
-            const prId = pullRequest._id.toString()
-
-            if (!prMap.has(prId)) {
-                // Calculate days open
-                const createdDate = new Date(pullRequest.createdAt)
-                const daysOpen = Math.floor(
-                    (currentDate.getTime() - createdDate.getTime()) /
-                        (1000 * 60 * 60 * 24)
-                )
-
-                // Determine status based on PR state
-                let status = 'Opened'
-                const prState = pullRequest.prState?.toLowerCase()
-                if (prState === 'merged') {
-                    status = 'Merged'
-                } else if (prState === 'declined') {
-                    status = 'Rejected'
-                } else if (prState === 'closed') {
-                    status = 'Approved'
-                }
-
-                prMap.set(prId, {
-                    id: pullRequest._id,
-                    pr:
-                        pullRequest.title ||
-                        `PR #${pullRequest.prNumber}` ||
-                        'Untitled PR',
-                    owner: pullRequest.prUser || 'Unknown',
-                    severity: [], // Will collect all severities for this PR
-                    status: status,
-                    daysOpen: daysOpen,
-                    updated: pullRequest.updatedAt || pullRequest.createdAt,
-                    repositorySlug: comment.repositorySlug || '',
-                    prNumber: pullRequest.prNumber || null,
-                    prState: pullRequest.prState || null
-                })
+            // Determine status based on PR state
+            let status = 'Opened'
+            const prState = pullRequest.prState?.toLowerCase()
+            if (prState === 'merged') {
+                status = 'Merged'
+            } else if (prState === 'declined') {
+                status = 'Rejected'
+            } else if (prState === 'closed') {
+                status = 'Approved'
             }
 
-            // Add severity to the PR if it's not already there
-            const prData = prMap.get(prId)
-            if (
-                comment.severity &&
-                !prData.severity.includes(comment.severity)
-            ) {
-                prData.severity.push(comment.severity)
+            return {
+                id: comment._id, // Use comment ID for uniqueness
+                pr:
+                    pullRequest.title ||
+                    `PR #${pullRequest.prNumber}` ||
+                    'Untitled PR',
+                owner: pullRequest.prUser || 'Unknown',
+                severity: comment.severity, // Individual severity per row
+                status: status,
+                daysOpen: daysOpen,
+                updated: pullRequest.updatedAt || pullRequest.createdAt,
+                repositorySlug: comment.repositorySlug || '',
+                prNumber: pullRequest.prNumber || null,
+                prState: pullRequest.prState || null,
+                category: comment.category || '',
+                content: comment.content || '',
+                filePath: comment.filePath || '',
+                lineStart: comment.lineStart || null,
+                lineEnd: comment.lineEnd || null
             }
         })
-
-        // Convert map to array - more efficient without unnecessary transformations
-        const issueCardData = Array.from(prMap.values(), (item: any) => ({
-            id: item.id,
-            pr: item.pr,
-            owner: item.owner,
-            severity: item.severity, // Return as array for table processing
-            status: item.status,
-            daysOpen: item.daysOpen,
-            updated: item.updated,
-            repositorySlug: item.repositorySlug,
-            prNumber: item.prNumber,
-            prState: item.prState
-        }))
 
         // Sort by updated date (most recent first)
         issueCardData.sort(

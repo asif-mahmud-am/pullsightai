@@ -29,8 +29,8 @@ export const columns: ColumnDef<PullRequest>[] = [
         accessorKey: "prUser",
         header: "Author",
         meta: {
-            headerClassName: "w-32",
-            cellClassName: "w-32",
+            headerClassName: "w-60",
+            cellClassName: "w-60",
         },
         cell: ({ row }) => {
             return (
@@ -67,7 +67,22 @@ export const columns: ColumnDef<PullRequest>[] = [
             );
         },
     },
-
+    {
+        accessorKey: "issueCount",
+        header: "Issues",
+        meta: {
+            headerClassName: "w-28",
+            cellClassName: "w-28",
+        },
+        cell: ({ row }) => {
+            const issueCount = row.getValue("issueCount") as number | undefined;
+            return (
+                <span className="bg-white/5 text-gray-400 rounded-full px-2 py-1 inline-block">
+                    {issueCount || 0}
+                </span>
+            );
+        },
+    },
     {
         accessorKey: "prUpdatedAt",
         header: "Updated",

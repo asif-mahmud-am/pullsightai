@@ -191,7 +191,11 @@ export class AnalysisService {
                 {
                     pullRequest: {
                         ...pullRequestFormattedData.pullRequest,
-                        pullRequestAnalysisId: pullRequestAnalysis['_id']
+                        pullRequestAnalysisId: pullRequestAnalysis['_id'],
+                        apiKey: repository?.workspace?.workspaceSetting?.apiKey,
+                        modelName: repository?.workspace?.workspaceSetting?.modelName,
+                        minSeverity: repository?.minSeverity,
+                        ignore: repository?.ignore
                     }
                 },
                 {
@@ -203,11 +207,7 @@ export class AnalysisService {
         }
         return {
             pullRequestAnalysisId: pullRequestAnalysis['_id'],
-            pullRequest: savedPullRequestFormattedData,
-            apiKey: repository?.workspace?.workspaceSetting?.apiKey,
-            modelName: repository?.workspace?.workspaceSetting?.modelName,
-            minSeverity: repository?.minSeverity,
-            ignore: repository?.ignore
+            pullRequest: savedPullRequestFormattedData
         }
     }
 

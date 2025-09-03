@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { Octokit } from '@octokit/rest'
 import { AnalysisService } from 'src/analysis/analysis.service'
 import { PaginateDto } from 'src/common/dto/paginate.dto'
-import { PREvent } from 'src/common/enums/pr.enum'
+import { PREvent, PRState } from 'src/common/enums/pr.enum'
 import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
 import {
@@ -420,7 +420,8 @@ export class GithubService {
         }
         return await this.analysisService.makeAnalysis(
             pullRequestFormattedData,
-            PREvent.CREATED
+            PREvent.CREATED,
+            userData.currentWorkspace._id
         )
     }
 
@@ -523,6 +524,22 @@ export class GithubService {
                             payload,
                             prEvent
                         )
+                } else if ('closed' == payload.action) {
+                    await this.analysisService.updatedPRState(
+                        {
+                            repo: payload.repository.name,
+                            prNumber: payload.pull_request.number.toString(),
+                            owner: payload.repository.owner.login,
+                            provider: 'github'
+                        },
+                        {
+                            prState:
+                                payload.pull_request.merged == true
+                                    ? PRState.MERGED
+                                    : PRState.DECLINED
+                        }
+                    )
+                    pullRequestFormattedData = false
                 } else {
                     pullRequestFormattedData = false
                 }
@@ -536,6 +553,7 @@ export class GithubService {
             this.analysisService.makeAnalysis(
                 pullRequestFormattedData,
                 prEvent,
+                isApplicable.workspaceMember.workspace,
                 isApplicable.repository
             )
         }

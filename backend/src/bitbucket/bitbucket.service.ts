@@ -8,7 +8,7 @@ import { AnalysisService } from 'src/analysis/analysis.service'
 import { BitbucketEventsService } from 'src/bitbucket/bitbucket-events.service'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
 import { PaginateDto } from 'src/common/dto/paginate.dto'
-import { PREvent } from 'src/common/enums/pr.enum'
+import { PREvent, PRState } from 'src/common/enums/pr.enum'
 import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { Repository } from 'src/common/interfaces/repository.interface'
@@ -263,6 +263,36 @@ export class BitbucketService {
                         prEvent
                     )
                 break
+            case 'pullrequest:fulfilled':
+                await this.analysisService.updatedPRState(
+                    {
+                        repo:
+                            payload.repository.slug || payload.repository.name,
+                        prNumber: payload.pullRequest.id.toString(),
+                        owner:
+                            payload.repository.workspace?.slug ||
+                            payload.repository.full_name?.split('/')[0],
+                        provider: 'bitbucket'
+                    },
+                    { prState: PRState.MERGED }
+                )
+                pullRequestFormattedData = false
+                break
+            case 'pullrequest:rejected':
+                await this.analysisService.updatedPRState(
+                    {
+                        repo:
+                            payload.repository.slug || payload.repository.name,
+                        prNumber: payload.pullRequest.id.toString(),
+                        owner:
+                            payload.repository.workspace?.slug ||
+                            payload.repository.full_name?.split('/')[0],
+                        provider: 'bitbucket'
+                    },
+                    { prState: PRState.DECLINED }
+                )
+                pullRequestFormattedData = false
+                break
             default:
                 pullRequestFormattedData = false
         }
@@ -271,6 +301,7 @@ export class BitbucketService {
             this.analysisService.makeAnalysis(
                 pullRequestFormattedData,
                 prEvent,
+                isApplicable.workspaceMember.workspace,
                 isApplicable.repository
             )
         }
@@ -314,7 +345,8 @@ export class BitbucketService {
         }
         return await this.analysisService.makeAnalysis(
             pullRequestFormattedData,
-            PREvent.CREATED
+            PREvent.CREATED,
+            userData.currentWorkspace._id
         )
     }
 

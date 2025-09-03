@@ -72,6 +72,17 @@ export class PullRequestAnalysis {
     })
     pullRequest: Types.ObjectId
 
+    @Prop({
+        required: false,
+        type: Types.ObjectId,
+        ref: 'Workspace',
+        set: (value) =>
+            value instanceof Types.ObjectId
+                ? value
+                : Types.ObjectId.createFromHexString(value)
+    })
+    workspace?: Types.ObjectId
+
     @Prop({ type: Number, default: null })
     estimatedCodeReviewEffort: number
 

@@ -13,12 +13,12 @@ import { useAuthStore } from "@/store/authStore";
 import showToast from "@/lib/toast";
 
 const claudeModels = [
-    { value: "claude-4-1-opus-20241022", label: "Claude 4.1 Opus - 20241022" },
-    { value: "claude-4-opus-20241022", label: "Claude 4 Opus - 20241022" },
-    { value: "claude-4-sonnet-20241022", label: "Claude 4 Sonnet - 20241022" },
+    { value: "claude-opus-4-1-20250805", label: "Claude 4.1 Opus - 20250805" },
+    { value: "claude-opus-4-20250514", label: "Claude 4 Opus - 20250514" },
+    { value: "claude-sonnet-4-20250514", label: "Claude 4 Sonnet - 20250514" },
     {
-        value: "claude-3-7-sonnet-20241022",
-        label: "Claude 3.7 Sonnet - 20241022",
+        value: "claude-3-7-sonnet-20250219",
+        label: "Claude 3.7 Sonnet - 20250219",
     },
     {
         value: "claude-3-5-haiku-20241022",

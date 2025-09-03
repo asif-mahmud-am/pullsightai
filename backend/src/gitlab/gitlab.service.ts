@@ -7,7 +7,7 @@ import { ConfigService } from '@nestjs/config'
 import { AnalysisService } from 'src/analysis/analysis.service'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
 import { PaginateDto } from 'src/common/dto/paginate.dto'
-import { PREvent } from 'src/common/enums/pr.enum'
+import { PREvent, PRState } from 'src/common/enums/pr.enum'
 import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
 import {
@@ -297,6 +297,29 @@ export class GitlabService {
                             payload,
                             prEvent
                         )
+                } else if (
+                    ['merge', 'close'].includes(
+                        payload.object_attributes.action
+                    )
+                ) {
+                    await this.analysisService.updatedPRState(
+                        {
+                            repo: payload.project.path_with_namespace,
+                            prNumber: payload.object_attributes.iid.toString(),
+                            owner:
+                                payload.project.namespace.path ||
+                                payload.project.path_with_namespace.split(
+                                    '/'
+                                )[0],
+                            provider: 'gitlab'
+                        },
+                        {
+                            prState:
+                                payload.object_attributes.action == 'merge'
+                                    ? PRState.MERGED
+                                    : PRState.DECLINED
+                        }
+                    )
                 }
                 break
             default:
@@ -306,6 +329,7 @@ export class GitlabService {
             this.analysisService.makeAnalysis(
                 pullRequestFormattedData,
                 prEvent,
+                isApplicable.workspaceMember.workspace,
                 isApplicable.repository
             )
         }
@@ -349,7 +373,8 @@ export class GitlabService {
         }
         return await this.analysisService.makeAnalysis(
             pullRequestFormattedData,
-            PREvent.CREATED
+            PREvent.CREATED,
+            userData.currentWorkspace._id
         )
     }
 

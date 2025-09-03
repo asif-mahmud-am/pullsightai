@@ -12,6 +12,10 @@ export const columns: ColumnDef<PullRequest>[] = [
     {
         accessorKey: "prTitle",
         header: "PR Title",
+        meta: {
+            headerClassName: "min-w-64 flex-1",
+            cellClassName: "min-w-64 flex-1",
+        },
         cell: ({ row }) => (
             <div>
                 <span className="text-white mb-1 text-base">
@@ -24,6 +28,10 @@ export const columns: ColumnDef<PullRequest>[] = [
     {
         accessorKey: "prUser",
         header: "Author",
+        meta: {
+            headerClassName: "w-32",
+            cellClassName: "w-32",
+        },
         cell: ({ row }) => {
             return (
                 <Avatar
@@ -37,6 +45,10 @@ export const columns: ColumnDef<PullRequest>[] = [
     {
         accessorKey: "prState",
         header: "PR Status",
+        meta: {
+            headerClassName: "w-28",
+            cellClassName: "w-28",
+        },
         cell: ({ row }) => {
             const status = row.getValue("prState") as string;
             return (
@@ -59,6 +71,10 @@ export const columns: ColumnDef<PullRequest>[] = [
     {
         accessorKey: "prUpdatedAt",
         header: "Updated",
+        meta: {
+            headerClassName: "w-28",
+            cellClassName: "w-28",
+        },
         cell: ({ row }) => {
             const updated = row.getValue("prUpdatedAt") as string | undefined;
             return (

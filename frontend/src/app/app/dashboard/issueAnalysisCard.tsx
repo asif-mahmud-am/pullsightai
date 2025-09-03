@@ -61,14 +61,14 @@ const IssueAnalysisCard = ({
                         <div className="text-3xl">0%</div>
                     </div> */}
                 </div>
-                <div className="border rounded-xl flex-1">
+                <div className="border rounded-xl flex-1 overflow-hidden">
                     {data?.data?.total < 1 ? (
                         <div className="text-center text-muted p-6 h-full flex items-center justify-center">
                             No issues data found for the selected period.
                         </div>
                     ) : (
                         <ChartContainer
-                            className="py-3 pr-3"
+                            className="w-full h-64 sm:h-72 md:h-80"
                             config={{
                                 warning: {
                                     label: "Warning",
@@ -92,9 +92,19 @@ const IssueAnalysisCard = ({
                                 <Pie
                                     data={[
                                         {
-                                            name: "warning",
-                                            value: data?.data?.warning || 0,
+                                            name: "info",
+                                            value: data?.data?.info || 0,
+                                            fill: "#39D5F7",
+                                        },
+                                        {
+                                            name: "minor",
+                                            value: data?.data?.minor || 0,
                                             fill: "#FFB455",
+                                        },
+                                        {
+                                            name: "major",
+                                            value: data?.data?.major || 0,
+                                            fill: "#A254F5",
                                         },
                                         {
                                             name: "critical",
@@ -102,20 +112,22 @@ const IssueAnalysisCard = ({
                                             fill: "#F85661",
                                         },
                                         {
-                                            name: "info",
-                                            value: data?.data?.info || 0,
-                                            fill: "#A254F5",
+                                            name: "blocker",
+                                            value: data?.data?.blocker || 0,
+                                            fill: "#960002",
                                         },
                                     ]}
                                     dataKey="value"
                                     nameKey="name"
-                                    innerRadius={50}
+                                    innerRadius="50%"
                                     paddingAngle={2}
-                                    outerRadius={70}
+                                    outerRadius="70%"
+                                    cx="50%"
+                                    cy="45%"
                                 />
                                 <ChartLegend
                                     content={({ payload }) => (
-                                        <div className="flex flex-wrap gap-2 justify-center mt-4">
+                                        <div className="flex flex-wrap gap-2 sm:gap-3 justify-center mt-1 mb-5 px-4">
                                             {payload?.map((entry, index) => {
                                                 const count =
                                                     entry.payload?.value || 0;
@@ -130,16 +142,16 @@ const IssueAnalysisCard = ({
                                                 return (
                                                     <div
                                                         key={`legend-${index}`}
-                                                        className="flex items-center gap-2 text-xs"
+                                                        className="flex items-center gap-1.5 text-xs"
                                                     >
                                                         <div
-                                                            className="w-2 h-2 rounded-full"
+                                                            className="w-2 h-2 rounded-full flex-shrink-0"
                                                             style={{
                                                                 backgroundColor:
                                                                     entry.color,
                                                             }}
                                                         />
-                                                        <span className="capitalize">
+                                                        <span className="capitalize whitespace-nowrap">
                                                             {entry.value} (
                                                             {percentage}%)
                                                         </span>
@@ -148,7 +160,7 @@ const IssueAnalysisCard = ({
                                             })}
                                         </div>
                                     )}
-                                    className="-translate-y-2"
+                                    className=""
                                 />
                             </PieChart>
                         </ChartContainer>

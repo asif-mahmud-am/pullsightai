@@ -59,6 +59,9 @@ export class User {
             )
     })
     workspaces?: Types.ObjectId[]
+
+    @Prop({ required: false, trim: true })
+    stripeCustomerId: string
 }
 
 const schema = SchemaFactory.createForClass(User)

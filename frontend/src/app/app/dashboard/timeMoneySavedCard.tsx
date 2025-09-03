@@ -54,7 +54,10 @@ const TimeMoneySavedCard = ({
                     </span>
                 </div>
             </ContentCard.Header>
-            <ContentCard.Body isLoading={isFetching}>
+            <ContentCard.Body
+                isLoading={isFetching}
+                className="flex flex-col flex-1"
+            >
                 <div className="flex divide-x gap-5 lg:gap-9 pb-5 lg:py-5">
                     <div className="pr-5 lg:pr-9">
                         <div className="opacity-50 text-xs mb-1">Hours</div>
@@ -81,7 +84,7 @@ const TimeMoneySavedCard = ({
                     </div> */}
                 </div>
                 <ChartContainer
-                    className="border py-3 pr-3 rounded-xl"
+                    className="border py-3 pr-3 rounded-xl flex-1"
                     config={{
                         total: {
                             label: "Total",
@@ -117,7 +120,7 @@ const TimeMoneySavedCard = ({
                             width={35}
                             tickLine={false}
                             axisLine={false}
-                            tickMargin={10}
+                            tickMargin={5}
                         />
                         <ChartTooltip
                             cursor={false}

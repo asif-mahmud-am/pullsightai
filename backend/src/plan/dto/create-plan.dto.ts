@@ -60,4 +60,8 @@ export class CreatePlanDto {
     @IsBoolean()
     @IsOptional()
     isPublic?: boolean
+
+    @IsOptional()
+    @IsString()
+    stripProductId?: string
 }

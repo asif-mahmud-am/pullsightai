@@ -394,32 +394,7 @@ export class DashboardService {
         )
 
         if (!findUser || !findUser.currentWorkspace) {
-            return {}
-        }
-
-        const findWorkspace = await this.dataService.workspaces.findOne(
-            { _id: findUser.currentWorkspace },
-            'slug'
-        )
-
-        if (!findWorkspace) {
-            return {}
-        }
-
-        // Build query for pullRequestAnalysis with repo filter
-        const analysisQuery: any = { workspaceSlug: findWorkspace.slug }
-        if (issueCardFilterDto.repo) {
-            analysisQuery.repositorySlug = issueCardFilterDto.repo
-        }
-
-        const pullRequestAnalysisIds =
-            await this.dataService.pullRequestAnalysis.find(
-                analysisQuery,
-                '_id'
-            )
-
-        if (!pullRequestAnalysisIds || pullRequestAnalysisIds.length === 0) {
-            return {}
+            return []
         }
 
         // Set default date range if not provided (last 30 days)
@@ -430,43 +405,121 @@ export class DashboardService {
             ? new Date(issueCardFilterDto.from)
             : new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
 
-        // Build the base query for filtering by pullRequestAnalysisIds from workspace and date range
+        // Build the base query using workspace directly from PullRequestAnalysisComment
         const baseQuery: any = {
-            pullRequestAnalysisId: {
-                $in: pullRequestAnalysisIds.map((item) => item._id)
-            },
+            workspace: findUser.currentWorkspace,
             createdAt: {
                 $gte: fromDate,
                 $lte: toDate
             }
         }
 
+        // Build pullRequest populate match conditions for prUser and prState filtering
+        const pullRequestMatch: any = {}
+        if (issueCardFilterDto.prUser) {
+            pullRequestMatch.prUser = issueCardFilterDto.prUser
+        }
+        if (issueCardFilterDto.prState) {
+            pullRequestMatch.prState = issueCardFilterDto.prState
+        }
+
         const findPullRequestComments =
             await this.dataService.pullRequestAnalysisComments
                 .find(baseQuery)
                 .populate({
-                    path: 'pullRequestAnalysisId',
-                    populate: {
-                        path: 'pullRequest',
-                        match: {
-                            ...(issueCardFilterDto.prUser && {
-                                prUser: issueCardFilterDto.prUser
-                            }),
-                            ...(issueCardFilterDto.prState && {
-                                prState: issueCardFilterDto.prState
-                            })
-                        }
-                    }
+                    path: 'pullRequest',
+                    match:
+                        Object.keys(pullRequestMatch).length > 0
+                            ? pullRequestMatch
+                            : {},
+                    select: 'title prNumber prUser prState createdAt updatedAt'
                 })
                 .exec()
 
-        // Filter out comments where pullRequest doesn't match the criteria
+        // Filter out comments where pullRequest doesn't match the criteria or is null
         const filteredComments = findPullRequestComments.filter((comment) => {
-            const analysis = comment.pullRequestAnalysisId as any
-            return analysis?.pullRequest !== null
+            return comment.pullRequest !== null
         })
 
-        return filteredComments
+        // Group comments by pull request to avoid duplicates and format the response
+        const prMap = new Map()
+        const currentDate = new Date()
+
+        filteredComments.forEach((comment: any) => {
+            const pullRequest = comment.pullRequest
+
+            if (!pullRequest || !pullRequest._id) return
+
+            const prId = pullRequest._id.toString()
+
+            if (!prMap.has(prId)) {
+                // Calculate days open
+                const createdDate = new Date(pullRequest.createdAt)
+                const daysOpen = Math.floor(
+                    (currentDate.getTime() - createdDate.getTime()) /
+                        (1000 * 60 * 60 * 24)
+                )
+
+                // Determine status based on PR state
+                let status = 'Opened'
+                const prState = pullRequest.prState?.toLowerCase()
+                if (prState === 'merged') {
+                    status = 'Merged'
+                } else if (prState === 'declined') {
+                    status = 'Rejected'
+                } else if (prState === 'closed') {
+                    status = 'Approved'
+                }
+
+                prMap.set(prId, {
+                    id: pullRequest._id,
+                    pr:
+                        pullRequest.title ||
+                        `PR #${pullRequest.prNumber}` ||
+                        'Untitled PR',
+                    owner: pullRequest.prUser || 'Unknown',
+                    severity: [], // Will collect all severities for this PR
+                    status: status,
+                    daysOpen: daysOpen,
+                    updated: pullRequest.updatedAt || pullRequest.createdAt,
+                    repositorySlug: comment.repositorySlug || '',
+                    prNumber: pullRequest.prNumber || null,
+                    prState: pullRequest.prState || null
+                })
+            }
+
+            // Add severity to the PR if it's not already there
+            const prData = prMap.get(prId)
+            if (
+                comment.severity &&
+                !prData.severity.includes(comment.severity)
+            ) {
+                prData.severity.push(comment.severity)
+            }
+        })
+
+        // Convert map to array and format severities
+        const issueCardData = Array.from(prMap.values()).map((item: any) => ({
+            id: item.id,
+            pr: item.pr,
+            owner: item.owner,
+            severity:
+                item.severity.length > 0 ? item.severity.join(', ') : 'Unknown',
+            status: item.status,
+            daysOpen: item.daysOpen,
+            updated: item.updated,
+            repositorySlug: item.repositorySlug,
+            prNumber: item.prNumber,
+            prState: item.prState
+        }))
+
+        // Sort by updated date (most recent first)
+        issueCardData.sort(
+            (a, b) =>
+                new Date(b.updated).getTime() - new Date(a.updated).getTime()
+        )
+
+        return issueCardData
     }
 
     private async getTimeSeriesData(

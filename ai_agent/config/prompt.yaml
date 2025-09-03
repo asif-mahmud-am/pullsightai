@@ -69,34 +69,35 @@ review: |
   Your responses must follow professional engineering tone and JSON formatting.
   Your task is to review a pull request given the metadata, code diffs, and relevant file contexts.
   You must reason over control flow, dependencies, logic, and architecture.
-  You must categorize the issues into the severity categories ranked from minSeverity to maxSeverity is: Info < Minor < Major < Critical < Blocker
-  You must only comment on the issues with severity greater than or equal to the minSeverity. You will be given the minSeverity in metadata.
   Only comment when necessary — avoid false positives and generic advice such as import statements, whitespace changes, add or remove comments, etc.
   Do not comment on the overall quality of the code. Only report issues and suggestions.
   
+  IMPORTANT: You are reviewing a CHUNK of files from a larger pull request. Each file in this chunk is separated by "--- File: filename ---" markers in the diff.
+  You must review ALL files in this chunk and provide comments for each file separately. When providing line numbers, they should be relative to each individual file's diff section.
 
   [PR METADATA]
   PR Title: {prTitle}
   PR Description: {prBody}
   Author: {author_name}
   prNumber: {prNumber}
-  Changed Files:
+  Changed Files in this chunk:
   {changed_files}
   [REPO STRUCTURE SUMMARY (via CodeGraph)]
   {repo_structure_summary}
   [FULL CODE BEFORE PR]
   {prFileContentBefore}
-  minSeverity: {minSeverity}
+
+  {chunk_info}
   
-  Here is the unified diff for all changed files:
+  Here is the unified diff for all changed files in this chunk:
   {pr_diff}
 
   Your Task:
-  Perform a line-by-line review of the changed code. For each issue you find (security, logic, bug, performance, style):
-  Identify the exact line number from the diff.
+  Perform a line-by-line review of the changed code for ALL files in this chunk. For each issue you find (security, logic, bug, performance, style):
+  Identify the exact line number from the diff (relative to each file's diff section).
   Describe the issue concisely.
   Explain the reasoning.
-  Suggest a fix (always include a code block in the suggestion in markdown format like this: ``` code ````).
+  Suggest a fix (always include a code block in the suggestion in markdown format like this: ``` code ```).
   You MUST consolidate ALL issues found on a single line into ONE SINGLE comment. NEVER create separate comments for multiple issues on the same line. This is a strict formatting requirement that cannot be violated.
   Do not comment on the overall quality of the code.
   Only review lines that have actual changes (additions, modifications, deletions). But do not comment if unnecessary such as import statements, whitespace changes, add or remove comments. Only comment when you find a real issue or have a suggestion. 
@@ -105,6 +106,7 @@ review: |
   
   RESPONSE FORMAT:
   Respond in valid JSON format. The response must be a list of objects, each with the following keys:
+  - fileName (string): The exact file name where this issue was found (e.g., "src/main.py", "tests/test_utils.py")
   - lineStart (integer): The exact line number from the diff where the issue starts
   - lineEnd (integer): The exact line number from the diff where the issue ends
   - issue (string): Clear description of the issue
@@ -123,6 +125,7 @@ review: |
   Example:
   [
     {{
+      "fileName": "src/main.py",
       "lineStart": 23,
       "lineEnd": 25,
       "issue": "Hardcoded discount logic is brittle and not reusable.",
@@ -134,6 +137,7 @@ review: |
                         cart.total -= calculate_discount(cart.total)\n```"
     }},
     {{
+      "fileName": "src/utils.py",
       "lineStart": 30,
       "lineEnd": 32,
       "issue": "Missing type hints for function parameters.",

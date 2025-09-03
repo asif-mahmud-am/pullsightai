@@ -56,6 +56,28 @@ export class PullRequestAnalysisComment {
                 : Types.ObjectId.createFromHexString(value)
     })
     pullRequestAnalysisId?: Types.ObjectId
+
+    @Prop({
+        required: false,
+        type: Types.ObjectId,
+        ref: 'PullRequest',
+        set: (value) =>
+            value instanceof Types.ObjectId
+                ? value
+                : Types.ObjectId.createFromHexString(value)
+    })
+    pullRequest: Types.ObjectId
+
+    @Prop({
+        required: false,
+        type: Types.ObjectId,
+        ref: 'Workspace',
+        set: (value) =>
+            value instanceof Types.ObjectId
+                ? value
+                : Types.ObjectId.createFromHexString(value)
+    })
+    workspace?: Types.ObjectId
 }
 
 const schema = SchemaFactory.createForClass(PullRequestAnalysisComment)

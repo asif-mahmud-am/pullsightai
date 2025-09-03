@@ -42,9 +42,11 @@ export class User {
         type: Types.ObjectId,
         ref: 'Workspace',
         set: (value) =>
-            value instanceof Types.ObjectId
-                ? value
-                : Types.ObjectId.createFromHexString(value)
+            !value
+                ? null
+                : value instanceof Types.ObjectId
+                  ? value
+                  : Types.ObjectId.createFromHexString(value)
     })
     currentWorkspace?: Types.ObjectId
 

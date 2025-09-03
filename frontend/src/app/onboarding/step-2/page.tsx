@@ -32,7 +32,7 @@ const Step2Page = () => {
     });
 
     const { searchInput, filteredData } = useSearchable({
-        data: repositories,
+        data: Array.isArray(repositories) ? repositories : [],
         searchFn: (item, search) =>
             search.trim()
                 ? item.name.toLowerCase().includes(search.toLowerCase())

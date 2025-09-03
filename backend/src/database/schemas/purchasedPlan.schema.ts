@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { Document, Types } from 'mongoose'
 import * as mongoosePaginate from 'mongoose-paginate-v2'
 import * as uniqueValidator from 'mongoose-unique-validator'
+import { PaymentStatus } from 'src/database/enums/status.enum'
 import { BillingCycle } from 'src/database/schemas/plan.schema'
 
 export type PurchasedPlanDocument = PurchasedPlan & Document
@@ -33,7 +34,7 @@ export class PurchasedPlan {
     @Prop({ required: true, min: 0 })
     amount: number
 
-    @Prop({ required: true, min: 0 })
+    @Prop({ required: false, min: 0 })
     gatewayCharge: number
 
     @Prop({ required: true, min: 0 })
@@ -48,8 +49,24 @@ export class PurchasedPlan {
     @Prop({ required: true, default: BillingCycle.MONTHLY })
     billingCycle: BillingCycle
 
-    @Prop({ default: true })
+    @Prop({ default: false })
     isActive: boolean
+
+    @Prop({ required: false })
+    subscriptionId: string
+
+    @Prop({
+        required: true,
+        enum: PaymentStatus,
+        default: PaymentStatus.PENDING
+    })
+    paymentStatus: string
+
+    @Prop({ required: false })
+    periodStart: Date
+
+    @Prop({ required: false })
+    periodEnd: Date
 }
 
 const schema = SchemaFactory.createForClass(PurchasedPlan)

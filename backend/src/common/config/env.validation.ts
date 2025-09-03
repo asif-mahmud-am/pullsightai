@@ -65,6 +65,9 @@ class EnvironmentVariables {
 
     @IsString()
     DOMAIN: string
+
+    @IsString()
+    STRIPE_SECRET_KEY: string
 }
 
 export function validate(config: Record<string, unknown>) {

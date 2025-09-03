@@ -32,6 +32,10 @@ import {
     RepositoryDocument
 } from 'src/database/schemas/repository.schema'
 import {
+    Transaction,
+    TransactionDocument
+} from 'src/database/schemas/transaction.schema'
+import {
     WorkspaceMember,
     WorkspaceMemberDocument
 } from 'src/database/schemas/workspace-members.schema'
@@ -55,6 +59,7 @@ export class DatabaseService {
     packs: PaginateModel<PackDocument>
     purchasedPlans: PaginateModel<PurchasedPlanDocument>
     purchasedPacks: PaginateModel<PurchasedPackDocument>
+    transactions: PaginateModel<TransactionDocument>
     constructor(
         @InjectModel(User.name)
         private UserRepository: PaginateModel<UserDocument>,
@@ -79,7 +84,9 @@ export class DatabaseService {
         @InjectModel(PurchasedPlan.name)
         private PurchasedPlanRepository: PaginateModel<PurchasedPlanDocument>,
         @InjectModel(PurchasedPack.name)
-        private PurchasedPackRepository: PaginateModel<PurchasedPackDocument>
+        private PurchasedPackRepository: PaginateModel<PurchasedPackDocument>,
+        @InjectModel(Transaction.name)
+        private TransactionRepository: PaginateModel<TransactionDocument>
     ) {}
     onApplicationBootstrap() {
         this.users = this.UserRepository
@@ -95,5 +102,6 @@ export class DatabaseService {
         this.packs = this.PackRepository
         this.purchasedPlans = this.PurchasedPlanRepository
         this.purchasedPacks = this.PurchasedPackRepository
+        this.transactions = this.TransactionRepository
     }
 }

@@ -266,7 +266,8 @@ export class BitbucketService {
             case 'pullrequest:fulfilled':
                 await this.analysisService.updatedPRState(
                     {
-                        repo: payload.repository.slug || payload.repository.name,
+                        repo:
+                            payload.repository.slug || payload.repository.name,
                         prNumber: payload.pullRequest?.id.toString(),
                         owner:
                             payload.repository.workspace?.slug ||
@@ -280,7 +281,8 @@ export class BitbucketService {
             case 'pullrequest:rejected':
                 await this.analysisService.updatedPRState(
                     {
-                        repo: payload.repository.slug || payload.repository.name,
+                        repo:
+                            payload.repository.slug || payload.repository.name,
                         prNumber: payload?.pullRequest?.id.toString(),
                         owner:
                             payload.repository.workspace?.slug ||
@@ -372,6 +374,11 @@ export class BitbucketService {
             return {
                 ...member,
                 _id: savedMember?._id ?? null,
+                role:
+                    savedMember?.role ||
+                    userData.providerId == member.providerId
+                        ? 'owner'
+                        : 'member',
                 isActive: Boolean(savedMember?.isActive),
                 joinedAt: savedMember?.joinedAt
             }

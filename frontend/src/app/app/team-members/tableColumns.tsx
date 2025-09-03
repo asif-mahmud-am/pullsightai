@@ -39,6 +39,7 @@ const TeamMemberStatusSwitch = ({
             <Switch
                 checked={isActive}
                 onCheckedChange={() => setShowConfirm(true)}
+                disabled={member?.role == "owner"}
             />
             <ConfirmDialog
                 open={showConfirm}

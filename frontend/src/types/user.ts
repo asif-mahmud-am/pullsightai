@@ -21,6 +21,7 @@ export interface TeamMember {
     providerId: string;
     displayName: string;
     avatarUrl: string;
+    role?: string; // Role of the team member owner | member
     isActive?: boolean; // Active status
     invitedAt?: string; // Invitation date
     joinedAt?: string; // Joining date

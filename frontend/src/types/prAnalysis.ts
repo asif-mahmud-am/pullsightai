@@ -10,7 +10,7 @@ export interface AIComment {
     suggestion: string;
     codeSnippet: string;
     codeSnippetLineStart: number;
-    severity: string; // Severity can be "Critical", "Warning", "Info" or similar
+    severity: string; // info | minor | major | critical | blocker
     category: string;
     pullRequestAnalysisId: string; // Reference to the PR analysis this comment belongs to
     createdAt: string;
@@ -35,7 +35,6 @@ export interface PRAnalysisData {
 }
 
 export interface PRAnalysis {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     pullRequest?: any;
     pullRequestAnalysisId: string;
     pullRequestAnalysis?: PRAnalysisData;

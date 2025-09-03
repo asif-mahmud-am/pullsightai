@@ -196,14 +196,14 @@
             thead {
                 tr {
                     th {
-                        @apply text-left px-2 py-1 align-top border-b border-border;
+                        @apply text-left px-2 py-1 align-top border-b border-r border-border  bg-neutral-800;
                     }
                 }
             }
             tbody {
                 tr {
                     td {
-                        @apply px-2 py-1 align-top border-b border-border;
+                        @apply px-2 py-1 align-top border-b border-r border-border;
                     }
                 }
             }

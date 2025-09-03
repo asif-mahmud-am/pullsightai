@@ -99,7 +99,7 @@ const PrAnalysisCard = ({
                         <YAxis
                             tickLine={false}
                             axisLine={false}
-                            tickMargin={10}
+                            tickMargin={5}
                             width={35}
                         />
                         <ChartTooltip

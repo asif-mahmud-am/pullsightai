@@ -62,6 +62,7 @@ const DataTable = <TData,>({
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         onRowSelectionChange: setRowSelection,
+        columnResizeMode: "onChange",
         state: {
             rowSelection,
             columnFilters: filters,
@@ -123,63 +124,80 @@ const DataTable = <TData,>({
                 className
             )}
         >
-            <Table>
-                <TableHeader
-                    className={cn("bg-card", noBorder && "[&_tr]:border-b-0")}
-                >
-                    {table.getHeaderGroups().map((headerGroup) => (
-                        <TableRow key={headerGroup.id}>
-                            {headerGroup.headers.map((header) => {
-                                return (
-                                    <TableHead
-                                        key={header.id}
-                                        className="px-5 py-3 text-muted text-xs"
-                                    >
-                                        {header.isPlaceholder
-                                            ? null
-                                            : flexRender(
-                                                  header.column.columnDef
-                                                      .header,
-                                                  header.getContext()
-                                              )}
-                                    </TableHead>
-                                );
-                            })}
-                        </TableRow>
-                    ))}
-                </TableHeader>
-                <TableBody>
-                    {table.getRowModel().rows?.length ? (
-                        table.getRowModel().rows.map((row) => (
-                            <TableRow
-                                key={row.id}
-                                className={cn(noBorder && "border-0")}
-                            >
-                                {row.getVisibleCells().map((cell) => (
-                                    <TableCell
-                                        key={cell.id}
-                                        className="px-5 py-3"
-                                    >
-                                        {flexRender(
-                                            cell.column.columnDef.cell,
-                                            cell.getContext()
-                                        )}
-                                    </TableCell>
-                                ))}
+            <div className="overflow-x-auto">
+                <Table className="w-full min-w-max">
+                    <TableHeader
+                        className={cn(
+                            "bg-card",
+                            noBorder && "[&_tr]:border-b-0"
+                        )}
+                    >
+                        {table.getHeaderGroups().map((headerGroup) => (
+                            <TableRow key={headerGroup.id}>
+                                {headerGroup.headers.map((header) => {
+                                    const meta = header.column.columnDef
+                                        .meta as any;
+                                    return (
+                                        <TableHead
+                                            key={header.id}
+                                            className={cn(
+                                                "px-3 sm:px-5 py-3 text-muted text-xs whitespace-nowrap",
+                                                meta?.headerClassName
+                                            )}
+                                        >
+                                            {header.isPlaceholder
+                                                ? null
+                                                : flexRender(
+                                                      header.column.columnDef
+                                                          .header,
+                                                      header.getContext()
+                                                  )}
+                                        </TableHead>
+                                    );
+                                })}
                             </TableRow>
-                        ))
-                    ) : (
-                        <TableRow>
-                            <TableCell
-                                colSpan={columns.length}
-                                className="h-24 text-center"
-                            >
-                                No results.
-                            </TableCell>
-                        </TableRow>
-                    )}
-                </TableBody>
-            </Table>
+                        ))}
+                    </TableHeader>
+                    <TableBody>
+                        {table.getRowModel().rows?.length ? (
+                            table.getRowModel().rows.map((row) => (
+                                <TableRow
+                                    key={row.id}
+                                    className={cn("", noBorder && "border-0")}
+                                >
+                                    {row.getVisibleCells().map((cell) => {
+                                        const meta = cell.column.columnDef
+                                            .meta as any;
+                                        return (
+                                            <TableCell
+                                                key={cell.id}
+                                                className={cn(
+                                                    "px-3 sm:px-5 py-3",
+                                                    meta?.cellClassName
+                                                )}
+                                            >
+                                                {flexRender(
+                                                    cell.column.columnDef.cell,
+                                                    cell.getContext()
+                                                )}
+                                            </TableCell>
+                                        );
+                                    })}
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={columns.length}
+                                    className="h-24 text-center"
+                                >
+                                    No results.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
             {isLoading && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center bg-dark/50 backdrop-blur-sm">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

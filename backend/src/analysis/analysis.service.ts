@@ -239,7 +239,8 @@ export class AnalysisService {
                             Types.ObjectId.createFromHexString(
                                 postReviewDto.pullRequestAnalysisId
                             ),
-                        repositorySlug: analysis.repositorySlug
+                        repositorySlug: analysis.repositorySlug,
+                        pullRequest: analysis.pullRequest
                     }
                 )
             })
@@ -266,6 +267,21 @@ export class AnalysisService {
                 break
             default:
                 throw new Error('Unsupported provider')
+        }
+
+        if (postReviewDto.completed) {
+            const issueCount =
+                await this.dataService.pullRequestAnalysisComments.countDocuments(
+                    {
+                        pullRequest: analysis.pullRequest
+                    }
+                )
+            if (issueCount) {
+                await this.dataService.pullRequests.updateOne(
+                    { _id: analysis.pullRequest },
+                    { $set: { issueCount: issueCount } }
+                )
+            }
         }
         return {}
     }

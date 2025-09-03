@@ -42,11 +42,14 @@ export class CreatePaymentDto {
     @IsOptional()
     gateway?: string = 'stripe'
 
-    @IsNotEmpty()
-    productId: string
+    @IsOptional()
+    productId?: string
 
     @IsOptional()
     subscriptionId?: string
+
+    @IsOptional()
+    productTitle?: string
 }
 
 export class PaymentCallbackDto {

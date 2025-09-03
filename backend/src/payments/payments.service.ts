@@ -46,6 +46,26 @@ export class PaymentsService {
         }
     }
 
+    async createOneTimePayment(createPaymentDto: CreatePaymentDto) {
+        if (createPaymentDto.gateway == Gateway.STRIPE) {
+            const responseData =
+                await this.stripeService.createOneTimeCheckout(createPaymentDto)
+            await this.dataServices.transactions.create({
+                ...createPaymentDto,
+                transactionId: responseData.transactionId,
+                paymentStatus: responseData.paymentStatus,
+                storeAmount: responseData.storeAmount,
+                amount: responseData.amount
+            })
+            return {
+                url: responseData.url,
+                transactionId: responseData.transactionId
+            }
+        } else {
+            throw new BadGatewayException('Payment gateway not supported')
+        }
+    }
+
     async updateSubscription(createPaymentDto: CreatePaymentDto) {
         if (createPaymentDto.gateway == Gateway.STRIPE) {
             const updateSubscriptionInvoice =

@@ -138,6 +138,19 @@ export class Workspace {
     @Prop({
         required: false,
         type: Types.ObjectId,
+        ref: 'PurchasedPack',
+        set: (value) =>
+            !value
+                ? null
+                : value instanceof Types.ObjectId
+                  ? value
+                  : Types.ObjectId.createFromHexString(value)
+    })
+    currentPack?: Types.ObjectId
+
+    @Prop({
+        required: false,
+        type: Types.ObjectId,
         ref: 'Team',
         set: (value) =>
             value instanceof Types.ObjectId

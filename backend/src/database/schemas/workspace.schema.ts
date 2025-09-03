@@ -127,9 +127,11 @@ export class Workspace {
         type: Types.ObjectId,
         ref: 'PurchasedPlan',
         set: (value) =>
-            value instanceof Types.ObjectId
-                ? value
-                : Types.ObjectId.createFromHexString(value)
+            !value
+                ? null
+                : value instanceof Types.ObjectId
+                  ? value
+                  : Types.ObjectId.createFromHexString(value)
     })
     currentPlan?: Types.ObjectId
 

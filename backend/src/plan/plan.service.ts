@@ -143,6 +143,31 @@ export class PlanService {
             .populate({ path: 'plan' })
     }
 
+    async cancelPlan(user: any) {
+        const userData: any = await this.dataService.users
+            .findOne({ _id: user.sub })
+            .populate({
+                path: 'currentWorkspace'
+            })
+        const purchasedPlan = await this.dataService.purchasedPlans.findOne({
+            _id: userData?.currentWorkspace?.currentPlan
+        })
+        if (purchasedPlan == null) {
+            throw new NotFoundException('No active plan found')
+        }
+        if (purchasedPlan.subscriptionId)
+            await this.stripeService.cancelSubscription(
+                purchasedPlan.subscriptionId
+            )
+        purchasedPlan.isActive = false
+        purchasedPlan.subscriptionId = ''
+        await purchasedPlan.save()
+        return await this.dataService.workspaces.updateOne(
+            { _id: userData?.currentWorkspace?._id },
+            { currentPlan: null }
+        )
+    }
+
     async update(id: string, updatePlanDto: UpdatePlanDto) {
         return await this.dataService.plans.updateOne(
             { _id: id },

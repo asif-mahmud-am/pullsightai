@@ -37,9 +37,9 @@ export class PaymentsService {
             })
             return {
                 url: responseData.url,
-                transactionId: responseData.transactionId,
-                paymentStatus: responseData.paymentStatus,
-                response: responseData.response
+                transactionId: responseData.transactionId
+                // paymentStatus: responseData.paymentStatus,
+                // response: responseData.response
             }
         } else {
             throw new BadGatewayException('Payment gateway not supported')

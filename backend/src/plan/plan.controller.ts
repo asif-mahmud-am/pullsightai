@@ -31,6 +31,14 @@ export class PlanController {
         }
     }
 
+    @Post('cancel-plan')
+    async cancelPlan(@Req() req) {
+        return {
+            message: 'Cancel plan request successful',
+            result: await this.planService.cancelPlan(req.user)
+        }
+    }
+
     @Post('purchase')
     async purchase(@Body() purchasePlanDto: PurchasePlanDto, @Req() req) {
         return {

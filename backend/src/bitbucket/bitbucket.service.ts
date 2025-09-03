@@ -266,9 +266,8 @@ export class BitbucketService {
             case 'pullrequest:fulfilled':
                 await this.analysisService.updatedPRState(
                     {
-                        repo:
-                            payload.repository.slug || payload.repository.name,
-                        prNumber: payload.pullRequest.id.toString(),
+                        repo: payload.repository.slug || payload.repository.name,
+                        prNumber: payload.pullRequest?.id.toString(),
                         owner:
                             payload.repository.workspace?.slug ||
                             payload.repository.full_name?.split('/')[0],
@@ -281,9 +280,8 @@ export class BitbucketService {
             case 'pullrequest:rejected':
                 await this.analysisService.updatedPRState(
                     {
-                        repo:
-                            payload.repository.slug || payload.repository.name,
-                        prNumber: payload.pullRequest.id.toString(),
+                        repo: payload.repository.slug || payload.repository.name,
+                        prNumber: payload?.pullRequest?.id.toString(),
                         owner:
                             payload.repository.workspace?.slug ||
                             payload.repository.full_name?.split('/')[0],

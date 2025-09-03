@@ -9,6 +9,7 @@ import { ResponseInterceptor } from 'src/common/interceptors/response.intercepto
 import { MailModule } from 'src/common/notifications/mail/mail.module'
 import { DatabaseModule } from 'src/database/database.module'
 import { PackModule } from 'src/pack/pack.module'
+import { PaymentsModule } from 'src/payments/payments.module'
 import { AnalysisModule } from './analysis/analysis.module'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
@@ -36,7 +37,8 @@ import { WorkspaceModule } from './workspace/workspace.module'
         MailModule,
         NotificationModule,
         PlanModule,
-        PackModule
+        PackModule,
+        PaymentsModule
     ],
     controllers: [AppController],
     providers: [

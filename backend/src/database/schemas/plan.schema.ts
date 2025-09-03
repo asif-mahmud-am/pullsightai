@@ -55,6 +55,9 @@ export class Plan {
 
     @Prop({ default: 0 })
     priority: number
+
+    @Prop({ required: false })
+    stripeProductId: string
 }
 
 const schema = SchemaFactory.createForClass(Plan)

@@ -6,9 +6,11 @@ import {
     Param,
     Patch,
     Post,
+    Req,
     UseGuards
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
+import { PurchasePlanDto } from 'src/plan/dto/purchase-plan.dto'
 import { CreatePlanDto } from './dto/create-plan.dto'
 import { UpdatePlanDto } from './dto/update-plan.dto'
 import { PlanService } from './plan.service'
@@ -20,6 +22,14 @@ import { PlanService } from './plan.service'
 @UseGuards(AuthGuard('jwt-cookie'))
 export class PlanController {
     constructor(private readonly planService: PlanService) {}
+
+    @Post('purchase')
+    async purchase(@Body() purchasePlanDto: PurchasePlanDto, @Req() req) {
+        return {
+            message: 'Plan purchased request successful',
+            result: await this.planService.purchase(purchasePlanDto, req.user)
+        }
+    }
 
     @Post()
     async create(@Body() createPlanDto: CreatePlanDto) {

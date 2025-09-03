@@ -55,7 +55,7 @@ const Step1Page = () => {
 
     const onStepComplete = async () => {
         if (!selectedOrg) return;
-        if (!selectedOrg?.installationId) {
+        if (selectedOrg.provider == "github" && !selectedOrg?.installationId) {
             showToast.error(
                 "Please install the app on your organization to proceed."
             );

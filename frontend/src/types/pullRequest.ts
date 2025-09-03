@@ -4,7 +4,7 @@ export interface PullRequest {
     prId: number;
     prNumber: number;
     prTitle: string;
-    prState: string;
+    prState: string; //open | merged | declined
     prUser: string;
     prUserAvatar: string;
     prCreatedAt: string;

@@ -26,7 +26,6 @@ export class StripeService {
     }
 
     async getCustomerId(userData: any) {
-        console.log('Creating Stripe Customer for user:', userData._id)
         const customer = await this.stripe.customers.create({
             email: userData.email,
             name: userData.displayName,
@@ -34,15 +33,14 @@ export class StripeService {
                 userId: (userData as any)._id.toString()
             }
         })
-        console.log('Created Stripe Customer:', customer)
         return customer.id
     }
 
     async createCheckoutSession(createPaymentDto: CreatePaymentDto) {
         const SUCCESS_URL =
-            this.configService.get<string>('CLIENT_URL') + '/payment/success'
+            this.configService.get<string>('CLIENT_URL') + '/app/subscription'
         const CANCEL_URL =
-            this.configService.get<string>('CLIENT_URL') + '/payment/cancel'
+            this.configService.get<string>('CLIENT_URL') + '/app/subscription'
         const session = await this.stripe.checkout.sessions.create({
             mode: 'subscription',
             customer: createPaymentDto.customerId, // must exist in Stripe
@@ -66,11 +64,10 @@ export class StripeService {
     }
 
     async createOneTimeCheckout(createPaymentDto: CreatePaymentDto) {
-        console.log('createPaymentDto=====', createPaymentDto)
         const SUCCESS_URL =
-            this.configService.get<string>('CLIENT_URL') + '/payment/success'
+            this.configService.get<string>('CLIENT_URL') + '/app/subscription'
         const CANCEL_URL =
-            this.configService.get<string>('CLIENT_URL') + '/payment/cancel'
+            this.configService.get<string>('CLIENT_URL') + '/app/subscription'
         const session = await this.stripe.checkout.sessions.create({
             mode: 'payment',
             customer: createPaymentDto.customerId,

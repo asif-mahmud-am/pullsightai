@@ -160,7 +160,7 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                                             "blocker"
                                     ).length
                                 }{" "}
-                                Blocker
+                                <span className="ml-2">Blocker</span>
                             </span>
                             <span className="flex items-center gap-1">
                                 <span className="">🛑</span>
@@ -171,7 +171,7 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                                             "critical"
                                     ).length
                                 }{" "}
-                                Critical
+                                <span className="ml-2">Critical</span>
                             </span>
                             <span className="flex items-center gap-1">
                                 <span className="">❗</span>
@@ -182,7 +182,7 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                                             "major"
                                     ).length
                                 }{" "}
-                                Major
+                                <span className="ml-2">Major</span>
                             </span>
                             <span className="flex items-center gap-1">
                                 <span className="">⚠️</span>
@@ -193,7 +193,7 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                                             "minor"
                                     ).length
                                 }{" "}
-                                Minor
+                                <span className="ml-2">Minor</span>
                             </span>
                             <span className="flex items-center gap-1">
                                 <span className="">ℹ️</span>
@@ -204,7 +204,7 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                                             "info"
                                     ).length
                                 }{" "}
-                                Info
+                                <span className="ml-2">Info</span>
                             </span>
                         </div>
                     </div>

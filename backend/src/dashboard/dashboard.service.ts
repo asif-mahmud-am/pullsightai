@@ -498,13 +498,12 @@ export class DashboardService {
             }
         })
 
-        // Convert map to array and format severities
-        const issueCardData = Array.from(prMap.values()).map((item: any) => ({
+        // Convert map to array - more efficient without unnecessary transformations
+        const issueCardData = Array.from(prMap.values(), (item: any) => ({
             id: item.id,
             pr: item.pr,
             owner: item.owner,
-            severity:
-                item.severity.length > 0 ? item.severity.join(', ') : 'Unknown',
+            severity: item.severity, // Return as array for table processing
             status: item.status,
             daysOpen: item.daysOpen,
             updated: item.updated,

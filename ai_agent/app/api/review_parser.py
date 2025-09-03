@@ -88,9 +88,9 @@ def parse_review_response(review_text: str, file_name: str):
         if severity == "Critical":
             severity_text = "🛑 **Critical Error** "
         elif severity == "Blocker":
-            severity_text = "🚫 **Blocker** "
+            severity_text = "⛔ **Blocker** "
         elif severity == "Major":
-            severity_text = "⚠️ **Major Issue** "
+            severity_text = "❗ **Major Issue** "
         elif severity == "Minor":
             severity_text = "⚠️ **Minor Issue** "
         elif severity == "Info":

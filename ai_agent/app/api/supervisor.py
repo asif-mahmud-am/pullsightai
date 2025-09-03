@@ -354,8 +354,6 @@ async def process_pr_review_background(extracted_data: dict):
                         "completed": 1 if chunk_index == total_chunks - 1 else 0
                     }
 
-                    print(review_payload)
-
                     logger.info(f"Posting {len(chunk_comments)} comments for chunk {chunk_index + 1} to backend...")
 
                     try:

@@ -17,6 +17,7 @@ import { useUpdateUserMutation } from "@/api/queries/auth";
 import ContentCard from "@/components/reusable/ContentCard";
 import Avatar from "@/components/reusable/Avatar";
 import { humanizeDate } from "@/lib/dayjs";
+import showToast from "@/lib/toast";
 
 const Step1Page = () => {
     const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
@@ -54,6 +55,12 @@ const Step1Page = () => {
 
     const onStepComplete = async () => {
         if (!selectedOrg) return;
+        if (!selectedOrg?.installationId) {
+            showToast.error(
+                "Please install the app on your organization to proceed."
+            );
+            return;
+        }
 
         if (
             user?.currentWorkspace &&

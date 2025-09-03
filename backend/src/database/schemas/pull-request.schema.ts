@@ -114,6 +114,9 @@ export class PullRequest {
 
     @Prop({ type: [PRFile], default: [] })
     prFiles: PRFile[]
+
+    @Prop({ type: Number, default: null })
+    issueCount: number
 }
 
 const schema = SchemaFactory.createForClass(PullRequest)

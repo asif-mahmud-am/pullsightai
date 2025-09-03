@@ -1,19 +1,18 @@
 from fastapi import APIRouter, Request, BackgroundTasks
 from app.models.pr_event import PRPayloadV2, PRFileInfo
 from app.api.summary import generate_summary_response
-from app.api.review import generate_review_response
+from app.api.review import generate_review_response, generate_chunked_review_response
 from app.services.claude_service import ClaudeService
-from app.utils.chunking_strategy import create_summary_chunks, prepare_chunk_for_summary
+from app.utils.chunking_strategy import create_summary_chunks, create_review_chunks, prepare_chunk_for_summary, prepare_chunk_for_review
 from app.utils.summary_aggregator import aggregate_chunk_summaries
 from app.utils.line_perser import extract_summary_info
 import httpx
 import os
 import json
 import re
-from app.api.review_parser import parse_review_response
+from app.api.review_parser import parse_review_response, parse_chunked_review_response
 from typing import Literal
 from dotenv import load_dotenv
-import math
 import logging
 import time
 from logging.handlers import RotatingFileHandler
@@ -60,7 +59,6 @@ supervisor = APIRouter(prefix="", tags=["Supervisor"])
 BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://backend")
 BACKEND_REVIEW_ENDPOINT = os.getenv("BACKEND_REVIEW_ENDPOINT", "http://backend/reviews")
 BACKEND_SUMMARY_ENDPOINT = os.getenv("BACKEND_SUMMARY_ENDPOINT", "http://backend/summary")
-BATCH_SIZE = 10
 
 def get_backend_url(provider: str, endpoint: Literal["summary", "reviews"]) -> str:
     provider = provider.lower()
@@ -148,6 +146,13 @@ async def process_pr_review_background(extracted_data: dict):
     """
     start_time = time.time()
     
+    # Initialize token counters for summary and review separately
+    summary_input_tokens = 0
+    summary_output_tokens = 0
+    review_input_tokens = 0
+    review_output_tokens = 0
+    model_info = ""
+    
     logger.info("=" * 80)
     logger.info("Starting background PR review process")
     logger.info(f"PR Details: Number={extracted_data['prNumber']}, Title={extracted_data['prTitle'][:50]}...")
@@ -176,8 +181,6 @@ async def process_pr_review_background(extracted_data: dict):
         chunk_summaries = []
         total_time_estimation = 0
         total_issue_count = 0
-        total_input_tokens = 0
-        total_output_tokens = 0
         summary_info = {}
         for chunk in chunks:
             logger.info(f"Generating summary for chunk {chunk['chunk_index'] + 1}/{len(chunks)} with {len(chunk['files'])} files")
@@ -195,8 +198,8 @@ async def process_pr_review_background(extracted_data: dict):
                 logger.info(f"Summary info: {summary_info}")
                 total_time_estimation += summary_info["estimated_code_review_time"]
                 total_issue_count += summary_info["potential_issue_count"]
-                total_input_tokens += summary_usage["input_tokens"]
-                total_output_tokens += summary_usage["output_tokens"]
+                summary_input_tokens += summary_usage["input_tokens"]
+                summary_output_tokens += summary_usage["output_tokens"]
                 logger.info(f"Successfully generated summary for chunk {chunk['chunk_index'] + 1}")
             except Exception as e:
                 logger.error(f"Failed to generate summary for chunk {chunk['chunk_index'] + 1}: {str(e)}")
@@ -217,8 +220,8 @@ async def process_pr_review_background(extracted_data: dict):
                 
                 aggregated_summary, summary_usage, model_info = await aggregate_chunk_summaries(chunk_summaries, extracted_data, llm_service, summary_info)
                 summary_info = extract_summary_info(aggregated_summary)
-                total_input_tokens += summary_usage["input_tokens"]
-                total_output_tokens += summary_usage["output_tokens"]
+                summary_input_tokens += summary_usage["input_tokens"]
+                summary_output_tokens += summary_usage["output_tokens"]
                 logger.info(f"Summary info: {summary_info}")
                 summary = type('Summary', (), {'pr_summary': aggregated_summary})()
                 logger.info("Successfully aggregated chunk summaries")
@@ -249,8 +252,8 @@ async def process_pr_review_background(extracted_data: dict):
     logger.info("PR summary generation completed successfully")
 
     summary_usage = {
-            "input_tokens": total_input_tokens,
-            "output_tokens": total_output_tokens
+            "input_tokens": summary_input_tokens,
+            "output_tokens": summary_output_tokens
         }
     logger.info(f"Total summary usage: {summary_usage}")
     # Post summary to backend
@@ -280,121 +283,110 @@ async def process_pr_review_background(extracted_data: dict):
         except Exception as e:
             logger.error(f"Exception while posting summary: {str(e)}")
 
-    # Process reviews in batches
-    total_input_tokens = 0
-    total_output_tokens = 0
-    
-    logger.info("Starting review generation process...")
+    # Process reviews using chunking strategy
+    logger.info("Starting review generation process with chunking strategy...")
+
     async with httpx.AsyncClient() as client:
         if extracted_data["prFiles"]:
-            pr_files = extracted_data["prFiles"]
-            total_batches = math.ceil(extracted_data["number_of_files"] / BATCH_SIZE)
+            # Create chunks for review generation
+            review_chunks, ignored_review_files = create_review_chunks(
+                files=extracted_data["prFiles"],
+                max_chunk_tokens=150000,  # LLM limit for reviews
+                max_file_tokens=100000    # File size limit
+            )
             
-            logger.info(f"Processing {extracted_data['number_of_files']} files in {total_batches} batches (batch size: {BATCH_SIZE})")
+            if ignored_review_files:
+                logger.warning(f"Ignored {len(ignored_review_files)} files for review due to size limits")
+                for ignored in ignored_review_files:
+                    logger.warning(f"  - {ignored['fileName']}: {ignored['reason']}")
             
-            for batch_index in range(total_batches):
-                batch_start_time = time.time()
-                start_index = batch_index * BATCH_SIZE
-                end_index = min(start_index + BATCH_SIZE, extracted_data["number_of_files"])
-                current_batch = pr_files[start_index:end_index]
+            total_chunks = len(review_chunks)
+            logger.info(f"Processing {extracted_data['number_of_files']} files in {total_chunks} review chunks")
+            
+            all_comments = []
+            
+            for chunk_index, chunk in enumerate(review_chunks):
+                chunk_start_time = time.time()
+                logger.info(f"Processing review chunk {chunk_index + 1}/{total_chunks} with {len(chunk['files'])} files")
                 
-                logger.info(f"Processing batch {batch_index + 1}/{total_batches} (files {start_index + 1}-{end_index})")
-                
-                batch_comments = []
-                total_input_tokens = 0
-                total_output_tokens = 0
-                
-                # Process files in current batch
-                for file_index, file_info in enumerate(current_batch):
-                    file_start_time = time.time()
-                    file_name = file_info["prFileName"]
-                    
-                    logger.info(f"Processing file {start_index + file_index + 1}/{extracted_data['number_of_files']}: {file_name}")
-                    
-                    review_variables = {
-                        "prTitle": extracted_data["prTitle"],
-                        "prBody": extracted_data["prBody"],
-                        "author_name": extracted_data["author_name"],
-                        "prNumber": extracted_data["prNumber"],
-                        "changed_files": file_info["prFileName"],
-                        "repo_structure_summary": extracted_data["repo_structure_summary"],
-                        "pr_diff": file_info["prFileDiff"],
-                        "prFileContentBefore": file_info.get("prFileContentBefore", ""),
-                        "minSeverity": extracted_data["minSeverity"]
-                    }
-                                        
-                    try:
-                        logger.info(f"Generating review for {file_name} with LLM...")
-                        llm_start_time = time.time()
-                        review = await generate_review_response(review_variables, llm_service, extracted_data["model_name"])
-                        review_usage = review.review_usage or {}
-                        total_input_tokens += review_usage.get("input_tokens", 0)
-                        total_output_tokens += review_usage.get("output_tokens", 0)
-                        logger.info(f"Review usage for {file_name}: {review_usage}")
-                        model_info = review.model_info or ""
-                        llm_duration = time.time() - llm_start_time
-                        logger.info(f"LLM review generated for {file_name} in {llm_duration:.2f}s")
-                        
-                        logger.info(f"Parsing review response for {file_name}...")
-                        parse_start_time = time.time()
-                        file_comments = parse_review_response(review.pr_review_and_suggestion, file_info["prFileName"])
-                        parse_duration = time.time() - parse_start_time
-                        
-                        logger.info(f"Parsed {len(file_comments)} comments for {file_name} in {parse_duration:.2f}s")
-                        batch_comments.extend(file_comments)
-                        
-                        file_duration = time.time() - file_start_time
-                        logger.info(f"Completed processing {file_name} in {file_duration:.2f}s")
-                        
-                    except Exception as e:
-                        logger.error(f"Failed to process file {file_name}: {str(e)}")
-                        continue
-                
-                # Determine if this is the last batch
-                is_last_batch = batch_index == total_batches - 1
-
-                review_usage = {
-                    "input_tokens": total_input_tokens,
-                    "output_tokens": total_output_tokens
-                }
-
-                logger.info(f"Total review usage for batch {batch_index + 1}: {review_usage}")
-
-                model_information = {"model_name": model_info} if model_info else {}
-
-                review_payload = {
-                    "pullRequestAnalysisId": extracted_data["pullRequestAnalysisId"],
-                    "comments": batch_comments,
-                    "modelInfo": model_information,
-                    "usageInfo": review_usage,
-                    "completed": 1 if is_last_batch else 0
-                }
-                
-                logger.info(f"Posting batch {batch_index + 1}/{total_batches} with {len(batch_comments)} comments to backend...")
-
                 try:
-                    post_start_time = time.time()
-                    response = await client.post(BACKEND_REVIEW_ENDPOINT, json=review_payload)
-                    post_duration = time.time() - post_start_time
+                    # Prepare chunk variables for review
+                    chunk_variables = prepare_chunk_for_review(chunk, extracted_data)
                     
-                    if response.status_code == 200:
-                        logger.info(f"Batch {batch_index + 1} posted successfully in {post_duration:.2f}s")
-                    else:
-                        # Truncate response for cleaner logs
-                        response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
-                        logger.error(f"Failed to post batch {batch_index + 1}. Status: {response.status_code}, Response: {response_text}")
+                    logger.info(f"Generating review for chunk {chunk_index + 1} with LLM...")
+                    llm_start_time = time.time()
+                    review = await generate_chunked_review_response(chunk_variables, llm_service, extracted_data["model_name"])
+                    review_usage = review.review_usage or {}
+                    review_input_tokens += review_usage.get("input_tokens", 0)
+                    review_output_tokens += review_usage.get("output_tokens", 0)
+                    logger.info(f"Review usage for chunk {chunk_index + 1}: {review_usage}")
+                    model_info = review.model_info or ""
+                    llm_duration = time.time() - llm_start_time
+                    logger.info(f"LLM review generated for chunk {chunk_index + 1} in {llm_duration:.2f}s")
+                    
+                    logger.info(f"Parsing review response for chunk {chunk_index + 1}...")
+                    parse_start_time = time.time()
+                    chunk_comments = parse_chunked_review_response(review.pr_review_and_suggestion, chunk["files"],minSeverity=extracted_data["minSeverity"])
+                    parse_duration = time.time() - parse_start_time
+                    
+                    logger.info(f"Parsed {len(chunk_comments)} comments for chunk {chunk_index + 1} in {parse_duration:.2f}s")
+                    all_comments.extend(chunk_comments)
+                    
+                    chunk_duration = time.time() - chunk_start_time
+                    logger.info(f"Completed processing review chunk {chunk_index + 1} in {chunk_duration:.2f}s")
+
+                    review_usage = {
+                        "input_tokens": review_input_tokens,
+                        "output_tokens": review_output_tokens
+                    }
+
+                    logger.info(f"Total review usage: {review_usage}")
+                    logger.info(f"Total comments generated: {len(all_comments)}")
+
+                    model_information = {"model_name": model_info} if model_info else {}
+                    
+                    # Post this chunk's comments immediately
+                    review_payload = {
+                        "pullRequestAnalysisId": extracted_data["pullRequestAnalysisId"],
+                        "comments": chunk_comments,
+                        "modelInfo": {"model_name": model_info} if model_info else {},
+                        "usageInfo": review_usage,
+                        "completed": 1 if chunk_index == total_chunks - 1 else 0
+                    }
+
+                    print(review_payload)
+
+                    logger.info(f"Posting {len(chunk_comments)} comments for chunk {chunk_index + 1} to backend...")
+
+                    try:
+                        post_start_time = time.time()
+                        response = await client.post(BACKEND_REVIEW_ENDPOINT, json=review_payload)
+                        post_duration = time.time() - post_start_time
                         
+                        if response.status_code == 200:
+                            logger.info(f"Review comments for chunk {chunk_index + 1} posted successfully in {post_duration:.2f}s")
+                        else:
+                            # Truncate response for cleaner logs
+                            response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
+                            logger.error(f"Failed to post review comments for chunk {chunk_index + 1}. Status: {response.status_code}, Response: {response_text}")
+                    
+                    except Exception as e:
+                        logger.error(f"Exception while posting review comments: {str(e)}")
+
+                    post_duration = time.time() - post_start_time
+        
                 except Exception as e:
-                    logger.error(f"Exception while posting batch {batch_index + 1}: {str(e)}")
-                
-                batch_duration = time.time() - batch_start_time
-                logger.info(f"Completed batch {batch_index + 1}/{total_batches} in {batch_duration:.2f}s")
+                    logger.error(f"Failed to process review chunk {chunk_index + 1}: {str(e)}")
+                    continue
         else:
             logger.warning("No prFiles found for review processing")
 
     total_duration = time.time() - start_time
     logger.info(f"Background PR review process completed successfully in {total_duration:.2f}s")
     logger.info("=" * 80)
+
+
+    
 
 @supervisor.post("/ai_agent")
 async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: BackgroundTasks):
@@ -430,4 +422,3 @@ async def supervisor_pr_review(payload: PRPayloadV2, background_tasks: Backgroun
         "prNumber": extracted_data["prNumber"],
         "filesCount": extracted_data["number_of_files"]
     }
-    

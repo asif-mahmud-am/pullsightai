@@ -62,14 +62,15 @@ export class AnalysisService {
             console.log('Repository not found or inactive')
             return false
         }
-        const workspaceMemberCount =
-            await this.dataService.workspaceMembers.countDocuments({
+        const workspaceMember = await this.dataService.workspaceMembers.findOne(
+            {
                 provider: provider,
                 providerId: providerId,
                 workspace: repository.workspace!['_id'],
                 isActive: true
-            })
-        if (!workspaceMemberCount) {
+            }
+        )
+        if (!workspaceMember) {
             console.log(
                 'No active workspace member found for providerId:',
                 providerId
@@ -77,7 +78,8 @@ export class AnalysisService {
             return false
         }
         return {
-            repository
+            repository,
+            workspaceMember
         }
     }
 
@@ -151,9 +153,16 @@ export class AnalysisService {
         })
     }
 
+    async updatedPRState(query: any, data: any) {
+        return await this.dataService.pullRequests.updateOne(query, {
+            $set: data
+        })
+    }
+
     async makeAnalysis(
         pullRequestFormattedData: StructuredPRData,
         event: PREvent,
+        workspace: any,
         repository?: any
     ) {
         const savedPullRequestFormattedData =
@@ -173,7 +182,8 @@ export class AnalysisService {
                 prState: savedPullRequestFormattedData.prState,
                 status: Status.INPROGRESS,
                 startedAt: new Date(),
-                pullRequest: savedPullRequestFormattedData._id
+                pullRequest: savedPullRequestFormattedData._id,
+                workspace
             })
         try {
             await this.httpService.post(
@@ -239,7 +249,9 @@ export class AnalysisService {
                             Types.ObjectId.createFromHexString(
                                 postReviewDto.pullRequestAnalysisId
                             ),
-                        repositorySlug: analysis.repositorySlug
+                        repositorySlug: analysis.repositorySlug,
+                        pullRequest: analysis.pullRequest,
+                        workspace: analysis.workspace
                     }
                 )
             })
@@ -266,6 +278,21 @@ export class AnalysisService {
                 break
             default:
                 throw new Error('Unsupported provider')
+        }
+
+        if (postReviewDto.completed) {
+            const issueCount =
+                await this.dataService.pullRequestAnalysisComments.countDocuments(
+                    {
+                        pullRequest: analysis.pullRequest
+                    }
+                )
+            if (issueCount) {
+                await this.dataService.pullRequests.updateOne(
+                    { _id: analysis.pullRequest },
+                    { $set: { issueCount: issueCount } }
+                )
+            }
         }
         return {}
     }

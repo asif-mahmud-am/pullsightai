@@ -63,5 +63,5 @@ export class CreatePlanDto {
 
     @IsOptional()
     @IsString()
-    stripProductId?: string
+    stripeProductId?: string
 }

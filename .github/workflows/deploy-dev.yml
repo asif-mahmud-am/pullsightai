@@ -89,6 +89,7 @@ jobs:
           GITHUB_APP_SLUG: ${{ secrets.GIT_APP_SLUG }}
           GITHUB_APP_ID: ${{ secrets.GIT_APP_ID }}
           DOMAIN: ${{ vars.DOMAIN }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           # AI Agent environment variables
           CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
           BACKEND_BASE_URL: ${{ vars.BACKEND_BASE_URL }}

@@ -23,6 +23,14 @@ import { PackService } from './pack.service'
 export class PackController {
     constructor(private readonly packService: PackService) {}
 
+    @Get('current-active-plan')
+    async currentActivePlan(@Req() req) {
+        return {
+            message: 'Current active plan retrieved successfully',
+            result: await this.packService.currentActivePlan(req.user)
+        }
+    }
+
     @Post('purchase')
     async purchase(@Body() purchasePlanDto: PurchasePlanDto, @Req() req) {
         return {

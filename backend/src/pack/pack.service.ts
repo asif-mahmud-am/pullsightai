@@ -15,6 +15,17 @@ export class PackService {
         private readonly stripeService: StripeService
     ) {}
 
+    async currentActivePlan(user: any) {
+        const userData: any = await this.dataService.users
+            .findOne({ _id: user.sub })
+            .populate({
+                path: 'currentWorkspace'
+            })
+        return await this.dataService.purchasedPacks
+            .findOne({ _id: userData?.currentWorkspace?.currentPack })
+            .populate({ path: 'pack' })
+    }
+
     async purchase(purchasePlanDto: PurchasePlanDto, user: any) {
         const userData: any = await this.dataService.users
             .findOne({ _id: user.sub })

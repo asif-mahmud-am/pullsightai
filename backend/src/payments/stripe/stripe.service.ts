@@ -65,6 +65,40 @@ export class StripeService {
         }
     }
 
+    async createOneTimeCheckout(createPaymentDto: CreatePaymentDto) {
+        console.log('createPaymentDto=====', createPaymentDto)
+        const SUCCESS_URL =
+            this.configService.get<string>('CLIENT_URL') + '/payment/success'
+        const CANCEL_URL =
+            this.configService.get<string>('CLIENT_URL') + '/payment/cancel'
+        const session = await this.stripe.checkout.sessions.create({
+            mode: 'payment',
+            customer: createPaymentDto.customerId,
+            line_items: [
+                {
+                    price_data: {
+                        currency: 'usd',
+                        product_data: {
+                            name: createPaymentDto.productTitle as string
+                        },
+                        unit_amount: createPaymentDto.price * 100
+                    },
+                    quantity: 1
+                }
+            ],
+            success_url: SUCCESS_URL,
+            cancel_url: CANCEL_URL
+        })
+        return {
+            url: session.url,
+            transactionId: session.id,
+            paymentStatus: session.payment_status,
+            storeAmount: Number(session.amount_total) / 100,
+            amount: Number(session.amount_total) / 100,
+            response: session
+        }
+    }
+
     async handleWebhook(sig: string, body: any) {
         switch (body.type) {
             case 'checkout.session.completed': {

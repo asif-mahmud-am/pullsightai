@@ -40,6 +40,7 @@ jobs:
           GITHUB_PRIVATE_KEY_PATH=${{ secrets.GIT_PRIVATE_KEY_PATH }}
           GITHUB_APP_SLUG=${{ secrets.GIT_APP_SLUG }}
           GITHUB_APP_ID=${{ secrets.GIT_APP_ID }}
+          STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
           DOMAIN=${{ vars.DOMAIN }}
           EOF
 

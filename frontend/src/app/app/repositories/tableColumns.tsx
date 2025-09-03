@@ -92,8 +92,8 @@ export const columns: ColumnDef<Repository>[] = [
         accessorKey: "isActive",
         header: "",
         meta: {
-            headerClassName: "w-20",
-            cellClassName: "w-20",
+            headerClassName: "w-15",
+            cellClassName: "w-15",
         },
         cell: ({ row }) => {
             const active = row.getValue("isActive") as boolean;
@@ -115,19 +115,15 @@ export const columns: ColumnDef<Repository>[] = [
         },
         cell: ({ row }) => {
             const name = row.getValue("name") as string;
-            return (
-                <div className="text-white hover:underline cursor-pointer min-w-0 truncate">
-                    {name}
-                </div>
-            );
+            return <div className="text-white  min-w-0 truncate">{name}</div>;
         },
     },
     {
         accessorKey: "author",
         header: "Author",
         meta: {
-            headerClassName: "w-32",
-            cellClassName: "w-32",
+            headerClassName: "w-60",
+            cellClassName: "w-60",
         },
         cell: ({ row }) => {
             const author =
@@ -148,8 +144,8 @@ export const columns: ColumnDef<Repository>[] = [
         accessorKey: "updatedOn",
         header: "Updated",
         meta: {
-            headerClassName: "w-28",
-            cellClassName: "w-28",
+            headerClassName: "w-32",
+            cellClassName: "w-32",
         },
         cell: ({ row }) => {
             const updated = row.getValue("updatedOn") as string | undefined;

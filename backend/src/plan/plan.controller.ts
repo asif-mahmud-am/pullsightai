@@ -23,6 +23,14 @@ import { PlanService } from './plan.service'
 export class PlanController {
     constructor(private readonly planService: PlanService) {}
 
+    @Get('current-active-plan')
+    async currentActivePlan(@Req() req) {
+        return {
+            message: 'Current active plan retrieved successfully',
+            result: await this.planService.currentActivePlan(req.user)
+        }
+    }
+
     @Post('purchase')
     async purchase(@Body() purchasePlanDto: PurchasePlanDto, @Req() req) {
         return {

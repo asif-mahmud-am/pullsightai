@@ -15,7 +15,9 @@ class Feature {
 
 export enum BillingCycle {
     MONTHLY = 'monthly',
-    YEARLY = 'yearly'
+    YEARLY = 'yearly',
+    FORTNIGHTLY = 'fortnightly',
+    WEEKLY = 'weekly'
 }
 
 @Schema({ timestamps: true, versionKey: false })

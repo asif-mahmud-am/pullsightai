@@ -1,9 +1,15 @@
-import { BadRequestException, Injectable } from '@nestjs/common'
+import {
+    BadRequestException,
+    Injectable,
+    NotFoundException
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { AnalysisService } from 'src/analysis/analysis.service'
 import { BitbucketService } from 'src/bitbucket/bitbucket.service'
 import { PaginateDto } from 'src/common/dto/paginate.dto'
+import { getTimePeriod } from 'src/common/helpers/coversion.helper'
 import { DatabaseService } from 'src/database/database.service'
+import { PaymentStatus } from 'src/database/enums/status.enum'
 import { MemberRole } from 'src/database/schemas/workspace-members.schema'
 import { GitlabService } from 'src/gitlab/gitlab.service'
 import { CreateAndUpdateWorkspaceSettingsDto } from 'src/workspace/dto/create-update-workspace-settings.dto'
@@ -111,7 +117,7 @@ export class WorkspaceService {
         makeSubscriptionDto: MakeSubscriptionDto,
         user: any
     ) {
-        const userData =
+        const userData: any =
             await this.analysisService.getUserDataWithWorkspace(user)
         let repositories = makeSubscriptionDto.repositories
 
@@ -200,7 +206,48 @@ export class WorkspaceService {
                 }
             })
         )
+
+        if (!userData?.currentWorkspace?.currentPlan) {
+            await this.assignFreePlanToWorkspace(
+                userData,
+                makeSubscriptionDto.members.length
+            )
+        }
         return {}
+    }
+
+    async assignFreePlanToWorkspace(userData: any, noOfSeat: number) {
+        const planData = await this.dataService.plans.findOne({
+            isFree: true,
+            isDefault: true
+        })
+        if (!planData) {
+            throw new NotFoundException('No free plan found')
+        }
+        let totalToken = planData.tokenLimitPerDev * noOfSeat
+        let remainingToken = totalToken
+        const period = getTimePeriod(planData.billingCycle)
+        const purchasedPlan = await this.dataService.purchasedPlans.create({
+            workspace: userData?.currentWorkspace?._id,
+            plan: planData._id,
+            amount: 0,
+            totalToken: totalToken,
+            remainingToken: remainingToken,
+            numOfSeat: noOfSeat,
+            billingCycle: planData.billingCycle,
+            periodStart: period.periodStart,
+            periodEnd: period.periodEnd,
+            paymentStatus: PaymentStatus.PAID
+        })
+        await this.dataService.workspaces.updateOne(
+            { _id: userData?.currentWorkspace?._id },
+            {
+                $set: {
+                    currentPlan: purchasedPlan._id
+                }
+            }
+        )
+        return purchasedPlan
     }
 
     async addMembers(createMembersDto: CreateMembersDto, user: any) {

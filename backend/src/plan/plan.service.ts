@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
+import { getTimePeriod } from 'src/common/helpers/coversion.helper'
 import { DatabaseService } from 'src/database/database.service'
+import { PaymentStatus } from 'src/database/enums/status.enum'
 import { Service, ServiceBookingRef } from 'src/database/enums/transaction.enum'
 import { PaymentsService } from 'src/payments/payments.service'
 import { StripeService } from 'src/payments/stripe/stripe.service'
@@ -48,6 +50,7 @@ export class PlanService {
                 (userData?.currentWorkspace?.currentPlan?.totalToken -
                     userData?.currentWorkspace?.currentPlan?.remainingToken)
         }
+        const period = getTimePeriod(planData.billingCycle)
         const purchasedPlan = await this.dataService.purchasedPlans.create({
             workspace: userData?.currentWorkspace?._id,
             plan: purchasePlanDto.planId,
@@ -56,14 +59,41 @@ export class PlanService {
             remainingToken: remainingToken,
             numOfSeat: purchasePlanDto.noOfSeat,
             billingCycle: planData.billingCycle,
-            periodStart: new Date(),
-            periodEnd:
-                planData.billingCycle == 'monthly'
-                    ? new Date(new Date().setMonth(new Date().getMonth() + 1))
-                    : new Date(
-                          new Date().setFullYear(new Date().getFullYear() + 1)
-                      )
+            periodStart: period.periodStart,
+            periodEnd: period.periodEnd
         })
+        if (!planData.isFree) {
+            return await this.purchasePaidPlan(
+                userData,
+                planData,
+                purchasePlanDto,
+                purchasedPlan
+            )
+        }
+        purchasedPlan.paymentStatus = PaymentStatus.PAID
+        purchasedPlan.isActive = true
+        purchasedPlan.save()
+        return await this.purchaseFreePlan(userData, purchasedPlan)
+    }
+
+    async purchaseFreePlan(userData: any, purchasedPlan: any) {
+        if (userData?.currentWorkspace?.currentPlan?.subscriptionId) {
+            return await this.stripeService.cancelSubscription(
+                userData?.currentWorkspace?.currentPlan?.subscriptionId
+            )
+        }
+        await this.dataService.workspaces.updateOne(
+            { _id: userData?.currentWorkspace?._id },
+            { currentPlan: purchasedPlan._id }
+        )
+    }
+
+    async purchasePaidPlan(
+        userData: any,
+        planData: any,
+        purchasePlanDto: PurchasePlanDto,
+        purchasedPlan: any
+    ) {
         if (userData?.currentWorkspace?.currentPlan?.subscriptionId) {
             return await this.paymentsService.updateSubscription({
                 serviceId: planData?._id as any,
@@ -100,6 +130,17 @@ export class PlanService {
 
     async findAll() {
         return await this.dataService.plans.find()
+    }
+
+    async currentActivePlan(user: any) {
+        const userData: any = await this.dataService.users
+            .findOne({ _id: user.sub })
+            .populate({
+                path: 'currentWorkspace'
+            })
+        return await this.dataService.purchasedPlans
+            .findOne({ _id: userData?.currentWorkspace?.currentPlan })
+            .populate({ path: 'plan' })
     }
 
     async update(id: string, updatePlanDto: UpdatePlanDto) {

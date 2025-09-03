@@ -40,9 +40,9 @@ export class StripeService {
 
     async createCheckoutSession(createPaymentDto: CreatePaymentDto) {
         const SUCCESS_URL =
-            this.configService.get<string>('BASE_URL') + '/v1/stripe/success'
+            this.configService.get<string>('CLIENT_URL') + '/payment/success'
         const CANCEL_URL =
-            this.configService.get<string>('BASE_URL') + '/v1/stripe/cancel'
+            this.configService.get<string>('CLIENT_URL') + '/payment/cancel'
         const session = await this.stripe.checkout.sessions.create({
             mode: 'subscription',
             customer: createPaymentDto.customerId, // must exist in Stripe
@@ -142,6 +142,11 @@ export class StripeService {
             paymentStatus: paidInvoice.status,
             storeAmount: paidInvoice.amount_paid / 100
         }
+    }
+
+    async cancelSubscription(subscriptionId: string) {
+        const deleted = await this.stripe.subscriptions.cancel(subscriptionId)
+        return deleted
     }
 
     // async paymentCallback(sessionId: string) {

@@ -50,7 +50,7 @@ summary: |
 
     # Summary by Pullsight AI\n\n
 
-    **Walkthrough**: This PR introduces pagination to the `/users` endpoint and fixes\n\n
+    **Walkthrough**\nThis PR introduces pagination to the `/users` endpoint and fixes\n\n
 
     **File changes**\n\n
 

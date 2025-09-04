@@ -10,6 +10,7 @@ import { PaginateDto } from 'src/common/dto/paginate.dto'
 import { getTimePeriod } from 'src/common/helpers/coversion.helper'
 import { DatabaseService } from 'src/database/database.service'
 import { PaymentStatus } from 'src/database/enums/status.enum'
+import { Status } from 'src/database/schemas/purchasedPlan.schema'
 import { MemberRole } from 'src/database/schemas/workspace-members.schema'
 import { GitlabService } from 'src/gitlab/gitlab.service'
 import { CreateAndUpdateWorkspaceSettingsDto } from 'src/workspace/dto/create-update-workspace-settings.dto'
@@ -237,7 +238,13 @@ export class WorkspaceService {
             billingCycle: planData.billingCycle,
             periodStart: period.periodStart,
             periodEnd: period.periodEnd,
-            paymentStatus: PaymentStatus.PAID
+            paymentStatus: PaymentStatus.PAID,
+            status: Status.ACTIVE,
+            title: planData.title,
+            pricePerDev: planData.pricePerDev,
+            tokenLimitPerDev: planData.tokenLimitPerDev,
+            isFree: planData.isFree,
+            isDefault: planData.isDefault
         })
         await this.dataService.workspaces.updateOne(
             { _id: userData?.currentWorkspace?._id },

@@ -95,6 +95,9 @@ def validate_pr_payload(payload: PRPayloadV2) -> tuple[bool, str, dict]:
         for file in pr.get("prFiles", []):
             pr_file_names.append(file.get("prFileName"))
 
+        logger.info(f"Ignored files: {ignored_files}")
+        logger.info(f"PR file names: {pr_file_names}")
+
         pr_files_allowed = filter_pr_files(ignored_files, pr_file_names)
         pr_files = []
         for file in pr.get("prFiles", []):

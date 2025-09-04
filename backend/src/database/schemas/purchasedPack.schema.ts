@@ -43,6 +43,9 @@ export class PurchasedPack {
 
     @Prop({ default: false })
     isActive: boolean
+
+    @Prop({ required: true })
+    title: string
 }
 
 const schema = SchemaFactory.createForClass(PurchasedPack)

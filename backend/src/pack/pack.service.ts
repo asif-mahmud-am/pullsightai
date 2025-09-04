@@ -65,7 +65,8 @@ export class PackService {
             pack: purchasePlanDto.packId,
             amount: packData.price,
             totalToken: packData.token,
-            remainingToken: remainingToken
+            remainingToken: remainingToken,
+            title: packData.title
         })
 
         return await this.paymentsService.createOneTimePayment({

@@ -25,7 +25,7 @@ export class Plan {
     @Prop({ required: false })
     highlight: string
 
-    @Prop({ required: true, unique: true })
+    @Prop({ required: true })
     title: string
 
     @Prop({ required: true })

@@ -1,5 +1,6 @@
 import {
     BadGatewayException,
+    BadRequestException,
     forwardRef,
     Inject,
     Injectable
@@ -224,7 +225,6 @@ export class PaymentsService {
                 },
                 { new: true }
             )
-        console.log('Purchased pack updated:', purchasedPack)
         const workspace = await this.dataServices.workspaces.findOneAndUpdate(
             {
                 _id: purchasedPack?.workspace
@@ -236,8 +236,28 @@ export class PaymentsService {
                 new: true
             }
         )
-        console.log('workspace pack updated:', workspace)
         return workspace
+    }
+
+    async findAll(user: any, query: any) {
+        const userData = await this.dataServices.users.findOne({
+            _id: user.sub
+        })
+        if (!userData?.currentWorkspace) {
+            throw new BadRequestException('User or workspace not found')
+        }
+        return await this.dataServices.transactions.paginate(
+            {
+                workspace: userData.currentWorkspace
+            },
+            {
+                sort: { createdAt: -1 },
+                populate: 'serviceBookingId',
+                select: '-response',
+                limit: query.limit ? parseInt(query.limit) : 10,
+                page: query.page ? parseInt(query.page) : 1
+            }
+        )
     }
 
     async findOne(transactionId: string) {

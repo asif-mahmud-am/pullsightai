@@ -285,6 +285,7 @@ async def process_pr_review_background(extracted_data: dict):
 
     # Process reviews using chunking strategy
     logger.info("Starting review generation process with chunking strategy...")
+
     async with httpx.AsyncClient() as client:
         if extracted_data["prFiles"]:
             # Create chunks for review generation

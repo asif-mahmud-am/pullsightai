@@ -152,7 +152,7 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
 
                         <div className="flex items-center gap-4 text-xs text-gray-400">
                             <span className="flex items-center gap-1">
-                                <AlertCircle className="w-3 h-3 text-red-500" />
+                                <span className="">⛔</span>
                                 {
                                     validComments.filter(
                                         (c) =>
@@ -160,10 +160,10 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                                             "blocker"
                                     ).length
                                 }{" "}
-                                Blocker
+                                <span className="ml-2">Blocker</span>
                             </span>
                             <span className="flex items-center gap-1">
-                                <AlertTriangle className="w-3 h-3 text-orange-500" />
+                                <span className="">🛑</span>
                                 {
                                     validComments.filter(
                                         (c) =>
@@ -171,10 +171,10 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                                             "critical"
                                     ).length
                                 }{" "}
-                                Critical
+                                <span className="ml-2">Critical</span>
                             </span>
                             <span className="flex items-center gap-1">
-                                <AlertTriangle className="w-3 h-3 text-yellow-500" />
+                                <span className="">❗</span>
                                 {
                                     validComments.filter(
                                         (c) =>
@@ -182,10 +182,10 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                                             "major"
                                     ).length
                                 }{" "}
-                                Major
+                                <span className="ml-2">Major</span>
                             </span>
                             <span className="flex items-center gap-1">
-                                <Info className="w-3 h-3 text-blue-500" />
+                                <span className="">⚠️</span>
                                 {
                                     validComments.filter(
                                         (c) =>
@@ -193,10 +193,10 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                                             "minor"
                                     ).length
                                 }{" "}
-                                Minor
+                                <span className="ml-2">Minor</span>
                             </span>
                             <span className="flex items-center gap-1">
-                                <Info className="w-3 h-3 text-green-400" />
+                                <span className="">ℹ️</span>
                                 {
                                     validComments.filter(
                                         (c) =>
@@ -204,7 +204,7 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                                             "info"
                                     ).length
                                 }{" "}
-                                Info
+                                <span className="ml-2">Info</span>
                             </span>
                         </div>
                     </div>

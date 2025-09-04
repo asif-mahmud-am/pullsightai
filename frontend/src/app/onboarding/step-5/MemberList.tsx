@@ -33,6 +33,7 @@ export const columns: ColumnDef<TeamMember>[] = [
                 checked={row.getIsSelected()}
                 onCheckedChange={(value) => row.toggleSelected(!!value)}
                 aria-label="Select row"
+                disabled={row.original?.role == "owner"}
             />
         ),
         enableSorting: false,
@@ -75,7 +76,9 @@ const MemberList = ({ onSelectionChange }: Props) => {
 
     // Function to determine if a member should be initially selected
     const shouldSelectMember = (member: TeamMember) => {
-        return member.providerId === user?.providerId;
+        return (
+            member.providerId === user?.providerId || member?.role == "owner"
+        );
     };
 
     const otherMembers = members?.filter(

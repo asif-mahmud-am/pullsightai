@@ -61,6 +61,7 @@ export const useUpdateRepositoryMutation = () => {
     return useMutation({
         mutationFn: workspaceEndpoints.updateRepository,
         onSuccess: () => {
+            // Invalidate all queries that start with "repositories"
             queryClient.invalidateQueries({ queryKey: ["repositories"] });
         },
     });
@@ -72,7 +73,10 @@ export const useAddRepositoriesMutation = () => {
     return useMutation({
         mutationFn: workspaceEndpoints.addRepositories,
         onSuccess: () => {
+            console.log("Invalidating repositories queries after adding repositories");
+            // Try multiple invalidation approaches to ensure it works
             queryClient.invalidateQueries({ queryKey: ["repositories"] });
+            queryClient.refetchQueries({ queryKey: ["repositories"] });
         },
     });
 };

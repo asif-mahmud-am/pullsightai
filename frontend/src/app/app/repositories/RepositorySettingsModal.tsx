@@ -54,7 +54,14 @@ const RepositorySettingsModal = ({
                     ?.map((line) => line.trim())
                     ?.filter(Boolean),
             },
-        });
+        })
+            .then(() => {
+                showToast.success("Repository settings updated successfully");
+                onOpenChange(false);
+            })
+            .catch((error) => {
+                showToast.error("Failed to update repository settings");
+            });
     };
 
     const handleClose = () => {

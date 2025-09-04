@@ -26,7 +26,6 @@ export class StripeService {
     }
 
     async getCustomerId(userData: any) {
-        console.log('Creating Stripe Customer for user:', userData._id)
         const customer = await this.stripe.customers.create({
             email: userData.email,
             name: userData.displayName,
@@ -34,15 +33,14 @@ export class StripeService {
                 userId: (userData as any)._id.toString()
             }
         })
-        console.log('Created Stripe Customer:', customer)
         return customer.id
     }
 
     async createCheckoutSession(createPaymentDto: CreatePaymentDto) {
         const SUCCESS_URL =
-            this.configService.get<string>('CLIENT_URL') + '/payment/success'
+            this.configService.get<string>('CLIENT_URL') + '/app/subscription'
         const CANCEL_URL =
-            this.configService.get<string>('CLIENT_URL') + '/payment/cancel'
+            this.configService.get<string>('CLIENT_URL') + '/app/subscription'
         const session = await this.stripe.checkout.sessions.create({
             mode: 'subscription',
             customer: createPaymentDto.customerId, // must exist in Stripe
@@ -50,6 +48,39 @@ export class StripeService {
                 {
                     price: createPaymentDto.productId, // $12 per developer/month
                     quantity: createPaymentDto.noOfSeat
+                }
+            ],
+            success_url: SUCCESS_URL,
+            cancel_url: CANCEL_URL
+        })
+        return {
+            url: session.url,
+            transactionId: session.id,
+            paymentStatus: session.payment_status,
+            storeAmount: Number(session.amount_total) / 100,
+            amount: Number(session.amount_total) / 100,
+            response: session
+        }
+    }
+
+    async createOneTimeCheckout(createPaymentDto: CreatePaymentDto) {
+        const SUCCESS_URL =
+            this.configService.get<string>('CLIENT_URL') + '/app/subscription'
+        const CANCEL_URL =
+            this.configService.get<string>('CLIENT_URL') + '/app/subscription'
+        const session = await this.stripe.checkout.sessions.create({
+            mode: 'payment',
+            customer: createPaymentDto.customerId,
+            line_items: [
+                {
+                    price_data: {
+                        currency: 'usd',
+                        product_data: {
+                            name: createPaymentDto.productTitle as string
+                        },
+                        unit_amount: createPaymentDto.price * 100
+                    },
+                    quantity: 1
                 }
             ],
             success_url: SUCCESS_URL,

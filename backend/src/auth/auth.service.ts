@@ -59,7 +59,7 @@ export class AuthService {
             user.tokenExpiresAt = tokenExpiresAt
         }
         if (invitation && !invitation.user) {
-            if (user.currentWorkspace) {
+            if (!user.currentWorkspace) {
                 user.currentWorkspace = invitation.workspace
             }
             invitation.joinedAt = new Date()

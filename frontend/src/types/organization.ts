@@ -1,3 +1,4 @@
+import { Plan } from "./plan";
 import { Provider } from "./user";
 
 export interface WorkspaceSetting {
@@ -25,4 +26,21 @@ export interface Organization {
     updatedAt?: string;
     workspaceSetting?: WorkspaceSetting;
     onboardingStep?: number;
+    currentPlan?: {
+        _id: string;
+        workspace: string;
+        plan?: Plan;
+        amount: number;
+        totalToken: number;
+        remainingToken: number;
+        numOfSeat: number;
+        billingCycle: string;
+        isActive: boolean;
+        paymentStatus: string;
+        periodStart: string;
+        periodEnd: string;
+        createdAt: string;
+        updatedAt: string;
+        subscriptionId: string;
+    };
 }

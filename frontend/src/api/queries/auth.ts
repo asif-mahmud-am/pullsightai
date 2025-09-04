@@ -39,11 +39,18 @@ export const useUpdateUserMutation = () => {
     const { user, setUser, setSelectedWorkspace } = useAuthStore((s) => s);
 
     return useMutation({
-        mutationFn: authEndpoints.updateUser,
-        onSuccess: (data) => {
-            setUser({ ...user, ...data.data });
-            setSelectedWorkspace(data.data.currentWorkspace || null);
-            queryClient.invalidateQueries({ queryKey: ["user", "repos"] });
+        mutationFn: (variables: any) => {
+            const { updateState = true, ...data } = variables;
+            return authEndpoints.updateUser(data);
+        },
+        onSuccess: (data, variables: any) => {
+            const { updateState = true } = variables;
+            // Only update state if updateState is true (default behavior)
+            if (updateState !== false) {
+                setUser({ ...user, ...data.data });
+                setSelectedWorkspace(data.data.currentWorkspace || null);
+                queryClient.invalidateQueries({ queryKey: ["user", "repos"] });
+            }
         },
     });
 };

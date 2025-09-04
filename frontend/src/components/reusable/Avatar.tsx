@@ -87,8 +87,10 @@ const Avatar: FC<Props> = ({
                 </div>
             )}
             {!hideDetails && (
-                <div>
-                    <div className={cn("text-gray-300", fontSizeClass)}>
+                <div className="flex-1 min-w-0">
+                    <div
+                        className={cn("text-gray-300 truncate", fontSizeClass)}
+                    >
                         {name}
                     </div>
                     <div className="text-[12px] text-slate-400">

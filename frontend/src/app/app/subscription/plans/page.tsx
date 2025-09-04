@@ -1,0 +1,213 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
+import { Check, ArrowLeft, Users, Zap, X } from "lucide-react";
+import Link from "next/link";
+import { ROUTE_CONSTANTS } from "@/lib/constants";
+import {
+    useGetSubscriptionPlansQuery,
+    usePurchasePlanMutation,
+} from "@/api/queries/subscription";
+import { Plan } from "@/types/plan";
+import { CheckIcon } from "@/components/reusable/icons";
+import PricingTable from "./PricingTable";
+
+const PricingPlansPage = () => {
+    const [billingInterval, setBillingInterval] = useState<
+        "monthly" | "yearly"
+    >("monthly");
+    const [seats, setSeats] = useState<number>(5);
+
+    const { data, isFetching } = useGetSubscriptionPlansQuery();
+
+    let plans = data?.data?.filter(
+        (plan: Plan) => plan.isActive && plan.isPublic
+    );
+    if (billingInterval === "yearly") {
+        plans = plans?.filter(
+            (plan: Plan) =>
+                plan.billingCycle === "yearly" || plan.billingCycle == ""
+        );
+    }
+
+    const getSavings = () => {
+        const yearlyPlans = data?.data
+            ?.filter((plan) => plan.billingCycle === "yearly")
+            .find((plan) => !plan.isFree);
+        const monthlyPlans = data?.data
+            ?.filter(
+                (plan) =>
+                    plan.billingCycle === "monthly" || plan.billingCycle === ""
+            )
+            .find((plan) => !plan.isFree);
+
+        // calculate bases on one monthly and one yearly plan
+        const yearlyPrice = yearlyPlans?.pricePerDev || 0;
+        const monthlyPrice = monthlyPlans?.pricePerDev || 0;
+
+        const savings = monthlyPrice * 12 - yearlyPrice;
+        // return %
+        return savings > 0
+            ? `${Math.round((savings / (monthlyPrice * 12)) * 100)}%`
+            : null;
+    };
+
+    return (
+        <div className="space-y-8 pt-8 xl:-ml-[260px] bg-background relative">
+            <div className="container mx-auto">
+                <Link
+                    href={ROUTE_CONSTANTS.APP_SUBSCRIPTION}
+                    className="absolute right-0 top-0 bg-white/10 w-12 h-12 inline-flex items-center justify-center rounded-full"
+                >
+                    <X />
+                </Link>
+                <div className="text-center space-y-4 max-w-[570px] mx-auto">
+                    <h1 className="text-4xl font-bold">
+                        Choose your team plan and discover instant AI code
+                        insights
+                    </h1>
+                    <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                        Simple, transparent pricing - pay only for what you
+                        need.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-12 max-w-7xl mx-auto items-center gap-6 my-6">
+                    {/* Seats Selector */}
+                    <Card className="col-span-6 col-start-4">
+                        <CardContent className="">
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-sm font-medium flex items-center gap-2">
+                                        <Users className="w-4 h-4" />
+                                        Number of Team Members
+                                    </label>
+                                    <Badge
+                                        variant="outline"
+                                        className="text-lg font-semibold"
+                                    >
+                                        {seats}
+                                    </Badge>
+                                </div>
+                                <Slider
+                                    value={[seats]}
+                                    onValueChange={(value) =>
+                                        setSeats(value[0])
+                                    }
+                                    max={50}
+                                    min={1}
+                                    step={1}
+                                    className="w-full"
+                                />
+                                <div className="flex justify-between text-xs text-muted-foreground">
+                                    <span>1 user</span>
+                                    <span>50 users</span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Billing Toggle */}
+                    <div className="flex justify-end col-span-3">
+                        <div className="flex items-center bg-card rounded-lg p-1">
+                            <button
+                                onClick={() => setBillingInterval("monthly")}
+                                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                                    billingInterval === "monthly"
+                                        ? "bg-white text-gray-900"
+                                        : "text-muted-foreground hover:text-white"
+                                }`}
+                            >
+                                Monthly
+                            </button>
+                            <button
+                                onClick={() => setBillingInterval("yearly")}
+                                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors relative ${
+                                    billingInterval === "yearly"
+                                        ? "bg-white text-gray-900"
+                                        : "text-muted-foreground hover:text-white"
+                                }`}
+                            >
+                                Yearly
+                                <Badge className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-1">
+                                    Save {getSavings()}
+                                </Badge>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Plans Grid */}
+                <PricingTable
+                    isLoading={isFetching}
+                    plans={plans || []}
+                    seats={seats}
+                />
+
+                {/* FAQ Section */}
+                <div className="max-w-3xl mx-auto space-y-6">
+                    <h2 className="text-2xl font-bold text-center">
+                        Frequently Asked Questions
+                    </h2>
+                    <div className="space-y-4">
+                        {[
+                            {
+                                question: "Can I change my plan anytime?",
+                                answer: "Yes, you can upgrade or downgrade your plan at any time. Changes will be prorated and reflected in your next billing cycle.",
+                            },
+                            {
+                                question:
+                                    "What happens if I exceed my token limit?",
+                                answer: "Your account will be temporarily limited until the next billing cycle. You can upgrade your plan or purchase additional tokens if needed.",
+                            },
+                            {
+                                question: "How are seats counted?",
+                                answer: "Each active team member who accesses the platform counts as one seat. You can add or remove seats at any time.",
+                            },
+                            {
+                                question: "Is there a free trial?",
+                                answer: "Yes, all paid plans come with a 14-day free trial. No credit card required to get started.",
+                            },
+                            {
+                                question: "Can I cancel anytime?",
+                                answer: "Absolutely. You can cancel your subscription at any time. You'll continue to have access until the end of your current billing period.",
+                            },
+                        ].map((faq, index) => (
+                            <Card key={index}>
+                                <CardContent className="pt-6">
+                                    <h3 className="font-semibold mb-2">
+                                        {faq.question}
+                                    </h3>
+                                    <p className="text-muted-foreground">
+                                        {faq.answer}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+
+                {/* CTA Section */}
+                <div className="text-center space-y-4 py-12">
+                    <h2 className="text-2xl font-bold">
+                        Still have questions?
+                    </h2>
+                    <p className="text-muted-foreground">
+                        Our team is here to help you choose the right plan for
+                        your needs.
+                    </p>
+                    <div className="flex justify-center gap-4">
+                        <Button variant="outline">Contact Sales</Button>
+                        <Button>Start Free Trial</Button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default PricingPlansPage;

@@ -394,7 +394,17 @@ export class DashboardService {
         )
 
         if (!findUser || !findUser.currentWorkspace) {
-            return []
+            return {
+                issueCardData: [],
+                totalCount: {
+                    Critical: 0,
+                    Major: 0,
+                    Minor: 0,
+                    Info: 0,
+                    Blocker: 0,
+                    total: 0
+                }
+            }
         }
 
         // Set default date range if not provided (last 30 days)
@@ -405,8 +415,8 @@ export class DashboardService {
             ? new Date(issueCardFilterDto.from)
             : new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
 
-        // Build the base query using workspace directly from PullRequestAnalysisComment
-        const baseQuery: any = {
+        // Build the base match query
+        const baseMatch: any = {
             workspace: findUser.currentWorkspace,
             createdAt: {
                 $gte: fromDate,
@@ -414,85 +424,181 @@ export class DashboardService {
             }
         }
 
-        // Build pullRequest populate match conditions for prUser and prState filtering
+        // Add repository filter if provided
+        if (issueCardFilterDto.repo) {
+            baseMatch.repositorySlug = issueCardFilterDto.repo
+        }
+
+        // Add severity filter if provided
+        if (issueCardFilterDto.severity) {
+            baseMatch.severity = issueCardFilterDto.severity
+        }
+
+        // Build pullRequest match conditions for prUser and prState filtering
         const pullRequestMatch: any = {}
         if (issueCardFilterDto.prUser) {
-            pullRequestMatch.prUser = issueCardFilterDto.prUser
+            pullRequestMatch['pullRequest.prUser'] = issueCardFilterDto.prUser
         }
         if (issueCardFilterDto.prState) {
-            pullRequestMatch.prState = issueCardFilterDto.prState
+            pullRequestMatch['pullRequest.prState'] = issueCardFilterDto.prState
         }
 
-        const findPullRequestComments =
-            await this.dataService.pullRequestAnalysisComments
-                .find(baseQuery)
-                .populate({
-                    path: 'pullRequest',
-                    match:
-                        Object.keys(pullRequestMatch).length > 0
-                            ? pullRequestMatch
-                            : {},
-                    select: 'title prNumber prUser prState createdAt updatedAt'
-                })
-                .exec()
+        // Use aggregation for optimized query
+        const aggregationPipeline: any[] = [
+            { $match: baseMatch },
+            {
+                $lookup: {
+                    from: 'pullrequests',
+                    localField: 'pullRequest',
+                    foreignField: '_id',
+                    as: 'pullRequest'
+                }
+            },
+            { $unwind: '$pullRequest' },
+            ...(Object.keys(pullRequestMatch).length > 0
+                ? [{ $match: pullRequestMatch }]
+                : []),
+            {
+                $addFields: {
+                    daysOpen: {
+                        $floor: {
+                            $divide: [
+                                {
+                                    $subtract: [
+                                        new Date(),
+                                        '$pullRequest.createdAt'
+                                    ]
+                                },
+                                1000 * 60 * 60 * 24
+                            ]
+                        }
+                    },
+                    status: {
+                        $switch: {
+                            branches: [
+                                {
+                                    case: {
+                                        $eq: ['$pullRequest.prState', 'merged']
+                                    },
+                                    then: 'Merged'
+                                },
+                                {
+                                    case: {
+                                        $eq: [
+                                            '$pullRequest.prState',
+                                            'declined'
+                                        ]
+                                    },
+                                    then: 'Rejected'
+                                },
+                                {
+                                    case: {
+                                        $eq: ['$pullRequest.prState', 'closed']
+                                    },
+                                    then: 'Approved'
+                                }
+                            ],
+                            default: 'Opened'
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    id: '$_id',
+                    pr: {
+                        $ifNull: [
+                            '$pullRequest.title',
+                            {
+                                $ifNull: [
+                                    {
+                                        $concat: [
+                                            'PR #',
+                                            {
+                                                $toString:
+                                                    '$pullRequest.prNumber'
+                                            }
+                                        ]
+                                    },
+                                    'Untitled PR'
+                                ]
+                            }
+                        ]
+                    },
+                    owner: { $ifNull: ['$pullRequest.prUser', 'Unknown'] },
+                    prUser: '$pullRequest.prUser',
+                    severity: 1,
+                    status: 1,
+                    daysOpen: 1,
+                    updated: {
+                        $ifNull: [
+                            '$pullRequest.updatedAt',
+                            '$pullRequest.createdAt'
+                        ]
+                    },
+                    repositorySlug: 1,
+                    prNumber: '$pullRequest.prNumber',
+                    prState: '$pullRequest.prState',
+                    category: 1,
+                    content: 1,
+                    filePath: 1,
+                    lineStart: 1,
+                    lineEnd: 1
+                }
+            },
+            { $sort: { updated: -1 } }
+        ]
 
-        // Filter out comments where pullRequest doesn't match the criteria or is null
-        const filteredComments = findPullRequestComments.filter((comment) => {
-            return comment.pullRequest !== null
+        // Execute the optimized aggregation query
+        const [issueCardData, severityCounts] = await Promise.all([
+            this.dataService.pullRequestAnalysisComments.aggregate(
+                aggregationPipeline
+            ),
+            this.dataService.pullRequestAnalysisComments.aggregate([
+                { $match: baseMatch },
+                {
+                    $lookup: {
+                        from: 'pullrequests',
+                        localField: 'pullRequest',
+                        foreignField: '_id',
+                        as: 'pullRequest'
+                    }
+                },
+                { $unwind: '$pullRequest' },
+                ...(Object.keys(pullRequestMatch).length > 0
+                    ? [{ $match: pullRequestMatch }]
+                    : []),
+                {
+                    $group: {
+                        _id: '$severity',
+                        count: { $sum: 1 }
+                    }
+                }
+            ])
+        ])
+
+        // Process severity counts
+        const totalCount = {
+            Critical: 0,
+            Major: 0,
+            Minor: 0,
+            Info: 0,
+            Blocker: 0,
+            total: 0
+        }
+
+        severityCounts.forEach((item: any) => {
+            const severity = item._id
+            if (severity && totalCount.hasOwnProperty(severity)) {
+                totalCount[severity] = item.count
+            }
+            totalCount.total += item.count
         })
 
-        // Return individual severity rows instead of grouping by PR
-        const currentDate = new Date()
-        const issueCardData = filteredComments.map((comment: any) => {
-            const pullRequest = comment.pullRequest
-
-            // Calculate days open
-            const createdDate = new Date(pullRequest.createdAt)
-            const daysOpen = Math.floor(
-                (currentDate.getTime() - createdDate.getTime()) /
-                    (1000 * 60 * 60 * 24)
-            )
-
-            // Determine status based on PR state
-            let status = 'Opened'
-            const prState = pullRequest.prState?.toLowerCase()
-            if (prState === 'merged') {
-                status = 'Merged'
-            } else if (prState === 'declined') {
-                status = 'Rejected'
-            } else if (prState === 'closed') {
-                status = 'Approved'
-            }
-
-            return {
-                id: comment._id, // Use comment ID for uniqueness
-                pr:
-                    pullRequest.title ||
-                    `PR #${pullRequest.prNumber}` ||
-                    'Untitled PR',
-                owner: pullRequest.prUser || 'Unknown',
-                severity: comment.severity, // Individual severity per row
-                status: status,
-                daysOpen: daysOpen,
-                updated: pullRequest.updatedAt || pullRequest.createdAt,
-                repositorySlug: comment.repositorySlug || '',
-                prNumber: pullRequest.prNumber || null,
-                prState: pullRequest.prState || null,
-                category: comment.category || '',
-                content: comment.content || '',
-                filePath: comment.filePath || '',
-                lineStart: comment.lineStart || null,
-                lineEnd: comment.lineEnd || null
-            }
-        })
-
-        // Sort by updated date (most recent first)
-        issueCardData.sort(
-            (a, b) =>
-                new Date(b.updated).getTime() - new Date(a.updated).getTime()
-        )
-
-        return issueCardData
+        return {
+            issueCardData: issueCardData,
+            totalCount: totalCount
+        }
     }
 
     private async getTimeSeriesData(

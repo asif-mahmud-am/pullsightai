@@ -68,7 +68,7 @@ const AppTopBar = () => {
     };
 
     return (
-        <div className="xl:h-[88px] h-[60px] flex items-center border-b gap-x-4 xl:px-5 pr-3 pl-1 fixed top-0 left-0 right-0 z-30 bg-background">
+        <div className="xl:h-[88px] h-[60px] flex items-center border-b gap-x-4 xl:px-5 pr-3 pl-1 fixed top-0 left-0 right-0 z-40 bg-background">
             <Button
                 variant="ghost"
                 className="xl:hidden relative px-3"

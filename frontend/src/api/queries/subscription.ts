@@ -55,3 +55,19 @@ export const useCancelPlanMutation = () => {
         },
     });
 };
+
+export const useGetPacksQuery = ({ isEnabled = true } = {}) => {
+    return useQuery({
+        queryKey: ["packs"],
+        queryFn: () => subscriptionEndpoints.getPack(),
+        enabled: isEnabled,
+    });
+};
+
+export const usePurchasePackMutation = () => {
+    return useMutation({
+        mutationKey: ["purchasePack"],
+        mutationFn: (payload: unknown) =>
+            subscriptionEndpoints.purchasePack(payload),
+    });
+};

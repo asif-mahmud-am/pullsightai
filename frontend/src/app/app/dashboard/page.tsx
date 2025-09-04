@@ -3,7 +3,7 @@
 import ContentCard from "@/components/reusable/ContentCard";
 import { useState, useEffect } from "react";
 import PrAnalysisCard from "./prAnalysisCard";
-import { subtractDays } from "@/lib/dayjs";
+import { subtractDays, formatDate } from "@/lib/dayjs";
 import IssueAnalysisCard from "./issueAnalysisCard";
 import TimeMoneySavedCard from "./timeMoneySavedCard";
 import { useGetWorkspaceRepositoriesQuery } from "@/api/queries/workspace";
@@ -43,8 +43,14 @@ const DashboardPage = () => {
     const handlePeriodChange = (value: string) => {
         setSelectedPeriod(value);
         const days = parseInt(value);
-        const newToDate = new Date().toISOString();
-        const newFromDate = subtractDays(new Date(), days - 1).toISOString();
+        const today = new Date();
+        // Use formatDate helper for local date formatting
+        // Format: YYYY-MM-DD for API compatibility
+        const newToDate = formatDate(today, "YYYY-MM-DD");
+        const newFromDate = formatDate(
+            subtractDays(today, days - 1),
+            "YYYY-MM-DD"
+        );
         setFromDate(newFromDate);
         setToDate(newToDate);
     };

@@ -1,3 +1,4 @@
+import { Pack } from "./pack";
 import { Plan } from "./plan";
 import { Provider } from "./user";
 
@@ -42,5 +43,17 @@ export interface Organization {
         createdAt: string;
         updatedAt: string;
         subscriptionId: string;
+    };
+    currentPack?: {
+        _id: string;
+        workspace: string;
+        pack?: Pack;
+        amount: number;
+        gatewayCharge: number;
+        totalToken: number;
+        remainingToken: number;
+        isActive: boolean;
+        createdAt: string;
+        updatedAt: string;
     };
 }

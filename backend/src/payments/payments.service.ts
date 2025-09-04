@@ -12,6 +12,7 @@ import {
     Service,
     ServiceBookingRef
 } from 'src/database/enums/transaction.enum'
+import { Status } from 'src/database/schemas/purchasedPlan.schema'
 import { StripeService } from 'src/payments/stripe/stripe.service'
 import { CreatePaymentDto, PaymentCallbackDto } from './dto/create-payment.dto'
 
@@ -106,9 +107,14 @@ export class PaymentsService {
             remainingToken: currentPlan.totalToken,
             numOfSeat: currentPlan.numOfSeat,
             billingCycle: currentPlan.billingCycle,
-            isActive: true,
             paymentStatus: PaymentStatus.PAID,
             subscriptionId: transaction.subscriptionId,
+            status: Status.ACTIVE,
+            title: currentPlan.title,
+            pricePerDev: currentPlan.pricePerDev,
+            tokenLimitPerDev: currentPlan.tokenLimitPerDev,
+            isFree: currentPlan.isFree,
+            isDefault: currentPlan.isDefault,
             periodStart: new Date(),
             periodEnd:
                 currentPlan.billingCycle == 'monthly'

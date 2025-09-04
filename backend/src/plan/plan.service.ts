@@ -3,6 +3,7 @@ import { getTimePeriod } from 'src/common/helpers/coversion.helper'
 import { DatabaseService } from 'src/database/database.service'
 import { PaymentStatus } from 'src/database/enums/status.enum'
 import { Service, ServiceBookingRef } from 'src/database/enums/transaction.enum'
+import { Status } from 'src/database/schemas/purchasedPlan.schema'
 import { PaymentsService } from 'src/payments/payments.service'
 import { StripeService } from 'src/payments/stripe/stripe.service'
 import { PurchasePlanDto } from 'src/plan/dto/purchase-plan.dto'
@@ -60,7 +61,12 @@ export class PlanService {
             numOfSeat: purchasePlanDto.noOfSeat,
             billingCycle: planData.billingCycle,
             periodStart: period.periodStart,
-            periodEnd: period.periodEnd
+            periodEnd: period.periodEnd,
+            title: planData.title,
+            pricePerDev: planData.pricePerDev,
+            tokenLimitPerDev: planData.tokenLimitPerDev,
+            isFree: planData.isFree,
+            isDefault: planData.isDefault
         })
         if (!planData.isFree) {
             return await this.purchasePaidPlan(
@@ -71,7 +77,7 @@ export class PlanService {
             )
         }
         purchasedPlan.paymentStatus = PaymentStatus.PAID
-        purchasedPlan.isActive = true
+        purchasedPlan.status = Status.ACTIVE
         purchasedPlan.save()
         return await this.purchaseFreePlan(userData, purchasedPlan)
     }
@@ -159,7 +165,7 @@ export class PlanService {
             await this.stripeService.cancelSubscription(
                 purchasedPlan.subscriptionId
             )
-        purchasedPlan.isActive = false
+        purchasedPlan.status = Status.ACTIVE
         purchasedPlan.subscriptionId = ''
         await purchasedPlan.save()
         return await this.dataService.workspaces.updateOne(

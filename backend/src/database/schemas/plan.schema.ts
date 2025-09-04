@@ -32,6 +32,9 @@ export class Plan {
     description: string
 
     @Prop({ required: true, min: 0 })
+    pricePerDevDisplay: number
+
+    @Prop({ required: true, min: 0 })
     pricePerDev: number
 
     @Prop({ required: true, min: 0 })

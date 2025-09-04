@@ -30,4 +30,8 @@ export class IssueCardFilterDto extends DashboardFilterDto {
     @IsOptional()
     @IsIn(['open', 'merged', 'declined'])
     prState: string
+
+    @IsOptional()
+    @IsIn(['Major', 'Minor', 'Info', 'Critical', 'Blocker'])
+    severity: string
 }

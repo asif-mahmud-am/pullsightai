@@ -87,7 +87,21 @@ export class AuthService {
             })
             .populate([
                 {
-                    path: 'currentWorkspace'
+                    path: 'currentWorkspace',
+                    populate: [
+                        {
+                            path: 'currentPlan',
+                            populate: {
+                                path: 'plan'
+                            }
+                        },
+                        {
+                            path: 'currentPack',
+                            populate: {
+                                path: 'pack'
+                            }
+                        }
+                    ]
                 },
                 {
                     path: 'workspaces'

@@ -154,6 +154,8 @@ export class AnalysisService {
     }
 
     async updatedPRState(query: any, data: any) {
+        console.log('Updating PR state with data:', data)
+        console.log('For PR with query:', query)
         return await this.dataService.pullRequests.updateOne(query, {
             $set: data
         })
@@ -193,7 +195,8 @@ export class AnalysisService {
                         ...pullRequestFormattedData.pullRequest,
                         pullRequestAnalysisId: pullRequestAnalysis['_id'],
                         apiKey: repository?.workspace?.workspaceSetting?.apiKey,
-                        modelName: repository?.workspace?.workspaceSetting?.modelName,
+                        modelName:
+                            repository?.workspace?.workspaceSetting?.modelName,
                         minSeverity: repository?.minSeverity,
                         ignore: repository?.ignore
                     }

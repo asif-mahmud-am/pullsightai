@@ -168,6 +168,11 @@ export class WorkspaceService {
                     provider: userData.provider,
                     workspace: userData?.currentWorkspace!._id
                 })
+                console.log(
+                    'userData.providerId == member.providerId',
+                    userData.providerId,
+                    member.providerId
+                )
                 if (!user) {
                     await this.dataService.workspaceMembers.create({
                         providerId: member.providerId,

@@ -268,7 +268,7 @@ export class BitbucketService {
                     {
                         repo:
                             payload.repository.slug || payload.repository.name,
-                        prNumber: payload.pullRequest?.id.toString(),
+                        prNumber: payload.pullrequest?.id.toString(),
                         owner:
                             payload.repository.workspace?.slug ||
                             payload.repository.full_name?.split('/')[0],
@@ -283,7 +283,7 @@ export class BitbucketService {
                     {
                         repo:
                             payload.repository.slug || payload.repository.name,
-                        prNumber: payload?.pullRequest?.id.toString(),
+                        prNumber: payload?.pullrequest?.id.toString(),
                         owner:
                             payload.repository.workspace?.slug ||
                             payload.repository.full_name?.split('/')[0],

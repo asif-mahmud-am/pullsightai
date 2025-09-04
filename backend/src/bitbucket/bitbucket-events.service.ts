@@ -172,26 +172,32 @@ export class BitbucketEventsService {
                         userData.refreshToken
                     )
 
-                if (newTokens) {
+                if (newTokens && newTokens.access_token) {
                     const tokenExpiresAt = new Date(
-                        Date.now() + (newTokens.expires_in || 3600) * 1000
+                        Date.now() + (newTokens.expires_in || 7200) * 1000
                     )
 
                     // Update user with new tokens
+                    // Bitbucket always returns a new refresh token, so use it
+                    const updateData: any = {
+                        accessToken: newTokens.access_token,
+                        tokenExpiresAt
+                    }
+
+                    // Update refresh token if provided, otherwise keep the old one
+                    if (newTokens.refresh_token) {
+                        updateData.refreshToken = newTokens.refresh_token
+                    }
+
                     await this.dataService.users.updateOne(
                         { _id: userData._id },
-                        {
-                            $set: {
-                                accessToken: newTokens.access_token,
-                                refreshToken:
-                                    newTokens.refresh_token ||
-                                    userData.refreshToken,
-                                tokenExpiresAt
-                            }
-                        }
+                        { $set: updateData }
                     )
+
+                    console.log('Token refreshed successfully for workspace:', workspace)
                     return newTokens.access_token
                 } else {
+                    console.error('Failed to refresh access token - invalid response')
                     throw new BadRequestException(
                         'Failed to refresh access token'
                     )

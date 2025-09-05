@@ -1,5 +1,6 @@
 import AuthGuardClient from "@/components/auth/AuthGuardClient";
 import { AuthGuardServer } from "@/components/auth/AuthGuardServer";
+import PlanExpiredDialog from "@/components/reusable/PlanExpiredDialog";
 import { ReactNode } from "react";
 import AppSideBar from "./SideBar";
 import AppTopBar from "./TopBar";
@@ -17,6 +18,7 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
                         {children}
                     </main>
                 </div>
+                <PlanExpiredDialog />
             </AuthGuardClient>
         </AuthGuardServer>
     );

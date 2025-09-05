@@ -75,21 +75,24 @@ const Testimonial = () => {
                                         </blockquote>
                                         <div className="text-center">
                                             <p className="font-medium">
-                                                {testimonial.author}, {testimonial.position}
+                                                {testimonial.author},{" "}
+                                                {testimonial.position}
                                             </p>
                                             <p className="text-sm opacity-80 mt-1">
                                                 {testimonial.company}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className={`absolute inset-0 bg-gradient-to-r ${testimonial.gradient}/50`}></div>
+                                    <div
+                                        className={`absolute inset-0 bg-gradient-to-r ${testimonial.gradient}/50`}
+                                    ></div>
                                 </div>
                             </CarouselItem>
                         );
                     })}
                 </CarouselContent>
             </Carousel>
-            
+
             {/* Dot Navigation */}
             <div className="flex justify-center mt-6 space-x-2">
                 {testimonials.map((_, index) => (

@@ -310,74 +310,28 @@ export class BitbucketApiService {
         refresh_token?: string
         expires_in: number
     } | null> {
-        try {
-            // const bitbucketTokenUrl =
-            //     this.configService.get('BITBUCKET_TOKEN_URL') ||
-            //     'https://bitbucket.org/site/oauth2/access_token'
-            // const clientId = this.configService.get('BITBUCKET_CLIENT_ID')
-            // const clientSecret = this.configService.get(
-            //     'BITBUCKET_CLIENT_SECRET'
-            // )
-            // const response = await this.httpService.post(
-            //     bitbucketTokenUrl,
-            //     {
-            //         grant_type: 'refresh_token',
-            //         refresh_token: refreshToken
-            //     },
-            //     {
-            //         auth: {
-            //             username: clientId,
-            //             password: clientSecret
-            //         },
-            //         headers: {
-            //             'Content-Type': 'application/x-www-form-urlencoded'
-            //         }
-            //     }
-            // )
-            // return response
-
-            const bitbucketTokenUrl =
-                this.configService.get('BITBUCKET_TOKEN_URL') ||
-                'https://bitbucket.org/site/oauth2/access_token'
-            const clientId = this.configService.get('BITBUCKET_CLIENT_ID')
-            const clientSecret = this.configService.get(
-                'BITBUCKET_CLIENT_SECRET'
-            )
-
-            // Create form data as per Bitbucket OAuth documentation
-            const formData = new URLSearchParams()
-            formData.append('grant_type', 'refresh_token')
-            formData.append('refresh_token', refreshToken)
-
-            const response = await this.httpService.post(
-                bitbucketTokenUrl,
-                formData.toString(),
-                {
-                    auth: {
-                        username: clientId,
-                        password: clientSecret
-                    },
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    }
+        const bitbucketTokenUrl =
+            this.configService.get('BITBUCKET_TOKEN_URL') ||
+            'https://bitbucket.org/site/oauth2/access_token'
+        const clientId = this.configService.get('BITBUCKET_CLIENT_ID')
+        const clientSecret = this.configService.get('BITBUCKET_CLIENT_SECRET')
+        const response = await this.httpService.post(
+            bitbucketTokenUrl,
+            {
+                grant_type: 'refresh_token',
+                refresh_token: refreshToken
+            },
+            {
+                auth: {
+                    username: clientId,
+                    password: clientSecret
+                },
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 }
-            )
-
-            console.log('Token refresh successful:', {
-                access_token: response.access_token ? '***' : 'missing',
-                refresh_token: response.refresh_token ? '***' : 'missing',
-                expires_in: response.expires_in,
-                token_type: response.token_type
-            })
-
-            return response
-        } catch (error) {
-            console.error(
-                'Token refresh failed:',
-                error.response?.data || error.message
-            )
-            return null
-        }
+            }
+        )
+        return response
     }
 
     async getBitbucketPRAndRepo(

@@ -28,7 +28,6 @@ export class BitbucketEventsService {
         if (!pullRequest || !repository) {
             throw new Error('Invalid Bitbucket pull request payload')
         }
-
         // Try to get access token from database based on repository owner
         const workspace =
             repository.workspace?.slug || repository.full_name?.split('/')[0]
@@ -148,7 +147,9 @@ export class BitbucketEventsService {
 
         if (workspaceRecord?._id) {
             let userData = await this.dataService.users.findOne(
-                { workspaces: workspaceRecord._id },
+                {
+                    _id: workspaceRecord.ownerId
+                },
                 'accessToken refreshToken tokenExpiresAt'
             )
 
@@ -164,14 +165,11 @@ export class BitbucketEventsService {
                 userData.tokenExpiresAt &&
                 new Date(userData.tokenExpiresAt).getTime() <
                     now.getTime() + expiryBuffer
-
             if (isTokenExpired && userData.refreshToken) {
-                console.log('Access token expired, attempting to refresh...')
                 const newTokens =
                     await this.bitbucketApiService.refreshAccessToken(
                         userData.refreshToken
                     )
-
                 if (newTokens && newTokens.access_token) {
                     const tokenExpiresAt = new Date(
                         Date.now() + (newTokens.expires_in || 7200) * 1000
@@ -194,10 +192,8 @@ export class BitbucketEventsService {
                         { $set: updateData }
                     )
 
-                    console.log('Token refreshed successfully for workspace:', workspace)
                     return newTokens.access_token
                 } else {
-                    console.error('Failed to refresh access token - invalid response')
                     throw new BadRequestException(
                         'Failed to refresh access token'
                     )

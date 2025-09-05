@@ -155,6 +155,7 @@ async def process_pr_review_background(extracted_data: dict):
     review_input_tokens = 0
     review_output_tokens = 0
     model_info = ""
+    summary_info = {}
     
     logger.info("=" * 80)
     logger.info("Starting background PR review process")
@@ -184,7 +185,7 @@ async def process_pr_review_background(extracted_data: dict):
         chunk_summaries = []
         total_time_estimation = 0
         total_issue_count = 0
-        summary_info = {}
+        
         for chunk in chunks:
             logger.info(f"Generating summary for chunk {chunk['chunk_index'] + 1}/{len(chunks)} with {len(chunk['files'])} files")
             

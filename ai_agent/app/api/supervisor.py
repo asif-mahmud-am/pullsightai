@@ -3,7 +3,7 @@ from app.models.pr_event import PRPayloadV2, PRFileInfo
 from app.api.summary import generate_summary_response
 from app.api.review import generate_review_response, generate_chunked_review_response
 from app.services.claude_service import ClaudeService
-from app.utils.chunking_strategy import create_summary_chunks, create_review_chunks, prepare_chunk_for_summary, prepare_chunk_for_review
+from app.utils.chunking_strategy import create_summary_chunks, create_review_chunks, prepare_chunk_for_summary, prepare_chunk_for_review, convert_hunks_to_unified_diff
 from app.utils.summary_aggregator import aggregate_chunk_summaries
 from app.utils.line_perser import extract_summary_info
 import httpx
@@ -104,6 +104,13 @@ def validate_pr_payload(payload: PRPayloadV2) -> tuple[bool, str, dict]:
             if file.get("prFileName") in pr_files_allowed:
                 pr_files.append(file)
 
+        #converting hunks to unified diff
+        for file in pr_files:
+            # check if prFileDiffHunks exists and is not empty
+            if "prFileDiffHunks" not in file or not file.get("prFileDiffHunks"):
+                continue
+            file["prFileDiff"] = convert_hunks_to_unified_diff(file["prFileDiffHunks"], file["prFileName"])
+
         
         # Extract and validate data
         extracted_data = {
@@ -133,8 +140,8 @@ def validate_pr_payload(payload: PRPayloadV2) -> tuple[bool, str, dict]:
                 return False, f"File {i} is not a valid object", {}
             if "prFileName" not in file_info:
                 return False, f"File {i} missing prFileName", {}
-            if "prFileDiff" not in file_info:
-                return False, f"File {i} missing prFileDiff", {}
+            if "prFileDiff" not in file_info and "prFileDiffHunks" not in file_info:
+                return False, f"File {i} missing both prFileDiff and prFileDiffHunks", {}
         
         logger.info(f"Payload validation successful. PR: {extracted_data['prNumber']}, Files: {len(extracted_data['prFiles'])}")
         return True, "", extracted_data

@@ -195,3 +195,9 @@ def prepare_chunk_for_review(chunk: Dict, pr_metadata: Dict) -> Dict:
         "severity_list": str(severity_list),
         "chunk_info": f"Chunk {chunk['chunk_index'] + 1} of multiple chunks"
     } 
+
+def convert_hunks_to_unified_diff(hunks: List[str], file_name: str) -> str:
+    """
+    Convert hunks to unified diff format.
+    """
+    return "\n".join(hunks)

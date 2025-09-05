@@ -16,7 +16,7 @@ import {
 } from 'src/common/interfaces/repository.interface'
 import { DatabaseService } from 'src/database/database.service'
 import { Workspace } from 'src/database/schemas/workspace.schema'
-import { GetPRDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
+import { GetPRGitLabDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
 import { GitlabEventsService } from 'src/gitlab/gitlab-events.service'
 import { RepositoryDto } from 'src/workspace/dto/make-subscription.dto'
 import { GitlabApiService } from './gitlab-api.service'
@@ -243,7 +243,7 @@ export class GitlabService {
 
     async getPullRequests(
         user: any,
-        getPRDto: GetPRDto
+        getPRDto: GetPRGitLabDto
     ): Promise<PullRequestResponse[]> {
         const userData = await this.dataService.users
             .findOne({ _id: user.sub }, 'accessToken currentWorkspace')

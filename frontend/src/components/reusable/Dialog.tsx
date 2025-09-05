@@ -55,10 +55,10 @@ interface DialogProps {
 }
 
 const sizeVariants = {
-    sm: "sm:max-w-sm",
-    md: "sm:max-w-md",
-    lg: "sm:max-w-lg",
-    xl: "sm:max-w-xl",
+    sm: "sm:max-w-lg",
+    md: "sm:max-w-xl",
+    lg: "sm:max-w-3xl",
+    xl: "sm:max-w-5xl",
     full: "sm:max-w-full sm:max-h-[90vh] sm:m-4",
 };
 

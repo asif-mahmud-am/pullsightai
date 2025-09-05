@@ -68,7 +68,7 @@ const Step5Page = () => {
                         window.location.origin
                     );
                     dashboardUrl.searchParams.set("showCongrats", "true");
-                    window.location.href = dashboardUrl.toString();
+                    redirect(dashboardUrl.toString());
                 });
             })
             .catch((error) => {

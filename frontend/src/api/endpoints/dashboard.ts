@@ -53,4 +53,25 @@ export const dashboardEndpoints = {
             })
             .then((res) => res.data);
     },
+    getIssues: ({
+        from,
+        to,
+        repo,
+        prUser,
+        prState,
+        severity,
+    }: {
+        from?: string;
+        to?: string;
+        repo?: string | null;
+        prUser?: string | null;
+        prState?: string | null;
+        severity?: string | null;
+    }) => {
+        return apiClient
+            .get("/api/dashboard/issue-card", {
+                params: { from, to, repo, prUser, prState, severity },
+            })
+            .then((res) => res.data);
+    },
 };

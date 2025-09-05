@@ -22,9 +22,15 @@ export const columns: ColumnDef<TeamMember>[] = [
                     table.getIsAllPageRowsSelected() ||
                     (table.getIsSomePageRowsSelected() && "indeterminate")
                 }
-                onCheckedChange={(value) =>
-                    table.toggleAllPageRowsSelected(!!value)
-                }
+                onCheckedChange={(value) => {
+                    //toggle all rows except owner
+                    // table.toggleAllPageRowsSelected(!!value)
+                    table.getRowModel().rows.forEach((row) => {
+                        if (row.original?.role !== "owner") {
+                            row.toggleSelected(!!value);
+                        }
+                    });
+                }}
                 aria-label="Select all"
             />
         ),

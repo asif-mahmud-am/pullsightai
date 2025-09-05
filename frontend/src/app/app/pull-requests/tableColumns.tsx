@@ -7,6 +7,7 @@ import { PullRequest } from "@/types/pullRequest";
 import Avatar from "@/components/reusable/Avatar";
 import Badge from "@/components/reusable/Badge";
 import { formatDate } from "@/lib/dayjs";
+import PrStateBadge from "@/components/reusable/PrStateBadge";
 
 export const columns: ColumnDef<PullRequest>[] = [
     {
@@ -49,23 +50,9 @@ export const columns: ColumnDef<PullRequest>[] = [
             headerClassName: "w-28",
             cellClassName: "w-28",
         },
-        cell: ({ row }) => {
-            const status = row.getValue("prState") as string;
-            return (
-                <Badge
-                    variant={
-                        status === "merged" || status === "closed"
-                            ? "success"
-                            : status === "rejected"
-                            ? "destructive"
-                            : "default"
-                    }
-                    type="faded"
-                >
-                    {status}
-                </Badge>
-            );
-        },
+        cell: ({ row }) => (
+            <PrStateBadge state={row.getValue("prState") as string} />
+        ),
     },
     {
         accessorKey: "issueCount",

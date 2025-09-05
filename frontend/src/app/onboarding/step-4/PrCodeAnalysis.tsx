@@ -150,9 +150,9 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                             )}
                         </div>
 
-                        <div className="flex items-center gap-4 text-xs text-gray-400">
-                            <span className="flex items-center gap-1">
-                                <span className="">⛔</span>
+                        <div className="flex items-center gap-4 text-xs text-gray-400 divide-x divide-gray-700">
+                            <span className="flex items-center gap-1 pr-4">
+                                <span className="mr-[2px]">⛔</span>
                                 {
                                     validComments.filter(
                                         (c) =>
@@ -160,10 +160,10 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                                             "blocker"
                                     ).length
                                 }{" "}
-                                <span className="ml-2">Blocker</span>
+                                <span className="">Blocker</span>
                             </span>
-                            <span className="flex items-center gap-1">
-                                <span className="">🛑</span>
+                            <span className="flex items-center gap-1 pr-4">
+                                <span className="mr-[2px]">🛑</span>
                                 {
                                     validComments.filter(
                                         (c) =>
@@ -171,10 +171,10 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                                             "critical"
                                     ).length
                                 }{" "}
-                                <span className="ml-2">Critical</span>
+                                <span className="">Critical</span>
                             </span>
-                            <span className="flex items-center gap-1">
-                                <span className="">❗</span>
+                            <span className="flex items-center gap-1 pr-4">
+                                <span className="mr-[2px]">❗</span>
                                 {
                                     validComments.filter(
                                         (c) =>
@@ -182,10 +182,10 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                                             "major"
                                     ).length
                                 }{" "}
-                                <span className="ml-2">Major</span>
+                                <span className="">Major</span>
                             </span>
-                            <span className="flex items-center gap-1">
-                                <span className="">⚠️</span>
+                            <span className="flex items-center gap-1 pr-4">
+                                <span className="mr-[2px]">⚠️</span>
                                 {
                                     validComments.filter(
                                         (c) =>
@@ -193,10 +193,10 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                                             "minor"
                                     ).length
                                 }{" "}
-                                <span className="ml-2">Minor</span>
+                                <span className="">Minor</span>
                             </span>
-                            <span className="flex items-center gap-1">
-                                <span className="">ℹ️</span>
+                            <span className="flex items-center gap-1 pr-4">
+                                <span className="mr-[2px]">ℹ️</span>
                                 {
                                     validComments.filter(
                                         (c) =>
@@ -204,7 +204,7 @@ const PrCodeAnalysis: FC<Props> = ({ analysisData, pullRequest }) => {
                                             "info"
                                     ).length
                                 }{" "}
-                                <span className="ml-2">Info</span>
+                                <span className="">Info</span>
                             </span>
                         </div>
                     </div>

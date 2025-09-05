@@ -1,22 +1,26 @@
 "use client";
 
 import { useUpdateUserMutation } from "@/api/queries/auth";
+import AdminGuard from "@/components/auth/AdminGuard";
 import LogoutHandler from "@/components/auth/LogoutHandler";
 import Dropdown from "@/components/reusable/Dropdown";
+import { ProgressIcon } from "@/components/reusable/icons";
 import { Button } from "@/components/ui/button";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
+import { getRemainingDays } from "@/lib/dayjs";
 import showToast from "@/lib/toast";
 import { useAppStore } from "@/store/appStore";
 import { useAuthStore } from "@/store/authStore";
-import { ChevronDown, LogOutIcon, Plus, X } from "lucide-react";
+import { ChevronDown, LogOutIcon, Plus, Rocket, X } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Fragment, use } from "react";
 
 const AppTopBar = () => {
-    const { user, workspaces, selectedWorkspace, setSelectedWorkspace } =
-        useAuthStore((s) => s);
+    const { user, workspaces, selectedWorkspace } = useAuthStore((s) => s);
     const { toggleSidebar, isSidebarOpen } = useAppStore();
+
     const {
         mutateAsync: updateUser,
         isPending: isUpdatingUser,
@@ -27,6 +31,8 @@ const AppTopBar = () => {
         (workspace) =>
             !workspace.onboardingStep || workspace.onboardingStep == 0
     );
+    const activePlan = selectedWorkspace?.currentPlan;
+    const isTrialPlan = activePlan?.plan?.isDefault;
 
     // Custom 3x3 Grid Icon Component
     const GridIcon = () => (
@@ -55,6 +61,7 @@ const AppTopBar = () => {
 
         await updateUser({
             currentWorkspace: workspaceId,
+            updateState: false, // for not updating state of selectedWorkspace
         }).then(() => {
             window.location.reload();
             // showToast.success("Organization switched successfully!");
@@ -62,7 +69,7 @@ const AppTopBar = () => {
     };
 
     return (
-        <div className="xl:h-[88px] h-[60px] flex items-center border-b gap-x-4 xl:px-5 pr-3 pl-1 fixed top-0 left-0 right-0 z-50 bg-background">
+        <div className="xl:h-[88px] h-[60px] flex items-center border-b gap-x-4 xl:px-5 pr-3 pl-1 fixed top-0 left-0 right-0 z-40 bg-background">
             <Button
                 variant="ghost"
                 className="xl:hidden relative px-3"
@@ -99,9 +106,34 @@ const AppTopBar = () => {
                 height={37}
                 className="xl:h-auto w-auto h-[30px]"
             />
-            <span className="text-base font-medium hidden md:inline">
+            <span className="text-base font-medium mr-auto hidden md:inline">
                 Welcome back, {user?.displayName} 👋
             </span>
+
+            <AdminGuard>
+                {isTrialPlan && (
+                    <div className="text-sm text-gray-400 bg-yellow-400/20 rounded-xl py-2 px-3 mx-auto  hidden lg:inline-flex items-center gap-5">
+                        <ProgressIcon className="animate-spin" />
+                        <div>
+                            <div className="text-white font-semibold">
+                                {getRemainingDays(activePlan?.periodEnd || "")}{" "}
+                                day(s) left in your free trial
+                            </div>
+                            <div>
+                                {activePlan?.remainingToken || 0}/
+                                {activePlan?.totalToken} tokens used
+                            </div>
+                        </div>
+                        <Link
+                            className="gap-1 flex items-center bg-yellow-400 text-neutral-900 rounded-md px-2 py-1.5 text-sm font-medium"
+                            href={ROUTE_CONSTANTS.APP_SUBSCRIPTION_PLANS}
+                        >
+                            Upgrade Now
+                            <Rocket className="h-4 w-auto" />
+                        </Link>
+                    </div>
+                )}
+            </AdminGuard>
 
             <Dropdown>
                 <Dropdown.Trigger>

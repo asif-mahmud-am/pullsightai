@@ -37,7 +37,7 @@ const RepositorySettingsModal = ({
     onOpenChange,
 }: RepositorySettingsModalProps) => {
     const [settings, setSettings] = useState<RepositorySettings>({
-        minSeverity: "info",
+        minSeverity: "major",
         ignore: "",
     });
 

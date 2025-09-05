@@ -9,6 +9,7 @@ import ContentCard from "@/components/reusable/ContentCard";
 import { Button } from "@/components/ui/button";
 import AddRepositoryDialog from "./AddRepositoryDialog";
 import ResponsiveRepositoryList from "./ResponsiveRepositoryList";
+import AdminGuard from "@/components/auth/AdminGuard";
 
 const RepositoriesPage = () => {
     const [tab, setTab] = useState<"all" | "active">("all");
@@ -38,13 +39,15 @@ const RepositoriesPage = () => {
             {/* Header */}
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2 mb-3">
                 <h2 className="text-2xl font-semibold">Repositories</h2>
-                <Button
-                    variant="outline"
-                    onClick={() => setShowAddDialog(true)}
-                >
-                    <Plus />
-                    <span className="ml-2">Add Repository</span>
-                </Button>
+                <AdminGuard>
+                    <Button
+                        variant="outline"
+                        onClick={() => setShowAddDialog(true)}
+                    >
+                        <Plus />
+                        <span className="ml-2">Add Repository</span>
+                    </Button>
+                </AdminGuard>
             </div>
 
             {/* Add Repository Dialog */}

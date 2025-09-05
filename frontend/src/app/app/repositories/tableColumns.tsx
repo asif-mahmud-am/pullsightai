@@ -11,6 +11,7 @@ import { useUpdateRepositoryMutation } from "@/api/queries/workspace";
 import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
 import RepositorySettingsModal from "./RepositorySettingsModal";
+import AdminGuard from "@/components/auth/AdminGuard";
 
 interface RepositoryStatusSwitchProps {
     isActive: boolean;
@@ -70,19 +71,21 @@ const RepositorySettingsAction = ({
 
     return (
         <>
-            <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowSettings(true)}
-                className="h-8 w-8 p-0"
-            >
-                <Settings className="h-4 w-4" />
-            </Button>
-            <RepositorySettingsModal
-                repository={repository}
-                open={showSettings}
-                onOpenChange={setShowSettings}
-            />
+            <AdminGuard>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowSettings(true)}
+                    className="h-8 w-8 p-0"
+                >
+                    <Settings className="h-4 w-4" />
+                </Button>
+                <RepositorySettingsModal
+                    repository={repository}
+                    open={showSettings}
+                    onOpenChange={setShowSettings}
+                />
+            </AdminGuard>
         </>
     );
 };

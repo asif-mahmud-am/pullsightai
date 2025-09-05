@@ -5,6 +5,7 @@ import { create } from "zustand";
 type AuthState = {
     hydrated: boolean;
     user: User | null;
+    myRoleInSelectedWorkspace: string | null;
     selectedWorkspace: Organization | null;
     workspaces: Organization[] | null;
 };
@@ -12,6 +13,7 @@ type AuthState = {
 interface AuthActions {
     setHydrated: () => void;
     setUser: (user: User) => void;
+    setMyRoleInSelectedWorkspace: (role: string | null) => void;
     setSelectedWorkspace: (workspace: Organization | null) => void;
     setWorkspaces: (workspaces: Organization[] | null) => void;
     updateWorkspaceSettings: (settings: Partial<WorkspaceSetting>) => void;
@@ -23,10 +25,13 @@ interface AuthStore extends AuthState, AuthActions {}
 export const useAuthStore = create<AuthStore>((set) => ({
     hydrated: false,
     user: null,
+    myRoleInSelectedWorkspace: null,
     selectedWorkspace: null,
     workspaces: null,
     setHydrated: (): void => set({ hydrated: true }),
     setUser: (user: User): void => set({ user }),
+    setMyRoleInSelectedWorkspace: (role: string | null): void =>
+        set({ myRoleInSelectedWorkspace: role }),
     setSelectedWorkspace: (workspace: Organization | null): void =>
         set({ selectedWorkspace: workspace }),
     setWorkspaces: (workspaces: Organization[] | null): void =>

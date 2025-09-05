@@ -46,7 +46,8 @@ export const useOrganizationAddMutation = ({
 }: {
     provider?: "bitbucket" | "gitlab";
 }) => {
-    const { user, setUser, setSelectedWorkspace } = useAuthStore((s) => s);
+    const { user, setUser, setSelectedWorkspace, workspaces, setWorkspaces } =
+        useAuthStore();
     const queryFn: Record<
         "bitbucket" | "gitlab",
         (params: {
@@ -76,6 +77,7 @@ export const useOrganizationAddMutation = ({
                 currentWorkspace: data,
             });
             setSelectedWorkspace(data);
+            setWorkspaces([...(workspaces ?? []), data]);
         },
     });
 };

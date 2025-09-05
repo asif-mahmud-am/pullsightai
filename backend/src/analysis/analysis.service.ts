@@ -144,7 +144,7 @@ export class AnalysisService {
                 )
 
             return {
-                ...savedPullRequestFormattedData,
+                ...(savedPullRequestFormattedData?.toObject() || {}),
                 prFiles: prFiles
             }
         }
@@ -172,6 +172,10 @@ export class AnalysisService {
                 pullRequestFormattedData,
                 event
             )
+        console.log(
+            'savedPullRequestFormattedData====',
+            savedPullRequestFormattedData
+        )
         const pullRequestAnalysis =
             await this.dataService.pullRequestAnalysis.create({
                 prId: savedPullRequestFormattedData.prId,
@@ -192,7 +196,7 @@ export class AnalysisService {
                 this.configService.get('AI_AGENT_PR_POST_URL') as string,
                 {
                     pullRequest: {
-                        ...pullRequestFormattedData.pullRequest,
+                        ...savedPullRequestFormattedData,
                         pullRequestAnalysisId: pullRequestAnalysis['_id'],
                         apiKey: repository?.workspace?.workspaceSetting?.apiKey,
                         modelName:

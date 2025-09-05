@@ -37,11 +37,19 @@ export class PlanService {
                 await this.stripeService.getCustomerId(userData)
             await userData.save()
         }
-        const planData = await this.dataService.plans.findOne({
+        const planData: any = await this.dataService.plans.findOne({
             _id: purchasePlanDto.planId
         })
         if (planData == null) {
             throw new NotFoundException('Plan not found')
+        }
+        if (
+            userData?.currentWorkspace?.currentPlan?.plan.toString() ==
+                planData?._id.toString() &&
+            purchasePlanDto.noOfSeat ==
+                userData?.currentWorkspace?.currentPlan?.numOfSeat
+        ) {
+            throw new NotFoundException('You are already on this plan')
         }
         let totalToken = planData.tokenLimitPerDev * purchasePlanDto.noOfSeat
         let remainingToken = totalToken

@@ -90,16 +90,16 @@ export class PaymentsService {
     }
 
     async generateRecurringPayment(transaction: any) {
-        console.log(
-            'Generating recurring payment for transaction:',
-            transaction
-        )
         const currentPlan: any = await this.dataServices.purchasedPlans
             .findOne({
-                subscriptionId: transaction.subscriptionId,
-                isActive: true
+                subscriptionId: transaction.subscriptionId
             })
             .sort({ createdAt: -1 })
+        if (!currentPlan) {
+            throw new BadGatewayException('Current plan not found')
+        }
+        currentPlan.status = Status.RENEWED
+        await currentPlan.save()
         const newPurchasePlan = await this.dataServices.purchasedPlans.create({
             workspace: currentPlan.workspace,
             plan: currentPlan.plan,
@@ -191,25 +191,38 @@ export class PaymentsService {
                     _id: transaction.serviceBookingId
                 },
                 {
-                    isActive: true,
+                    status: Status.ACTIVE,
                     paymentStatus: PaymentStatus.PAID,
                     subscriptionId: transaction.subscriptionId,
                     amount: transaction.amount
                 },
                 { new: true }
             )
-        const workspace = await this.dataServices.workspaces.findOneAndUpdate(
-            {
+        if (!purchasedPlans) {
+            throw new BadGatewayException('Purchased plan not found')
+        }
+        const workspace: any = await this.dataServices.workspaces
+            .findOne({
                 _id: purchasedPlans?.workspace
-            },
-            {
-                currentPlan: purchasedPlans?._id
-            },
-            {
-                new: true
-            }
-        )
-        return workspace
+            })
+            .populate('currentPlan')
+        if (workspace?.currentPlan) {
+            await this.dataServices.purchasedPlans.findByIdAndUpdate(
+                {
+                    _id: workspace?.currentPlan?._id
+                },
+                {
+                    status:
+                        workspace.currentPlan.pricePerDev *
+                            workspace.currentPlan.numOfSeat >
+                        purchasedPlans.pricePerDev * purchasedPlans.numOfSeat
+                            ? Status.DOWNGRADED
+                            : Status.UPGRADED
+                }
+            )
+        }
+        workspace.currentPlan = purchasedPlans._id
+        return await workspace.save()
     }
 
     async purchasePackComplete(transaction: any) {

@@ -3,21 +3,25 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/authStore";
 import { authEndpoints } from "../endpoints/auth";
 
-export const useUserQuery = () => {
+export const useUserQuery = ({ isEnabled = true }) => {
     const { setSelectedWorkspace, setWorkspaces, setUser } = useAuthStore(
         (s) => s
     );
     return useQuery({
         queryKey: ["user"],
         queryFn: async () => {
-            const user = await authEndpoints.getMe();
-            setUser(user);
-            setWorkspaces(user.workspaces);
-            setSelectedWorkspace(user.currentWorkspace || null);
+            const data = await authEndpoints.getMe();
+            const user = data?.data;
+            if (user) {
+                setUser(user);
+                setWorkspaces(user.workspaces);
+                setSelectedWorkspace(user.currentWorkspace || null);
+            }
             return user;
         },
         staleTime: 5 * 60 * 1000,
         retry: false,
+        enabled: isEnabled,
     });
 };
 

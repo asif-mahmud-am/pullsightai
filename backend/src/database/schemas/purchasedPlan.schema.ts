@@ -78,13 +78,13 @@ export class PurchasedPlan {
     @Prop({ required: false })
     periodEnd: Date
 
-    @Prop({ required: true })
+    @Prop({ required: false })
     title: string
 
-    @Prop({ required: true, min: 0 })
+    @Prop({ required: false })
     pricePerDev: number
 
-    @Prop({ required: true, min: 0 })
+    @Prop({ required: false })
     tokenLimitPerDev: number
 
     @Prop({ default: false })

@@ -90,11 +90,11 @@ export class PaymentsService {
     }
 
     async generateRecurringPayment(transaction: any) {
-        const currentPlan: any = await this.dataServices.purchasedPlans
-            .findOne({
-                subscriptionId: transaction.subscriptionId
-            })
-            .sort({ createdAt: -1 })
+        const currentPlan: any = await this.dataServices.purchasedPlans.findOne(
+            {
+                _id: transaction.serviceBookingId
+            }
+        )
         if (!currentPlan) {
             throw new BadGatewayException('Current plan not found')
         }
@@ -116,13 +116,8 @@ export class PaymentsService {
             tokenLimitPerDev: currentPlan.tokenLimitPerDev,
             isFree: currentPlan.isFree,
             isDefault: currentPlan.isDefault,
-            periodStart: new Date(),
-            periodEnd:
-                currentPlan.billingCycle == 'monthly'
-                    ? new Date(new Date().setMonth(new Date().getMonth() + 1))
-                    : new Date(
-                          new Date().setFullYear(new Date().getFullYear() + 1)
-                      )
+            periodStart: transaction.periodStart,
+            periodEnd: transaction.periodEnd
         })
         const newTransaction = await this.dataServices.transactions.create({
             serviceId: currentPlan.plan,

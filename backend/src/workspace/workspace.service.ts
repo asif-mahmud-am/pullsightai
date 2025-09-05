@@ -213,6 +213,10 @@ export class WorkspaceService {
             })
         )
 
+        userData.currentWorkspace.noOfActiveMembers =
+            makeSubscriptionDto.members.length
+        await userData.currentWorkspace.save()
+
         if (!userData?.currentWorkspace?.currentPlan) {
             await this.assignFreePlanToWorkspace(
                 userData,
@@ -263,7 +267,7 @@ export class WorkspaceService {
     }
 
     async addMembers(createMembersDto: CreateMembersDto, user: any) {
-        const userData =
+        const userData: any =
             await this.analysisService.getUserDataWithWorkspace(user)
 
         Promise.all(
@@ -305,6 +309,13 @@ export class WorkspaceService {
                 }
             })
         )
+        userData.currentWorkspace.noOfActiveMembers =
+            await this.dataService.workspaceMembers.countDocuments({
+                provider: userData.provider,
+                workspace: userData?.currentWorkspace!._id,
+                isActive: true
+            })
+        userData.currentWorkspace.save()
         return {}
     }
 

@@ -161,6 +161,9 @@ export class Workspace {
 
     @Prop({ type: workspaceSetting, nullable: true })
     workspaceSetting?: workspaceSetting
+
+    @Prop({ required: false, default: 0 })
+    noOfActiveMembers?: number
 }
 
 const schema = SchemaFactory.createForClass(Workspace)

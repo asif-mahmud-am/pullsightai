@@ -64,8 +64,16 @@ def filter_pr_files(ignore_list: list, pr_files: list) -> list:
                     if normalized_file.startswith(dir_pattern + "/") or normalized_file == dir_pattern:
                         should_ignore = True
                         break
-                # Handle exact file matches
+                # Handle exact file matches (full path)
                 elif normalized_file == ignore_pattern:
+                    should_ignore = True
+                    break
+                # Handle filename-only matches (ignore by filename regardless of path)
+                elif filename == ignore_pattern:
+                    should_ignore = True
+                    break
+                # Handle filename with extension patterns like "*.lock", "*.log"
+                elif ignore_pattern.startswith("*") and fnmatch.fnmatch(filename, ignore_pattern):
                     should_ignore = True
                     break
         

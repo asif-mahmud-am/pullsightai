@@ -99,12 +99,12 @@ const IssueAnalysisCard = ({
                                         {
                                             name: "minor",
                                             value: data?.data?.minor || 0,
-                                            fill: "#FFB455",
+                                            fill: "#fdc800",
                                         },
                                         {
                                             name: "major",
                                             value: data?.data?.major || 0,
-                                            fill: "#A254F5",
+                                            fill: "#ff8905",
                                         },
                                         {
                                             name: "critical",

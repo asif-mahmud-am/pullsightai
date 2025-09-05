@@ -429,6 +429,9 @@ export class DashboardService {
             baseMatch.repositorySlug = issueCardFilterDto.repo
         }
 
+        // Match for total docs
+        const baseMatchForTotalCount = { ...baseMatch }
+
         // Add severity filter if provided
         if (issueCardFilterDto.severity) {
             baseMatch.severity = issueCardFilterDto.severity
@@ -590,7 +593,7 @@ export class DashboardService {
 
         // Create severity counts aggregation pipeline
         const severityCountsPipeline: any[] = [
-            // { $match: baseMatch },
+            { $match: totalDocsMatch },
             {
                 $lookup: {
                     from: 'pullrequests',

@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
 import { formatDate, getRemainingDays } from "@/lib/dayjs";
 import showToast from "@/lib/toast";
+import { numToHip } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { AlertCircle, Calendar, CreditCard, Users, Zap } from "lucide-react";
 import Link from "next/link";
@@ -46,14 +47,20 @@ const CurrentPlan = () => {
                         Available Tokens
                     </p>
                     <p className="text-xl font-bold">
-                        {(activePlan?.remainingToken || 0) +
-                            (selectedWorkspace?.currentPack?.remainingToken ||
-                                0)}{" "}
+                        {numToHip(
+                            (activePlan?.remainingToken || 0) +
+                                (selectedWorkspace?.currentPack
+                                    ?.remainingToken || 0),
+                            0
+                        )}{" "}
                         /{" "}
                         <span className="text-muted-foreground text-sm">
-                            {(activePlan?.totalToken || 0) +
-                                (selectedWorkspace?.currentPack?.totalToken ||
-                                    0)}
+                            {numToHip(
+                                (activePlan?.totalToken || 0) +
+                                    (selectedWorkspace?.currentPack
+                                        ?.totalToken || 0),
+                                0
+                            )}
                         </span>
                     </p>
                 </div>
@@ -143,7 +150,7 @@ const CurrentPlan = () => {
                                 </div>
                                 <div className="border rounded-2xl p-4">
                                     <p className="text-sm text-gray-400 mb-1 flex items-center gap-1">
-                                        Total Monthly Cost
+                                        Total {activePlan?.billingCycle} cost
                                     </p>
                                     <div className="flex justify-between">
                                         <p className="text-2xl font-bold ">
@@ -162,8 +169,13 @@ const CurrentPlan = () => {
                                     </p>
                                     <div className="flex justify-between">
                                         <p className="text-2xl font-bold ">
-                                            {activePlan?.plan
-                                                ?.tokenLimitPerDev || "-"}
+                                            {activePlan?.plan?.tokenLimitPerDev
+                                                ? numToHip(
+                                                      activePlan?.plan
+                                                          ?.tokenLimitPerDev,
+                                                      0
+                                                  )
+                                                : "-"}
                                         </p>
                                     </div>
                                 </div>

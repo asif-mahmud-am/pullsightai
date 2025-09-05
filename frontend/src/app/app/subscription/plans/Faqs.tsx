@@ -23,9 +23,13 @@ const FAQs = () => {
             </div>
 
             <div className="col-span-8 col-start-7">
-                <Accordion type="single" collapsible className="w-full space-y-4">
-                    <AccordionItem 
-                        value="item-1" 
+                <Accordion
+                    type="single"
+                    collapsible
+                    className="w-full space-y-4"
+                >
+                    <AccordionItem
+                        value="item-1"
                         className="border rounded-xl data-[state=open]:bg-card data-[state=closed]:bg-transparent transition-colors"
                     >
                         <AccordionTrigger className="text-left px-6 py-4 hover:no-underline font-semibold">
@@ -38,8 +42,8 @@ const FAQs = () => {
                         </AccordionContent>
                     </AccordionItem>
 
-                    <AccordionItem 
-                        value="item-2" 
+                    <AccordionItem
+                        value="item-2"
                         className="border rounded-xl data-[state=open]:bg-card data-[state=closed]:bg-transparent transition-colors"
                     >
                         <AccordionTrigger className="text-left px-6 py-4 hover:no-underline font-semibold">
@@ -53,8 +57,8 @@ const FAQs = () => {
                         </AccordionContent>
                     </AccordionItem>
 
-                    <AccordionItem 
-                        value="item-3" 
+                    <AccordionItem
+                        value="item-3"
                         className="border rounded-xl data-[state=open]:bg-card data-[state=closed]:bg-transparent transition-colors"
                     >
                         <AccordionTrigger className="text-left px-6 py-4 hover:no-underline font-semibold">
@@ -62,13 +66,13 @@ const FAQs = () => {
                         </AccordionTrigger>
                         <AccordionContent className="px-6 pb-6 text-muted-foreground">
                             We believe in transparency and community-driven
-                            development. Our open-source approach means faster fixes
-                            and better features.
+                            development. Our open-source approach means faster
+                            fixes and better features.
                         </AccordionContent>
                     </AccordionItem>
 
-                    <AccordionItem 
-                        value="item-4" 
+                    <AccordionItem
+                        value="item-4"
                         className="border rounded-xl data-[state=open]:bg-card data-[state=closed]:bg-transparent transition-colors"
                     >
                         <AccordionTrigger className="text-left px-6 py-4 hover:no-underline font-semibold">

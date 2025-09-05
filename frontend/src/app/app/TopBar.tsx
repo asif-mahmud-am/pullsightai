@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
 import { getRemainingDays } from "@/lib/dayjs";
 import showToast from "@/lib/toast";
+import { numToHip } from "@/lib/utils";
 import { useAppStore } from "@/store/appStore";
 import { useAuthStore } from "@/store/authStore";
 import { ChevronDown, LogOutIcon, Plus, Rocket, X } from "lucide-react";
@@ -107,7 +108,7 @@ const AppTopBar = () => {
                 className="xl:h-auto w-auto h-[30px]"
             />
             <span className="text-base font-medium mr-auto hidden md:inline">
-                Welcome back, {user?.displayName} 👋
+                Welcome back, {user?.displayName || user?.username} 👋
             </span>
 
             <AdminGuard>
@@ -120,12 +121,13 @@ const AppTopBar = () => {
                                 day(s) left in your free trial
                             </div>
                             <div>
-                                {activePlan?.remainingToken || 0}/
-                                {activePlan?.totalToken} tokens used
+                                {numToHip(activePlan?.remainingToken || 0, 0)}/
+                                {numToHip(activePlan?.totalToken || 0, 0)}{" "}
+                                tokens used
                             </div>
                         </div>
                         <Link
-                            className="gap-1 flex items-center bg-yellow-400 text-neutral-900 rounded-md px-2 py-1.5 text-sm font-medium"
+                            className="gap-1 flex items-center bg-yellow-400 text-neutral-900 rounded-md px-2 py-1.5 text-sm font-medium ml-10"
                             href={ROUTE_CONSTANTS.APP_SUBSCRIPTION_PLANS}
                         >
                             Upgrade Now

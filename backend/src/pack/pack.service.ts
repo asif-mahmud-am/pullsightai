@@ -60,19 +60,20 @@ export class PackService {
                 userData?.currentWorkspace?.currentPack?.remainingToken
         }
 
-        const purchasedPlan = await this.dataService.purchasedPacks.create({
+        const purchasedPack = await this.dataService.purchasedPacks.create({
             workspace: userData?.currentWorkspace?._id,
             pack: purchasePlanDto.packId,
             amount: packData.price,
             totalToken: packData.token,
-            remainingToken: remainingToken
+            remainingToken: remainingToken,
+            title: packData.title
         })
 
         return await this.paymentsService.createOneTimePayment({
             serviceId: packData?._id as any,
             service: Service.PACK,
-            serviceBookingId: purchasedPlan._id as any,
-            serviceBookingRef: ServiceBookingRef.PURCHASED_PLAN,
+            serviceBookingId: purchasedPack._id as any,
+            serviceBookingRef: ServiceBookingRef.PURCHASED_PACK,
             gateway: purchasePlanDto.gateway,
             workspace: userData?.currentWorkspace?._id as any,
             customerId: userData.stripeCustomerId,

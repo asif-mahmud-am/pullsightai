@@ -590,7 +590,7 @@ export class DashboardService {
 
         // Create severity counts aggregation pipeline
         const severityCountsPipeline: any[] = [
-            { $match: baseMatch },
+            // { $match: baseMatch },
             {
                 $lookup: {
                     from: 'pullrequests',
@@ -600,9 +600,9 @@ export class DashboardService {
                 }
             },
             { $unwind: '$pullRequest' },
-            ...(Object.keys(pullRequestMatch).length > 0
-                ? [{ $match: pullRequestMatch }]
-                : []),
+            // ...(Object.keys(pullRequestMatch).length > 0
+            //     ? [{ $match: pullRequestMatch }]
+            //     : []),
             {
                 $group: {
                     _id: '$severity',

@@ -481,11 +481,11 @@ export class GithubService {
             return {
                 ...member,
                 _id: savedMember?._id ?? null,
-                role:
-                    savedMember?.role ||
-                    userData.providerId == member.providerId
-                        ? 'owner'
-                        : 'member',
+                role: savedMember?.role
+                    ? savedMember.role
+                    : userData.providerId == member.providerId
+                      ? 'owner'
+                      : 'member',
                 isActive: Boolean(savedMember?.isActive),
                 joinedAt: savedMember?.joinedAt
             }
@@ -502,6 +502,8 @@ export class GithubService {
     }
 
     async processGithubEvent(event: any, payload: any) {
+        console.log('event name', event)
+        console.log('payload', payload)
         let isApplicable
         let pullRequestFormattedData: StructuredPRData | boolean
         let prEvent

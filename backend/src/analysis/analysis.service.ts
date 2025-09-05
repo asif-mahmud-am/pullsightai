@@ -270,13 +270,14 @@ export class AnalysisService {
                 )
 
             return {
-                ...savedPullRequestFormattedData,
+                ...(savedPullRequestFormattedData?.toObject() || {}),
                 prFiles: prFiles
             }
         }
-        return await this.dataService.pullRequests.create({
+        const pullRequest = await this.dataService.pullRequests.create({
             ...pullRequestFormattedData.pullRequest
         })
+        return pullRequest?.toObject()
     }
 
     async updatedPRState(query: any, data: any) {
@@ -314,19 +315,25 @@ export class AnalysisService {
                 workspace
             })
         try {
+            const requestBody = {
+                pullRequest: {
+                    ...savedPullRequestFormattedData,
+                    pullRequestAnalysisId: pullRequestAnalysis['_id'],
+                    apiKey: repository?.workspace?.workspaceSetting?.apiKey,
+                    modelName:
+                        repository?.workspace?.workspaceSetting?.modelName,
+                    minSeverity: repository?.minSeverity,
+                    ignore: repository?.ignore
+                }
+            }
+            console.log(
+                'Sending data to AI agent:',
+                this.configService.get('AI_AGENT_PR_POST_URL'),
+                requestBody
+            )
             await this.httpService.post(
                 this.configService.get('AI_AGENT_PR_POST_URL') as string,
-                {
-                    pullRequest: {
-                        ...pullRequestFormattedData.pullRequest,
-                        pullRequestAnalysisId: pullRequestAnalysis['_id'],
-                        apiKey: repository?.workspace?.workspaceSetting?.apiKey,
-                        modelName:
-                            repository?.workspace?.workspaceSetting?.modelName,
-                        minSeverity: repository?.minSeverity,
-                        ignore: repository?.ignore
-                    }
-                },
+                requestBody,
                 {
                     timeout: 1000 // 1 second timeout
                 }

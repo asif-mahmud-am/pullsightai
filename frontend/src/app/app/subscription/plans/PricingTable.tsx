@@ -256,7 +256,7 @@ const PricingTable: FC<PricingTableProps> = ({ isLoading, plans, seats }) => {
                     ))}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-7 max-w-8xl mx-auto mb-20">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-7 max-w-8xl mx-auto mb-20 justify-center">
                     {plans?.map((plan: Plan) => {
                         const isSelected =
                             selectedWorkspace?.currentPlan?.plan?._id ===

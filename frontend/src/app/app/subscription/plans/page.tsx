@@ -36,6 +36,11 @@ const PricingPlansPage = () => {
             (plan: Plan) =>
                 plan.billingCycle === "yearly" || plan.billingCycle == ""
         );
+    } else {
+        plans = plans?.filter(
+            (plan: Plan) =>
+                plan.billingCycle === "monthly" || plan.billingCycle == ""
+        );
     }
 
     const getSavings = () => {
@@ -48,6 +53,7 @@ const PricingPlansPage = () => {
                     plan.billingCycle === "monthly" || plan.billingCycle === ""
             )
             .find((plan) => !plan.isFree);
+        console.log("fsf", yearlyPlans, monthlyPlans);
 
         // calculate bases on one monthly and one yearly plan
         const yearlyPrice = yearlyPlans?.pricePerDev || 0;
@@ -80,7 +86,7 @@ const PricingPlansPage = () => {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-12 max-w-8xl mx-auto items-center gap-6 my-6">
+                <div className="grid grid-cols-12 max-w-8xl mx-auto items-center gap-6 my-12">
                     {/* Seats Selector */}
                     <div className="col-span-4 col-start-5">
                         <div className="space-y-4">
@@ -111,7 +117,7 @@ const PricingPlansPage = () => {
                     </div>
 
                     {/* Billing Toggle */}
-                    <div className="flex justify-end col-span-3 col-start-9">
+                    <div className="flex justify-end col-span-3 col-start-10">
                         <div className="flex items-center bg-card rounded-lg p-1">
                             <button
                                 onClick={() => setBillingInterval("monthly")}
@@ -132,9 +138,9 @@ const PricingPlansPage = () => {
                                 }`}
                             >
                                 Yearly
-                                <Badge className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-1">
+                                {/* <Badge className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-1">
                                     Save {getSavings()}
-                                </Badge>
+                                </Badge> */}
                             </button>
                         </div>
                     </div>

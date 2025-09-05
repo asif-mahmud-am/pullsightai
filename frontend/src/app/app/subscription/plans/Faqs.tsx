@@ -1,4 +1,10 @@
 import Badge from "@/components/reusable/Badge";
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion";
 
 const FAQs = () => {
     return (
@@ -16,63 +22,65 @@ const FAQs = () => {
                 </p>
             </div>
 
-            <div className="col-span-8 col-start-7 space-y-4">
-                <details className="group border rounded-xl p-6 bg-card">
-                    <summary className="flex items-center justify-between cursor-pointer font-semibold">
-                        <span>Worried about spammy AI feedback?</span>
-                        <span className="group-open:rotate-45 transition-transform">
-                            +
-                        </span>
-                    </summary>
-                    <div className="mt-4 text-muted-foreground">
-                        Our AI is trained specifically for code review, not
-                        generic text generation. We focus on actionable
-                        insights, not verbose explanations.
-                    </div>
-                </details>
+            <div className="col-span-8 col-start-7">
+                <Accordion type="single" collapsible className="w-full space-y-4">
+                    <AccordionItem 
+                        value="item-1" 
+                        className="border rounded-xl data-[state=open]:bg-card data-[state=closed]:bg-transparent transition-colors"
+                    >
+                        <AccordionTrigger className="text-left px-6 py-4 hover:no-underline font-semibold">
+                            Worried about spammy AI feedback?
+                        </AccordionTrigger>
+                        <AccordionContent className="px-6 pb-6 text-muted-foreground">
+                            Our AI is trained specifically for code review, not
+                            generic text generation. We focus on actionable
+                            insights, not verbose explanations.
+                        </AccordionContent>
+                    </AccordionItem>
 
-                <details className="group border rounded-xl p-6 bg-card">
-                    <summary className="flex items-center justify-between cursor-pointer font-semibold">
-                        <span>Concerned about code privacy?</span>
-                        <span className="group-open:rotate-45 transition-transform">
-                            +
-                        </span>
-                    </summary>
-                    <div className="mt-4 text-muted-foreground">
-                        Zero code retention policy and comprehensive data
-                        protection. Your data is encrypted in transit and at
-                        rest. SOC2 type II certified to keep data extremely
-                        secure.
-                    </div>
-                </details>
+                    <AccordionItem 
+                        value="item-2" 
+                        className="border rounded-xl data-[state=open]:bg-card data-[state=closed]:bg-transparent transition-colors"
+                    >
+                        <AccordionTrigger className="text-left px-6 py-4 hover:no-underline font-semibold">
+                            Concerned about code privacy?
+                        </AccordionTrigger>
+                        <AccordionContent className="px-6 pb-6 text-muted-foreground">
+                            Zero code retention policy and comprehensive data
+                            protection. Your data is encrypted in transit and at
+                            rest. SOC2 type II certified to keep data extremely
+                            secure.
+                        </AccordionContent>
+                    </AccordionItem>
 
-                <details className="group border rounded-xl p-6 bg-card">
-                    <summary className="flex items-center justify-between cursor-pointer font-semibold">
-                        <span>Think open-source means complexity?</span>
-                        <span className="group-open:rotate-45 transition-transform">
-                            +
-                        </span>
-                    </summary>
-                    <div className="mt-4 text-muted-foreground">
-                        We believe in transparency and community-driven
-                        development. Our open-source approach means faster fixes
-                        and better features.
-                    </div>
-                </details>
+                    <AccordionItem 
+                        value="item-3" 
+                        className="border rounded-xl data-[state=open]:bg-card data-[state=closed]:bg-transparent transition-colors"
+                    >
+                        <AccordionTrigger className="text-left px-6 py-4 hover:no-underline font-semibold">
+                            Think open-source means complexity?
+                        </AccordionTrigger>
+                        <AccordionContent className="px-6 pb-6 text-muted-foreground">
+                            We believe in transparency and community-driven
+                            development. Our open-source approach means faster fixes
+                            and better features.
+                        </AccordionContent>
+                    </AccordionItem>
 
-                <details className="group border rounded-xl p-6 bg-card">
-                    <summary className="flex items-center justify-between cursor-pointer font-semibold">
-                        <span>Worried automation misses context?</span>
-                        <span className="group-open:rotate-45 transition-transform">
-                            +
-                        </span>
-                    </summary>
-                    <div className="mt-4 text-muted-foreground">
-                        Our AI understands your codebase context, coding
-                        standards, and team preferences. It learns from your
-                        patterns to provide relevant, contextual feedback.
-                    </div>
-                </details>
+                    <AccordionItem 
+                        value="item-4" 
+                        className="border rounded-xl data-[state=open]:bg-card data-[state=closed]:bg-transparent transition-colors"
+                    >
+                        <AccordionTrigger className="text-left px-6 py-4 hover:no-underline font-semibold">
+                            Worried automation misses context?
+                        </AccordionTrigger>
+                        <AccordionContent className="px-6 pb-6 text-muted-foreground">
+                            Our AI understands your codebase context, coding
+                            standards, and team preferences. It learns from your
+                            patterns to provide relevant, contextual feedback.
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
             </div>
         </div>
     );

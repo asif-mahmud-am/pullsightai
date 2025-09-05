@@ -502,11 +502,11 @@ export class GithubService {
     }
 
     async processGithubEvent(event: any, payload: any) {
+        console.log('event name', event)
+        console.log('payload', payload)
         let isApplicable
         let pullRequestFormattedData: StructuredPRData | boolean
         let prEvent
-        console.log('GitHub Event Received:', event) // Log the event type
-        console.log('GITHUB EVENT PAYLOAD:', JSON.stringify(payload, null, 2)) // Log the full payload for debugging
         switch (event) {
             case 'pull_request':
                 if (

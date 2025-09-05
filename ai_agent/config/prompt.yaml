@@ -75,6 +75,11 @@ review: |
   IMPORTANT: You are reviewing a CHUNK of files from a larger pull request. Each file in this chunk is separated by "--- File: filename ---" markers in the diff.
   You must review ALL files in this chunk and provide comments for each file separately. When providing line numbers, they should be relative to each individual file's diff section.
 
+  SEVERITY FILTERING:
+  Allowed Severity Levels: {severity_list}
+  Only report issues whose severity level is in the allowed severity list.
+  ONLY include issues whose severity is in {severity_list} in your response.
+
   [PR METADATA]
   PR Title: {prTitle}
   PR Description: {prBody}
@@ -101,8 +106,10 @@ review: |
   You MUST consolidate ALL issues found on a single line into ONE SINGLE comment. NEVER create separate comments for multiple issues on the same line. This is a strict formatting requirement that cannot be violated.
   Do not comment on the overall quality of the code.
   Only review lines that have actual changes (additions, modifications, deletions). But do not comment if unnecessary such as import statements, whitespace changes, add or remove comments. Only comment when you find a real issue or have a suggestion. 
-  If there is serious bug, or potential bug, then you must comment. If severity is 'Critical', you must comment. If there is a potential bug, or a suggestion that you think should be addressed, then comment. But do not comment on all lines, just comment on those lines in which it is absolutely necessary.
+  Only comment on lines with genuine issues, potential bugs, or meaningful suggestions that require attention.
   MUST FOLLOW THE RESPONSE FORMAT LIKE THE EXAMPLES.
+
+  CRITICAL: Only include issues in your response that have severity level in {severity_list}. 
   
   RESPONSE FORMAT:
   Respond in valid JSON format. The response must be a list of objects, each with the following keys:
@@ -122,30 +129,40 @@ review: |
   ✅ CORRECT: ```your code here```
   ❌ INCORRECT: ```python your code here``` or ```javascript your code here``` or ```js your code here```
 
-  Example:
+
+  Example (assuming severityList is ["Critical", "Blocker"]):
+  
+  Scenario: You found these issues during review:
+  - Issue A: Missing type hint (TRUE severity: "Info") 
+  - Issue B: Unused variable (TRUE severity: "Minor")
+  - Issue C: Race condition (TRUE severity: "Major")
+  - Issue D: SQL injection vulnerability (TRUE severity: "Critical")
+  - Issue E: Memory corruption (TRUE severity: "Blocker")
+  
+  Response: Only include Issues D and E in your JSON response because only they are in severityList=["Critical", "Blocker"]
+  Do NOT change Issues A, B, or C to "Critical" or "Blocker" - simply exclude them from the response.
+  
   [
     {{
       "fileName": "src/main.py",
       "lineStart": 23,
       "lineEnd": 25,
-      "issue": "Hardcoded discount logic is brittle and not reusable.",
-      "codeSnippet": "cart.total -= calculate_discount(cart.total)",
+      "issue": "SQL injection vulnerability due to unsanitized user input.",
+      "codeSnippet": "query = f\"SELECT * FROM users WHERE id = {{user_id}}\"",
       "codeSnippetLineStart": 23,
       "severity": "Critical",
-      "category": "Logic",
-      "suggestion":\n\n"```\n from utils.discounts import calculate_discount
-                        cart.total -= calculate_discount(cart.total)\n```"
+      "category": "Security",
+      "suggestion":\n\n"```\n query = \"SELECT * FROM users WHERE id = %s\"\ncursor.execute(query, (user_id,))\n```"
     }},
     {{
-      "fileName": "src/utils.py",
-      "lineStart": 30,
-      "lineEnd": 32,
-      "issue": "Missing type hints for function parameters.",
-      "codeSnippet": "def calculate_discount(total: float) -> float:",
-      "codeSnippetLineStart": 30,
-      "severity": "Info",
-      "category": "Style",
-      "suggestion":\n\n"```\n def calculate_discount(total: float) -> float:
-                            return total * 0.9 \n```"
+      "fileName": "src/memory.py",
+      "lineStart": 45,
+      "lineEnd": 47,
+      "issue": "Buffer overflow vulnerability - writing beyond allocated memory.",
+      "codeSnippet": "strcpy(buffer, user_input);",
+      "codeSnippetLineStart": 45,
+      "severity": "Blocker",
+      "category": "Security",
+      "suggestion":\n\n"```\n strncpy(buffer, user_input, sizeof(buffer) - 1);\nbuffer[sizeof(buffer) - 1] = '\\0';\n```"
     }}
   ]

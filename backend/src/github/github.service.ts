@@ -481,11 +481,11 @@ export class GithubService {
             return {
                 ...member,
                 _id: savedMember?._id ?? null,
-                role:
-                    savedMember?.role ||
-                    userData.providerId == member.providerId
-                        ? 'owner'
-                        : 'member',
+                role: savedMember?.role
+                    ? savedMember.role
+                    : userData.providerId == member.providerId
+                      ? 'owner'
+                      : 'member',
                 isActive: Boolean(savedMember?.isActive),
                 joinedAt: savedMember?.joinedAt
             }

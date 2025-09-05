@@ -11,6 +11,7 @@ import Select from "@/components/reusable/Select";
 import { Repository } from "@/types/repository";
 import OnboardingCongratsModal from "./OnboardingCongratsModal";
 import { useSearchParams, useRouter } from "next/navigation";
+import IssuesCard from "./issuesCard";
 
 const DashboardPage = () => {
     const [fromDate, setFromDate] = useState<string | null>(null);
@@ -134,6 +135,12 @@ const DashboardPage = () => {
                     toDate={toDate || undefined}
                     repo={repo || undefined}
                     breakdown={breakdown || undefined}
+                />
+                <IssuesCard
+                    className="col-span-12"
+                    fromDate={fromDate || undefined}
+                    toDate={toDate || undefined}
+                    repo={repo || undefined}
                 />
             </div>
 

@@ -308,7 +308,7 @@ export class GitlabService {
                     await this.analysisService.updatedPRState(
                         {
                             repo: payload.project.path_with_namespace,
-                            prNumber: payload.object_attributes.id.toString(),
+                            prNumber: payload.object_attributes.iid.toString(),
                             owner:
                                 payload.project.namespace.path ||
                                 payload.project.path_with_namespace.split(

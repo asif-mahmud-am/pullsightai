@@ -51,7 +51,9 @@ export class PlanService {
         ) {
             throw new NotFoundException('You are already on this plan')
         }
-        let totalToken = planData.tokenLimitPerDev * purchasePlanDto.noOfSeat
+        let totalToken = planData.isFree
+            ? planData.tokenLimitPerDev
+            : planData.tokenLimitPerDev * purchasePlanDto.noOfSeat
         let remainingToken = totalToken
         if (userData?.currentWorkspace?.currentPlan) {
             remainingToken =
@@ -100,6 +102,15 @@ export class PlanService {
             { _id: userData?.currentWorkspace?._id },
             { currentPlan: purchasedPlan._id }
         )
+        await this.dataService.workspaceMembers.updateMany(
+            {
+                workspace: userData?.currentWorkspace?._id,
+                user: { $ne: userData._id }
+            },
+            { isActive: false }
+        )
+        userData.currentWorkspace.noOfActiveMembers = 1
+        await userData.currentWorkspace.save()
         return {}
     }
 

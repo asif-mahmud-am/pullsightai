@@ -51,7 +51,11 @@ export class StripeService {
                 }
             ],
             success_url: SUCCESS_URL,
-            cancel_url: CANCEL_URL
+            cancel_url: CANCEL_URL,
+            metadata: {
+                serviceBookingId: createPaymentDto.serviceBookingId.toString(),
+                serviceBookingRef: createPaymentDto.serviceBookingRef
+            }
         })
         return {
             url: session.url,
@@ -84,7 +88,11 @@ export class StripeService {
                 }
             ],
             success_url: SUCCESS_URL,
-            cancel_url: CANCEL_URL
+            cancel_url: CANCEL_URL,
+            metadata: {
+                serviceBookingId: createPaymentDto.serviceBookingId.toString(),
+                serviceBookingRef: createPaymentDto.serviceBookingRef
+            }
         })
         return {
             url: session.url,
@@ -111,18 +119,30 @@ export class StripeService {
             }
             case 'invoice.payment_succeeded': {
                 const invoice = body.data.object as Stripe.Invoice
-                if (invoice.billing_reason !== 'subscription_cycle') break
-                await this.paymentsService.generateRecurringPayment({
-                    transactionId: invoice.id as string,
-                    paymentStatus: invoice.status as string,
-                    amount: invoice.amount_paid / 100,
-                    currency: invoice.currency,
-                    gateway: Gateway.STRIPE,
-                    storeAmount: invoice.amount_paid / 100,
-                    subscriptionId: invoice.parent?.subscription_details
-                        ?.subscription as string,
-                    response: invoice
-                })
+                if (invoice.billing_reason == 'subscription_cycle') {
+                    const period = invoice.lines.data[0].period
+                    const startDate = new Date(period.start * 1000)
+                    const endDate = new Date(period.end * 1000)
+                    await this.paymentsService.generateRecurringPayment({
+                        transactionId: invoice.id as string,
+                        paymentStatus: invoice.status as string,
+                        amount: invoice.amount_paid / 100,
+                        currency: invoice.currency,
+                        gateway: Gateway.STRIPE,
+                        storeAmount: invoice.amount_paid / 100,
+                        periodEnd: endDate,
+                        periodStart: startDate,
+                        serviceBookingId:
+                            invoice?.parent?.subscription_details?.metadata
+                                ?.serviceBookingId,
+                        serviceBookingRef:
+                            invoice?.parent?.subscription_details?.metadata
+                                ?.serviceBookingRef,
+                        subscriptionId: invoice.parent?.subscription_details
+                            ?.subscription as string,
+                        response: invoice
+                    })
+                }
                 break
             }
         }
@@ -150,7 +170,12 @@ export class StripeService {
                         quantity: createPaymentDto.noOfSeat
                     }
                 ],
-                proration_behavior: 'create_prorations'
+                proration_behavior: 'create_prorations',
+                metadata: {
+                    serviceBookingId:
+                        createPaymentDto.serviceBookingId.toString(),
+                    serviceBookingRef: createPaymentDto.serviceBookingRef
+                }
             }
         )
 

@@ -443,6 +443,11 @@ export class DashboardService {
             pullRequestMatch['pullRequest.prState'] = issueCardFilterDto.prState
         }
 
+        // Get pagination parameters
+        const page = issueCardFilterDto.page || 1
+        const limit = issueCardFilterDto.limit || 10
+        const skip = (page - 1) * limit
+
         // Use aggregation for optimized query
         const aggregationPipeline: any[] = [
             { $match: baseMatch },
@@ -455,6 +460,15 @@ export class DashboardService {
                 }
             },
             { $unwind: '$pullRequest' },
+            {
+                $lookup: {
+                    from: 'workspaces',
+                    localField: 'workspace',
+                    foreignField: '_id',
+                    as: 'workspace'
+                }
+            },
+            { $unwind: '$workspace' },
             ...(Object.keys(pullRequestMatch).length > 0
                 ? [{ $match: pullRequestMatch }]
                 : []),
@@ -525,7 +539,12 @@ export class DashboardService {
                             }
                         ]
                     },
-                    owner: { $ifNull: ['$pullRequest.prUser', 'Unknown'] },
+                    prTitle: '$pullRequest.title',
+                    prUrl: '$pullRequest.prUrl',
+                    avatarUrl: '$workspace.avatarUrl',
+                    owner: {
+                        $ifNull: ['$pullRequest.prUser', 'Unknown']
+                    },
                     prUser: '$pullRequest.prUser',
                     severity: 1,
                     status: 1,
@@ -540,42 +559,83 @@ export class DashboardService {
                     prNumber: '$pullRequest.prNumber',
                     prState: '$pullRequest.prState',
                     category: 1,
-                    content: 1,
+                    // content: 1,
                     filePath: 1,
                     lineStart: 1,
                     lineEnd: 1
                 }
             },
-            { $sort: { updated: -1 } }
+            { $sort: { updated: -1 } },
+            { $skip: skip },
+            { $limit: limit }
         ]
 
-        // Execute the optimized aggregation query
-        const [issueCardData, severityCounts] = await Promise.all([
-            this.dataService.pullRequestAnalysisComments.aggregate(
-                aggregationPipeline
-            ),
-            this.dataService.pullRequestAnalysisComments.aggregate([
-                { $match: baseMatch },
-                {
-                    $lookup: {
-                        from: 'pullrequests',
-                        localField: 'pullRequest',
-                        foreignField: '_id',
-                        as: 'pullRequest'
-                    }
-                },
-                { $unwind: '$pullRequest' },
-                ...(Object.keys(pullRequestMatch).length > 0
-                    ? [{ $match: pullRequestMatch }]
-                    : []),
-                {
-                    $group: {
-                        _id: '$severity',
-                        count: { $sum: 1 }
-                    }
+        // Create count aggregation pipeline to get total documents
+        const countPipeline: any[] = [
+            { $match: baseMatch },
+            {
+                $lookup: {
+                    from: 'pullrequests',
+                    localField: 'pullRequest',
+                    foreignField: '_id',
+                    as: 'pullRequest'
                 }
+            },
+            { $unwind: '$pullRequest' },
+            ...(Object.keys(pullRequestMatch).length > 0
+                ? [{ $match: pullRequestMatch }]
+                : []),
+            { $count: 'total' }
+        ]
+
+        // Create severity counts aggregation pipeline
+        const severityCountsPipeline: any[] = [
+            { $match: baseMatch },
+            {
+                $lookup: {
+                    from: 'pullrequests',
+                    localField: 'pullRequest',
+                    foreignField: '_id',
+                    as: 'pullRequest'
+                }
+            },
+            { $unwind: '$pullRequest' },
+            ...(Object.keys(pullRequestMatch).length > 0
+                ? [{ $match: pullRequestMatch }]
+                : []),
+            {
+                $group: {
+                    _id: '$severity',
+                    count: { $sum: 1 }
+                }
+            }
+        ]
+
+        // Execute all aggregation queries in parallel
+        const [issueCardData, severityCounts, totalCountResult] =
+            await Promise.all([
+                this.dataService.pullRequestAnalysisComments.aggregate(
+                    aggregationPipeline
+                ),
+                this.dataService.pullRequestAnalysisComments.aggregate(
+                    severityCountsPipeline
+                ),
+                this.dataService.pullRequestAnalysisComments.aggregate(
+                    countPipeline
+                )
             ])
-        ])
+
+        // Get total documents count
+        const totalDocs =
+            totalCountResult.length > 0 ? totalCountResult[0].total : 0
+        const totalPages = Math.ceil(totalDocs / limit)
+
+        // Calculate pagination metadata
+        const hasPrevPage = page > 1
+        const hasNextPage = page < totalPages
+        const prevPage = hasPrevPage ? page - 1 : null
+        const nextPage = hasNextPage ? page + 1 : null
+        const pagingCounter = totalDocs > 0 ? (page - 1) * limit + 1 : 0
 
         // Process severity counts
         const totalCount = {
@@ -597,7 +657,16 @@ export class DashboardService {
 
         return {
             issueCardData: issueCardData,
-            totalCount: totalCount
+            totalCount: totalCount,
+            totalDocs: totalDocs,
+            limit: limit,
+            totalPages: totalPages,
+            page: page,
+            pagingCounter: pagingCounter,
+            hasPrevPage: hasPrevPage,
+            hasNextPage: hasNextPage,
+            prevPage: prevPage,
+            nextPage: nextPage
         }
     }
 

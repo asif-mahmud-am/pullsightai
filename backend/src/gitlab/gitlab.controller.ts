@@ -10,7 +10,7 @@ import {
 import { AuthGuard } from '@nestjs/passport'
 import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
 import { PaginateDto } from 'src/common/dto/paginate.dto'
-import { GetPRDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
+import { GetPRGitLabDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
 import { GitlabEventsService } from './gitlab-events.service'
 import { GitlabService } from './gitlab.service'
 
@@ -74,7 +74,7 @@ export class GitlabController {
 
     @UseGuards(AuthGuard('jwt-cookie'))
     @Get('repos-pr-list')
-    async getPullRequests(@Req() req: any, @Query() getPRDto: GetPRDto) {
+    async getPullRequests(@Req() req: any, @Query() getPRDto: GetPRGitLabDto) {
         return {
             message: 'Merge requests fetched successfully',
             result: await this.gitlabService.getPullRequests(req.user, getPRDto)

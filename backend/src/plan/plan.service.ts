@@ -92,7 +92,7 @@ export class PlanService {
 
     async purchaseFreePlan(userData: any, purchasedPlan: any) {
         if (userData?.currentWorkspace?.currentPlan?.subscriptionId) {
-            return await this.stripeService.cancelSubscription(
+            await this.stripeService.cancelSubscription(
                 userData?.currentWorkspace?.currentPlan?.subscriptionId
             )
         }
@@ -100,6 +100,7 @@ export class PlanService {
             { _id: userData?.currentWorkspace?._id },
             { currentPlan: purchasedPlan._id }
         )
+        return {}
     }
 
     async purchasePaidPlan(
@@ -108,6 +109,10 @@ export class PlanService {
         purchasePlanDto: PurchasePlanDto,
         purchasedPlan: any
     ) {
+        console.log(
+            'userData?.currentWorkspace?.currentPlan?.subscriptionId',
+            userData?.currentWorkspace?.currentPlan
+        )
         if (userData?.currentWorkspace?.currentPlan?.subscriptionId) {
             return await this.paymentsService.updateSubscription({
                 serviceId: planData?._id as any,

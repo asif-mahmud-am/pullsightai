@@ -10,6 +10,7 @@ import {
     UseGuards
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
+import { WorkspaceOwnerGuard } from 'src/auth/guards/workspace-owner.guard'
 import { PurchasePlanDto } from 'src/pack/dto/purchase-plan.dto'
 import { CreatePackDto } from './dto/create-pack.dto'
 import { UpdatePackDto } from './dto/update-pack.dto'
@@ -19,7 +20,7 @@ import { PackService } from './pack.service'
     path: 'pack',
     version: '1'
 })
-@UseGuards(AuthGuard('jwt-cookie'))
+@UseGuards(AuthGuard('jwt-cookie'), WorkspaceOwnerGuard)
 export class PackController {
     constructor(private readonly packService: PackService) {}
 

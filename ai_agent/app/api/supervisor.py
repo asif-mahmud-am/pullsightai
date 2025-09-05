@@ -119,7 +119,7 @@ def validate_pr_payload(payload: PRPayloadV2) -> tuple[bool, str, dict]:
             "prFiles": pr_files,
             "api_key": api_key,
             "model_name": model_name,
-            "minSeverity": pr.get("minSeverity", "Info")
+            "minSeverity": pr.get("minSeverity", "Major")
 
         }
         

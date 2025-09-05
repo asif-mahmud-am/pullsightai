@@ -31,8 +31,10 @@ export class AuthService {
         const tokenExpiresAt = new Date(Date.now() + expiry * 1000)
         const invitation = await this.dataService.workspaceMembers.findOne({
             provider: provider,
-            providerId: profile.id
+            providerId: profile.id,
+            joinedAt: null
         })
+        console.log('invitation-------->', invitation)
         if (!user) {
             user = await this.dataService.users.create({
                 provider,
@@ -58,7 +60,7 @@ export class AuthService {
             user.refreshToken = refreshToken
             user.tokenExpiresAt = tokenExpiresAt
         }
-        if (invitation && !invitation.user) {
+        if (invitation && !invitation.joinedAt) {
             if (!user.currentWorkspace) {
                 user.currentWorkspace = invitation.workspace
             }
@@ -66,6 +68,7 @@ export class AuthService {
             invitation.user = user._id as any
             invitation.save()
             user.workspaces?.push(invitation.workspace)
+            console.log('Invitation accepted, workspace added to user', user)
         }
         await user.save()
         return await this.getProfile(user._id)

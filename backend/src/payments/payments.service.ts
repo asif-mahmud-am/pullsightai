@@ -90,12 +90,11 @@ export class PaymentsService {
     }
 
     async generateRecurringPayment(transaction: any) {
-        const currentPlan: any = await this.dataServices.purchasedPlans
-            .findOne({
+        const currentPlan: any = await this.dataServices.purchasedPlans.findOne(
+            {
                 _id: transaction.serviceBookingId
-            })
-            .sort({ createdAt: -1 })
-
+            }
+        )
         if (!currentPlan) {
             throw new BadGatewayException('Current plan not found')
         }

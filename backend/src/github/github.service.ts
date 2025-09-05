@@ -191,7 +191,7 @@ export class GithubService {
         const query: any = {
             owner: userData.currentWorkspace['name'],
             repo: getPRDto.repo,
-            state: 'all',
+            state: 'open',
             per_page: 100
         }
 

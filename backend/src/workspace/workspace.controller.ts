@@ -10,6 +10,7 @@ import {
     UseGuards
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
+import { WorkspaceOwnerGuard } from 'src/auth/guards/workspace-owner.guard'
 import { PaginateDto } from 'src/common/dto/paginate.dto'
 import { DATA_RETRIEVED, UPDATED } from 'src/common/utils/response-message.util'
 import { CreateAndUpdateWorkspaceSettingsDto } from 'src/workspace/dto/create-update-workspace-settings.dto'
@@ -44,7 +45,7 @@ export class WorkspaceController {
         }
     }
 
-    @UseGuards(AuthGuard('jwt-cookie'))
+    @UseGuards(AuthGuard('jwt-cookie'), WorkspaceOwnerGuard)
     @Post('repositories')
     async createRepository(
         @Body() createRepositoryDto: CreateRepositoryDto,
@@ -59,7 +60,7 @@ export class WorkspaceController {
         }
     }
 
-    @UseGuards(AuthGuard('jwt-cookie'))
+    @UseGuards(AuthGuard('jwt-cookie'), WorkspaceOwnerGuard)
     @Post('members')
     async createMembers(
         @Body() createMembersDto: CreateMembersDto,
@@ -74,7 +75,7 @@ export class WorkspaceController {
         }
     }
 
-    @UseGuards(AuthGuard('jwt-cookie'))
+    @UseGuards(AuthGuard('jwt-cookie'), WorkspaceOwnerGuard)
     @Patch('update-settings')
     async updateWorkspace(
         @Req() req,
@@ -120,7 +121,7 @@ export class WorkspaceController {
         }
     }
 
-    @UseGuards(AuthGuard('jwt-cookie'))
+    @UseGuards(AuthGuard('jwt-cookie'), WorkspaceOwnerGuard)
     @Patch('repositories/:id')
     async updateRepository(
         @Param('id') id: string,

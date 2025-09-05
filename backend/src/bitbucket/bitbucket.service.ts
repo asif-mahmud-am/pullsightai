@@ -223,6 +223,8 @@ export class BitbucketService {
     }
 
     async processBitbucketEvent(event: any, payload: any) {
+        console.log('event name', event)
+        console.log('payload', payload)
         let isApplicable
         let pullRequestFormattedData: StructuredPRData | boolean
         let prEvent

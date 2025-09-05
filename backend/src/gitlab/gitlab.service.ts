@@ -263,11 +263,14 @@ export class GitlabService {
     }
 
     async processGitlabEvent(event: any, payload: any) {
+        console.log('event name', event)
+        console.log('payload', payload)
         const providerId =
             payload.user_id || payload.object_attributes.author_id
         let isApplicable
         let pullRequestFormattedData: StructuredPRData | boolean = false
         let prEvent
+
         switch (event) {
             case 'Merge Request Hook':
                 if (

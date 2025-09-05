@@ -141,7 +141,7 @@ export class GitlabEventsService {
 
         // Find a user who has this workspace in their workspaces array
         const userData = await this.dataService.users.findOne(
-            { workspaces: workspaceRecord._id },
+            { _id: workspaceRecord.ownerId },
             'accessToken refreshToken tokenExpiresAt'
         )
 

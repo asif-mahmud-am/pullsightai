@@ -263,11 +263,14 @@ export class GitlabService {
     }
 
     async processGitlabEvent(event: any, payload: any) {
+        console.log('event name', event)
+        console.log('payload', payload)
         const providerId =
             payload.user_id || payload.object_attributes.author_id
         let isApplicable
         let pullRequestFormattedData: StructuredPRData | boolean = false
         let prEvent
+
         switch (event) {
             case 'Merge Request Hook':
                 if (
@@ -305,7 +308,7 @@ export class GitlabService {
                     await this.analysisService.updatedPRState(
                         {
                             repo: payload.project.path_with_namespace,
-                            prNumber: payload.object_attributes.id.toString(),
+                            prNumber: payload.object_attributes.iid.toString(),
                             owner:
                                 payload.project.namespace.path ||
                                 payload.project.path_with_namespace.split(
@@ -398,11 +401,11 @@ export class GitlabService {
             return {
                 ...member,
                 _id: savedMember?._id ?? null,
-                role:
-                    savedMember?.role ||
-                    userData.providerId == member.providerId
-                        ? 'owner'
-                        : 'member',
+                role: savedMember?.role
+                    ? savedMember.role
+                    : userData.providerId == member.providerId
+                      ? 'owner'
+                      : 'member',
                 isActive: Boolean(savedMember?.isActive),
                 joinedAt: savedMember?.joinedAt
             }

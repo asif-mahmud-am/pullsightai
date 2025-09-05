@@ -1,6 +1,7 @@
 "use client";
 
 import { useUpdateUserMutation } from "@/api/queries/auth";
+import AdminGuard from "@/components/auth/AdminGuard";
 import LogoutHandler from "@/components/auth/LogoutHandler";
 import Dropdown from "@/components/reusable/Dropdown";
 import { ProgressIcon } from "@/components/reusable/icons";
@@ -17,8 +18,7 @@ import { redirect } from "next/navigation";
 import { Fragment, use } from "react";
 
 const AppTopBar = () => {
-    const { user, workspaces, selectedWorkspace, setSelectedWorkspace } =
-        useAuthStore((s) => s);
+    const { user, workspaces, selectedWorkspace } = useAuthStore((s) => s);
     const { toggleSidebar, isSidebarOpen } = useAppStore();
 
     const {
@@ -31,7 +31,8 @@ const AppTopBar = () => {
         (workspace) =>
             !workspace.onboardingStep || workspace.onboardingStep == 0
     );
-    const isTrialPlan = selectedWorkspace?.currentPlan?.plan?.isDefault;
+    const activePlan = selectedWorkspace?.currentPlan;
+    const isTrialPlan = activePlan?.plan?.isDefault;
 
     // Custom 3x3 Grid Icon Component
     const GridIcon = () => (
@@ -109,27 +110,30 @@ const AppTopBar = () => {
                 Welcome back, {user?.displayName} 👋
             </span>
 
-            {isTrialPlan && (
-                <div className="text-sm text-gray-400 bg-yellow-400/20 rounded-xl py-2 px-3 mx-auto  hidden lg:inline-flex items-center gap-5">
-                    <ProgressIcon className="animate-spin" />
-                    <div>
-                        <div className="text-white font-semibold">
-                            {getRemainingDays(
-                                selectedWorkspace?.currentPlan?.periodEnd || ""
-                            )}{" "}
-                            day(s) left in your free trial
+            <AdminGuard>
+                {isTrialPlan && (
+                    <div className="text-sm text-gray-400 bg-yellow-400/20 rounded-xl py-2 px-3 mx-auto  hidden lg:inline-flex items-center gap-5">
+                        <ProgressIcon className="animate-spin" />
+                        <div>
+                            <div className="text-white font-semibold">
+                                {getRemainingDays(activePlan?.periodEnd || "")}{" "}
+                                day(s) left in your free trial
+                            </div>
+                            <div>
+                                {activePlan?.remainingToken || 0}/
+                                {activePlan?.totalToken} tokens used
+                            </div>
                         </div>
-                        <div>7/10 code reviews used</div>
+                        <Link
+                            className="gap-1 flex items-center bg-yellow-400 text-neutral-900 rounded-md px-2 py-1.5 text-sm font-medium"
+                            href={ROUTE_CONSTANTS.APP_SUBSCRIPTION_PLANS}
+                        >
+                            Upgrade Now
+                            <Rocket className="h-4 w-auto" />
+                        </Link>
                     </div>
-                    <Link
-                        className="gap-1 flex items-center bg-yellow-400 text-neutral-900 rounded-md px-2 py-1.5 text-sm font-medium"
-                        href={ROUTE_CONSTANTS.APP_SUBSCRIPTION_PLANS}
-                    >
-                        Upgrade Now
-                        <Rocket className="h-4 w-auto" />
-                    </Link>
-                </div>
-            )}
+                )}
+            </AdminGuard>
 
             <Dropdown>
                 <Dropdown.Trigger>

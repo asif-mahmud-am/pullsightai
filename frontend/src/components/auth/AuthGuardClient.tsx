@@ -9,10 +9,16 @@ import Image from "next/image";
 
 export default function AuthGuardClient({ children }: { children: ReactNode }) {
     const pathname = usePathname();
-    const { user, hydrated, selectedWorkspace } = useAuthStore((s) => s);
+    const { user, hydrated, selectedWorkspace, myRoleInSelectedWorkspace } =
+        useAuthStore((s) => s);
 
     useEffect(() => {
-        console.log("First effect", user, selectedWorkspace);
+        console.log(
+            "First effect",
+            user,
+            selectedWorkspace,
+            myRoleInSelectedWorkspace
+        );
         if (!hydrated) return; // Wait for hydration
 
         // redirect to login if user is not authenticated

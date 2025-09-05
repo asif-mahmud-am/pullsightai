@@ -32,8 +32,8 @@ const CurrentPlan = () => {
     return (
         <div className="space-y-6">
             {/* Your current plan header */}
-            <div className="flex items-center justify-between gap-6">
-                <div className="">
+            <div className="flex items-center justify-between gap-3">
+                <div className="mr-7">
                     <h2 className="text-xl font-semibold ">
                         Your current plan
                     </h2>

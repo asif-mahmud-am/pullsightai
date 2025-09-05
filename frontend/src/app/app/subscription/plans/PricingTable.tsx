@@ -135,9 +135,14 @@ interface PricingTableProps {
     seats: number;
 }
 
-const PricingTable: FC<PricingTableProps> = ({ isLoading, plans, seats }) => {
+const SinglePlanCard: FC<{
+    plan: Plan;
+    seats: number;
+    isSelected: boolean;
+}> = ({ plan, seats, isSelected }) => {
     const { selectedWorkspace } = useAuthStore();
-    const { mutateAsync } = usePurchasePlanMutation();
+
+    const { mutateAsync, isPending } = usePurchasePlanMutation();
 
     const handleSubscribe = async (plan: Plan) => {
         // Handle subscription logic here
@@ -152,6 +157,94 @@ const PricingTable: FC<PricingTableProps> = ({ isLoading, plans, seats }) => {
             }
         });
     };
+
+    return (
+        <Card
+            key={plan._id}
+            className={`relative pt-18 rounded-4xl ${
+                plan.highlight ? "border-white border-2" : "border-0"
+            }`}
+        >
+            {plan.highlight && (
+                <Badge className="bg-white absolute top-8 left-6">
+                    {plan.highlight}
+                </Badge>
+            )}
+
+            <CardHeader className="pb-4 h-[200px]">
+                <CardTitle className="text-xl">{plan.title}</CardTitle>
+                <p className="text-muted-foreground text-sm mb-8">
+                    {plan.description}
+                </p>
+                <div className="mt-auto flex items-center">
+                    <div className="flex-1">
+                        <span className="text-3xl font-semibold">$</span>
+                        <span className="text-5xl font-bold">
+                            {plan.pricePerDev}
+                        </span>
+                        <span className="text-lg font-semibold text-muted-foreground">
+                            /dev
+                        </span>
+                    </div>
+                    {isSelected && (
+                        <Badge className="bg-neutral-500">Current Plan</Badge>
+                    )}
+                </div>
+            </CardHeader>
+
+            <CardContent className="space-y-6">
+                {/* <div className="text-center p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-center gap-2 text-lg font-semibold">
+                        <Zap className="w-5 h-5" />
+                        {(
+                            plan.tokenLimitPerDev * seats
+                        ).toLocaleString()}{" "}
+                        tokens/month
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        {plan.tokenLimitPerDev.toLocaleString()}{" "}
+                        tokens per user
+                    </p>
+                </div> */}
+
+                <Button
+                    className={`w-full font-semibold h-[56px]`}
+                    size="lg"
+                    onClick={() => handleSubscribe(plan)}
+                    disabled={
+                        isSelected &&
+                        selectedWorkspace?.currentPlan?.numOfSeat == seats
+                    }
+                    isLoading={isPending}
+                >
+                    Subscribe
+                </Button>
+
+                <div>
+                    <ul className="space-y-2 divide-y">
+                        {plan.features.map((feature, index) => (
+                            <li
+                                key={index}
+                                className="flex items-start gap-2 text-sm py-3"
+                            >
+                                <CheckIcon className="mt-3" />
+                                <div>
+                                    <div>{feature?.title}</div>
+                                    <div className="text-neutral-500">
+                                        {feature?.description}
+                                    </div>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
+
+const PricingTable: FC<PricingTableProps> = ({ isLoading, plans, seats }) => {
+    const { selectedWorkspace } = useAuthStore();
 
     return (
         <>
@@ -169,101 +262,12 @@ const PricingTable: FC<PricingTableProps> = ({ isLoading, plans, seats }) => {
                             selectedWorkspace?.currentPlan?.plan?._id ===
                             plan._id;
                         return (
-                            <Card
+                            <SinglePlanCard
                                 key={plan._id}
-                                className={`relative pt-18 rounded-4xl ${
-                                    plan.highlight
-                                        ? "border-white border-2"
-                                        : "border-0"
-                                }`}
-                            >
-                                {plan.highlight && (
-                                    <Badge className="bg-white absolute top-8 left-6">
-                                        {plan.highlight}
-                                    </Badge>
-                                )}
-
-                                <CardHeader className="pb-4 h-[200px]">
-                                    <CardTitle className="text-xl">
-                                        {plan.title}
-                                    </CardTitle>
-                                    <p className="text-muted-foreground text-sm mb-8">
-                                        {plan.description}
-                                    </p>
-                                    <div className="mt-auto flex">
-                                        <div className="flex-1">
-                                            <span className="text-3xl font-semibold">
-                                                $
-                                            </span>
-                                            <span className="text-5xl font-bold">
-                                                {plan.pricePerDev}
-                                            </span>
-                                            <span className="text-lg font-semibold text-muted-foreground">
-                                                /dev
-                                            </span>
-                                        </div>
-                                        {isSelected && (
-                                            <Badge className="bg-white absolute top-8 left-6">
-                                                Current Plan
-                                            </Badge>
-                                        )}
-                                    </div>
-                                </CardHeader>
-
-                                <CardContent className="space-y-6">
-                                    {/* <div className="text-center p-4 bg-muted/50 rounded-lg">
-                                    <div className="flex items-center justify-center gap-2 text-lg font-semibold">
-                                        <Zap className="w-5 h-5" />
-                                        {(
-                                            plan.tokenLimitPerDev * seats
-                                        ).toLocaleString()}{" "}
-                                        tokens/month
-                                    </div>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                        {plan.tokenLimitPerDev.toLocaleString()}{" "}
-                                        tokens per user
-                                    </p>
-                                </div> */}
-
-                                    <Button
-                                        className={`w-full font-semibold h-[56px]`}
-                                        size="lg"
-                                        onClick={() => handleSubscribe(plan)}
-                                        disabled={
-                                            isSelected &&
-                                            selectedWorkspace?.currentPlan
-                                                ?.numOfSeat == seats
-                                        }
-                                    >
-                                        Subscribe
-                                    </Button>
-
-                                    <div>
-                                        <ul className="space-y-2 divide-y">
-                                            {plan.features.map(
-                                                (feature, index) => (
-                                                    <li
-                                                        key={index}
-                                                        className="flex items-start gap-2 text-sm py-3"
-                                                    >
-                                                        <CheckIcon className="mt-3" />
-                                                        <div>
-                                                            <div>
-                                                                {feature?.title}
-                                                            </div>
-                                                            <div className="text-neutral-500">
-                                                                {
-                                                                    feature?.description
-                                                                }
-                                                            </div>
-                                                        </div>
-                                                    </li>
-                                                )
-                                            )}
-                                        </ul>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                                plan={plan}
+                                seats={seats}
+                                isSelected={isSelected}
+                            />
                         );
                     })}
                     <Card className={`relative pt-18 rounded-4xl border-0`}>

@@ -80,7 +80,7 @@ const MoreToken = () => {
                 onOpenChange={setDialogOpen}
                 title="Purchase Token Pack"
                 description="Select a token pack to purchase additional tokens for your workspace."
-                size="xl"
+                size="lg"
                 actions={[
                     {
                         label: "Cancel",
@@ -101,7 +101,7 @@ const MoreToken = () => {
                         <RadioGroup
                             value={selectedPackId}
                             onValueChange={setSelectedPackId}
-                            className="space-y-4 grid grid-cols-3"
+                            className="space-y-4 grid grid-cols-2"
                         >
                             {packs?.data
                                 ?.filter(

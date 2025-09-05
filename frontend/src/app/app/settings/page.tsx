@@ -11,6 +11,7 @@ import { Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
 import showToast from "@/lib/toast";
+import AdminGuard from "@/components/auth/AdminGuard";
 
 const claudeModels = [
     { value: "claude-opus-4-1-20250805", label: "Claude 4.1 Opus - 20250805" },
@@ -104,108 +105,110 @@ const SettingsPage = () => {
     }, [selectedWorkspace]);
 
     return (
-        <div className="max-w-4xl mx-auto">
-            {/* Header */}
-            <div className="mb-8">
-                <h1 className="text-2xl font-semibold text-neutral-900 dark:text-white">
-                    Settings
-                </h1>
-                <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-                    Manage your account settings and API configuration.
-                </p>
-            </div>
-
-            {/* Settings Card */}
-            <ContentCard className="">
-                {/* Section Header */}
-                <ContentCard.Header className="px-6 py-6 flex-col items-start border-b">
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                        Workspace Configuration
-                    </h3>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-neutral-400">
-                        Configure your Claude API settings and hourly rate for
-                        personalized usage.
+        <AdminGuard shouldRedirectTo403>
+            <div className="max-w-4xl mx-auto">
+                {/* Header */}
+                <div className="mb-8">
+                    <h1 className="text-2xl font-semibold text-neutral-900 dark:text-white">
+                        Settings
+                    </h1>
+                    <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+                        Manage your account settings and API configuration.
                     </p>
-                </ContentCard.Header>
+                </div>
 
-                {/* Form Content */}
-                <ContentCard.Body className="px-6 py-6">
-                    <form onSubmit={handleSubmit} className="space-y-8">
-                        {/* API Key Toggle Section */}
-                        <div className="flex items-start justify-between">
-                            <div className="flex-1 mr-8">
-                                <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                                    Use your own API key
-                                </h4>
-                                <p className="mt-1 text-sm text-gray-500 dark:text-neutral-400">
-                                    Enable this to use your own Claude API key.
-                                    This gives you more control and higher rate
-                                    limits.
-                                </p>
+                {/* Settings Card */}
+                <ContentCard className="">
+                    {/* Section Header */}
+                    <ContentCard.Header className="px-6 py-6 flex-col items-start border-b">
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                            Workspace Configuration
+                        </h3>
+                        <p className="mt-1 text-sm text-gray-500 dark:text-neutral-400">
+                            Configure your Claude API settings and hourly rate
+                            for personalized usage.
+                        </p>
+                    </ContentCard.Header>
+
+                    {/* Form Content */}
+                    <ContentCard.Body className="px-6 py-6">
+                        <form onSubmit={handleSubmit} className="space-y-8">
+                            {/* API Key Toggle Section */}
+                            <div className="flex items-start justify-between">
+                                <div className="flex-1 mr-8">
+                                    <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                                        Use your own API key
+                                    </h4>
+                                    <p className="mt-1 text-sm text-gray-500 dark:text-neutral-400">
+                                        Enable this to use your own Claude API
+                                        key. This gives you more control and
+                                        higher rate limits.
+                                    </p>
+                                </div>
+                                <Switch
+                                    checked={useOwnApiKey}
+                                    onCheckedChange={handleSwitchChange}
+                                />
                             </div>
-                            <Switch
-                                checked={useOwnApiKey}
-                                onCheckedChange={handleSwitchChange}
-                            />
-                        </div>
 
-                        {/* Conditional API Configuration */}
-                        {useOwnApiKey && (
-                            <div className="space-y-6 pt-6 border-t border-gray-200 dark:border-gray-800">
+                            {/* Conditional API Configuration */}
+                            {useOwnApiKey && (
+                                <div className="space-y-6 pt-6 border-t border-gray-200 dark:border-gray-800">
+                                    <Input
+                                        label="API Key"
+                                        type="password"
+                                        value={apiKey}
+                                        onValueChange={setApiKey}
+                                        placeholder="sk-ant-api03-..."
+                                        description="Your Claude API key from Anthropic Console"
+                                        // error={errors.apiKey}
+                                        required
+                                        className=""
+                                    />
+                                    <Select
+                                        label="Claude Model"
+                                        options={claudeModels}
+                                        value={selectedModel}
+                                        onChange={setSelectedModel}
+                                        // error={errors.model}
+                                        required
+                                    />
+                                </div>
+                            )}
+
+                            {/* Hourly Rate Configuration */}
+                            <div className="pt-6 border-t border-gray-200 dark:border-gray-800">
                                 <Input
-                                    label="API Key"
-                                    type="password"
-                                    value={apiKey}
-                                    onValueChange={setApiKey}
-                                    placeholder="sk-ant-api03-..."
-                                    description="Your Claude API key from Anthropic Console"
-                                    // error={errors.apiKey}
+                                    label="Hourly Rate"
+                                    type="number"
+                                    value={hourlyRate}
+                                    onValueChange={setHourlyRate}
+                                    placeholder="50"
+                                    description="Your hourly rate used to calculate money saved from automated PR reviews"
+                                    // error={errors.hourlyRate}
                                     required
+                                    min="0"
+                                    step="0.01"
                                     className=""
                                 />
-                                <Select
-                                    label="Claude Model"
-                                    options={claudeModels}
-                                    value={selectedModel}
-                                    onChange={setSelectedModel}
-                                    // error={errors.model}
-                                    required
-                                />
                             </div>
-                        )}
 
-                        {/* Hourly Rate Configuration */}
-                        <div className="pt-6 border-t border-gray-200 dark:border-gray-800">
-                            <Input
-                                label="Hourly Rate"
-                                type="number"
-                                value={hourlyRate}
-                                onValueChange={setHourlyRate}
-                                placeholder="50"
-                                description="Your hourly rate used to calculate money saved from automated PR reviews"
-                                // error={errors.hourlyRate}
-                                required
-                                min="0"
-                                step="0.01"
-                                className=""
-                            />
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex justify-end pt-6 border-t gap-x-3 border-gray-200 dark:border-gray-800">
-                            <Button
-                                type="submit"
-                                disabled={isPending}
-                                className="min-w-[120px]"
-                                size={"lg"}
-                            >
-                                {isPending ? "Saving..." : "Save changes"}
-                            </Button>
-                        </div>
-                    </form>
-                </ContentCard.Body>
-            </ContentCard>
-        </div>
+                            {/* Action Buttons */}
+                            <div className="flex justify-end pt-6 border-t gap-x-3 border-gray-200 dark:border-gray-800">
+                                <Button
+                                    type="submit"
+                                    disabled={isPending}
+                                    className="min-w-[120px]"
+                                    size={"lg"}
+                                >
+                                    {isPending ? "Saving..." : "Save changes"}
+                                </Button>
+                            </div>
+                        </form>
+                    </ContentCard.Body>
+                </ContentCard>
+            </div>
+        </AdminGuard>
     );
 };
 

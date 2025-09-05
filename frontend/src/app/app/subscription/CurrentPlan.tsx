@@ -46,12 +46,12 @@ const CurrentPlan = () => {
                         Available Tokens
                     </p>
                     <p className="text-xl font-bold">
-                        {(selectedWorkspace?.currentPlan?.remainingToken || 0) +
+                        {(activePlan?.remainingToken || 0) +
                             (selectedWorkspace?.currentPack?.remainingToken ||
                                 0)}{" "}
                         /{" "}
                         <span className="text-muted-foreground text-sm">
-                            {(selectedWorkspace?.currentPlan?.totalToken || 0) +
+                            {(activePlan?.totalToken || 0) +
                                 (selectedWorkspace?.currentPack?.totalToken ||
                                     0)}
                         </span>
@@ -79,8 +79,7 @@ const CurrentPlan = () => {
                             <p className="text-sm text-gray-400 mb-1">Plan</p>
                             <div className="flex justify-between">
                                 <p className="text-2xl font-bold ">
-                                    {selectedWorkspace?.currentPlan?.plan
-                                        ?.title || "Free"}
+                                    {activePlan?.plan?.title || "Free"}
                                 </p>
                                 <div className="flex items-baseline mt-1">
                                     {isFreeOrTrialPlan ? (
@@ -91,8 +90,8 @@ const CurrentPlan = () => {
                                         <>
                                             <span className="text-xl font-semibold ">
                                                 $
-                                                {selectedWorkspace?.currentPlan
-                                                    ?.plan?.pricePerDev || "0"}
+                                                {activePlan?.plan
+                                                    ?.pricePerDev || "0"}
                                             </span>
                                             <span className="text-sm text-gray-500 ml-1">
                                                 /dev
@@ -110,8 +109,7 @@ const CurrentPlan = () => {
                                     ? isTrialPlan
                                         ? "Trial Period"
                                         : "Free Forever"
-                                    : selectedWorkspace?.currentPlan
-                                          ?.billingCycle}
+                                    : activePlan?.billingCycle}
                             </p>
                         </div>
 
@@ -126,11 +124,8 @@ const CurrentPlan = () => {
                             <p className="text-2xl font-bold ">
                                 {isFreeOrTrialPlan && !isTrialPlan
                                     ? "No expiration"
-                                    : selectedWorkspace?.currentPlan?.periodEnd
-                                    ? formatDate(
-                                          selectedWorkspace?.currentPlan
-                                              ?.periodEnd
-                                      )
+                                    : activePlan?.periodEnd
+                                    ? formatDate(activePlan?.periodEnd)
                                     : "-"}
                             </p>
                         </div>
@@ -142,8 +137,7 @@ const CurrentPlan = () => {
                                     </p>
                                     <div className="flex justify-between">
                                         <p className="text-2xl font-bold ">
-                                            {selectedWorkspace?.currentPlan
-                                                ?.numOfSeat || "-"}
+                                            {activePlan?.numOfSeat || "-"}
                                         </p>
                                     </div>
                                 </div>
@@ -154,8 +148,11 @@ const CurrentPlan = () => {
                                     <div className="flex justify-between">
                                         <p className="text-2xl font-bold ">
                                             $
-                                            {selectedWorkspace?.currentPlan
-                                                ?.amount || "-"}
+                                            {activePlan?.numOfSeat
+                                                ? activePlan?.numOfSeat *
+                                                  (activePlan?.plan
+                                                      ?.pricePerDev ?? 0)
+                                                : "-"}
                                         </p>
                                     </div>
                                 </div>
@@ -165,8 +162,8 @@ const CurrentPlan = () => {
                                     </p>
                                     <div className="flex justify-between">
                                         <p className="text-2xl font-bold ">
-                                            {selectedWorkspace?.currentPlan
-                                                ?.plan?.tokenLimitPerDev || "-"}
+                                            {activePlan?.plan
+                                                ?.tokenLimitPerDev || "-"}
                                         </p>
                                     </div>
                                 </div>
@@ -177,51 +174,53 @@ const CurrentPlan = () => {
             </Card>
 
             {/* Include section */}
-            <div className="space-y-4">
-                <div>
-                    <h3 className="text-lg font-semibold ">Include</h3>
-                    <p className="text-sm text-gray-400 mt-1">
-                        See everything included in your plan.
-                    </p>
-                </div>
+            {(activePlan?.plan?.features?.length || 0) > 0 && (
+                <div className="space-y-4">
+                    <div>
+                        <h3 className="text-lg font-semibold ">Include</h3>
+                        <p className="text-sm text-gray-400 mt-1">
+                            See everything included in your plan.
+                        </p>
+                    </div>
 
-                <Card className="border max-w-[400px]">
-                    <CardContent className="p-6">
-                        <h4 className="text-sm font-medium text-gray-400 mb-4">
-                            Features
-                        </h4>
-                        <ul className="space-y-2 divide-y">
-                            {activePlan?.plan?.features?.map(
-                                (feature, index) => (
-                                    <li
-                                        key={index}
-                                        className="flex items-start gap-2 text-sm py-3"
-                                    >
-                                        <CheckIcon className="mt-3" />
-                                        <div>
-                                            <div>{feature?.title}</div>
-                                            <div className="text-neutral-500">
-                                                {feature?.description}
+                    <Card className="border max-w-[400px]">
+                        <CardContent className="p-6">
+                            <h4 className="text-sm font-medium text-gray-400 mb-4">
+                                Features
+                            </h4>
+                            <ul className="space-y-2 divide-y">
+                                {activePlan?.plan?.features?.map(
+                                    (feature, index) => (
+                                        <li
+                                            key={index}
+                                            className="flex items-start gap-2 text-sm py-3"
+                                        >
+                                            <CheckIcon className="mt-3" />
+                                            <div>
+                                                <div>{feature?.title}</div>
+                                                <div className="text-neutral-500">
+                                                    {feature?.description}
+                                                </div>
                                             </div>
-                                        </div>
-                                    </li>
-                                )
-                            )}
-                        </ul>
-                    </CardContent>
-                </Card>
-            </div>
+                                        </li>
+                                    )
+                                )}
+                            </ul>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
             {/* Alerts for trial/subscription ending */}
             {isTrialPlan &&
-                getRemainingDays(activePlan?.periodEnd || "") <= 7 && (
-                    <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                getRemainingDays(activePlan?.periodEnd || "") <= 15 && (
+                    <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
                         <div className="flex items-start gap-2">
-                            <AlertCircle className="w-5 h-5 text-blue-500 mt-0.5" />
+                            <AlertCircle className="w-5 h-5 text-primary mt-0.5" />
                             <div>
-                                <p className="font-medium text-blue-600">
+                                <p className="font-medium text-primary">
                                     Trial Ending Soon
                                 </p>
-                                <p className="text-sm text-blue-600/80">
+                                <p className="text-sm text-primary/80">
                                     Your trial period ends on{" "}
                                     {formatDate(activePlan?.periodEnd || "")}.{" "}
                                     <Link

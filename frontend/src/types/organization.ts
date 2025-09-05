@@ -36,10 +36,15 @@ export interface Organization {
         remainingToken: number;
         numOfSeat: number;
         billingCycle: string;
-        isActive: boolean;
+        status: string;
         paymentStatus: string;
         periodStart: string;
         periodEnd: string;
+        title: string;
+        pricePerDev: number;
+        tokenLimitPerDev: number;
+        isFree: boolean;
+        isDefault: boolean;
         createdAt: string;
         updatedAt: string;
         subscriptionId: string;

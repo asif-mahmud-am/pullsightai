@@ -46,7 +46,12 @@ const MoreToken = () => {
                     role="button"
                     onClick={() => setDialogOpen(true)}
                 >
-                    <ShieldCheck className="h-12 w-auto stroke-primary" />
+                    <Image
+                        src="/images/icons/shield.svg"
+                        alt="Shield Check"
+                        width={48}
+                        height={48}
+                    />
                     <div>
                         <h3 className="text-lg font-semibold">
                             Need more tokens?

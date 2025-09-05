@@ -16,6 +16,9 @@ import { Plan } from "@/types/plan";
 import { CheckIcon } from "@/components/reusable/icons";
 import PricingTable from "./PricingTable";
 import MoreToken from "./MoreToken";
+import Image from "next/image";
+import FAQs from "./Faqs";
+import Testimonial from "./Testimonial";
 
 const PricingPlansPage = () => {
     const [billingInterval, setBillingInterval] = useState<
@@ -147,7 +150,7 @@ const PricingPlansPage = () => {
                 <MoreToken />
 
                 {/* Trust & Social Proof Section */}
-                <div className="mx-auto max-w-8xl">
+                <div className="mx-auto max-w-8xl mb-28">
                     <div className="mb-8">
                         <Badge className="mb-4 bg-gradient-to-r from-blue-400 to-green-400 text-neutral-800 border-0 rounded-2xl h-7 px-4">
                             Trusted by
@@ -161,10 +164,16 @@ const PricingPlansPage = () => {
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-9 gap-6 mb-8">
-                        <div className="p-6 bg-card rounded-xl col-span-5">
-                            <Check className="w-6 h-6 text-white mb-4" />
-                            <h3 className="font-semibold mb-2">
+                    <div className="grid grid-cols-9 gap-6 mb-20">
+                        <div className="p-8 bg-card rounded-xl col-span-5">
+                            <Image
+                                className="mb-10"
+                                src="/images/icons/lock.svg"
+                                alt="lock icon"
+                                width={41}
+                                height={48}
+                            />
+                            <h3 className="font-semibold mb-2 text-xl">
                                 SOC2 Type II Certified
                             </h3>
                             <p className="text-sm text-muted-foreground">
@@ -172,11 +181,15 @@ const PricingPlansPage = () => {
                             </p>
                         </div>
 
-                        <div className="p-6 bg-card rounded-xl col-span-4">
-                            <div className="w-12 h-12 bg-green-500/10 rounded-lg flex items-center mx-auto mb-4">
-                                <Zap className="w-6 h-6 text-green-500" />
-                            </div>
-                            <h3 className="font-semibold mb-2">
+                        <div className="p-8 bg-card rounded-xl col-span-4">
+                            <Image
+                                className="mb-10"
+                                src="/images/icons/thumbs-up.svg"
+                                alt="thumbs up icon"
+                                width={46}
+                                height={48}
+                            />
+                            <h3 className="font-semibold mb-2 text-xl">
                                 1M+ PRs reviewed
                             </h3>
                             <p className="text-sm text-muted-foreground">
@@ -184,11 +197,15 @@ const PricingPlansPage = () => {
                             </p>
                         </div>
 
-                        <div className="p-6 bg-card rounded-xl col-span-4">
-                            <div className="w-12 h-12 bg-purple-500/10 rounded-lg flex items-center mx-auto mb-4">
-                                <Users className="w-6 h-6 text-purple-500" />
-                            </div>
-                            <h3 className="font-semibold mb-2">
+                        <div className="p-8 bg-card rounded-xl col-span-4">
+                            <Image
+                                className="mb-10"
+                                src="/images/icons/clock.svg"
+                                alt="clock icon"
+                                width={41}
+                                height={48}
+                            />
+                            <h3 className="font-semibold mb-2 text-xl">
                                 50%+ reduction in review time
                             </h3>
                             <p className="text-sm text-muted-foreground">
@@ -196,11 +213,15 @@ const PricingPlansPage = () => {
                             </p>
                         </div>
 
-                        <div className="p-6 bg-card rounded-xl col-span-5">
-                            <div className="w-12 h-12 bg-orange-500/10 rounded-lg flex items-center mx-auto mb-4">
-                                <ArrowLeft className="w-6 h-6 text-orange-500" />
-                            </div>
-                            <h3 className="font-semibold mb-2">
+                        <div className="p-8 bg-card rounded-xl col-span-5">
+                            <Image
+                                className="mb-10"
+                                src="/images/icons/bug.svg"
+                                alt="bug icon"
+                                width={46}
+                                height={48}
+                            />
+                            <h3 className="font-semibold mb-2 text-xl">
                                 60% fewer bugs reaching prod
                             </h3>
                             <p className="text-sm text-muted-foreground">
@@ -210,101 +231,10 @@ const PricingPlansPage = () => {
                     </div>
 
                     {/* Testimonial */}
-                    <div className="bg-gradient-to-br from-green-500 to-teal-500 rounded-2xl p-8 text-white relative overflow-hidden">
-                        <div className="relative z-10">
-                            <div className="flex items-center justify-center mb-6">
-                                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-                                    <Users className="w-8 h-8" />
-                                </div>
-                            </div>
-                            <blockquote className="text-xl font-medium text-center mb-6 max-w-3xl mx-auto">
-                                &ldquo;PullSight gave us the speed and
-                                confidence we needed—without ever risking our
-                                IP. Our 150-person engineering team now ships
-                                40% faster.&rdquo;
-                            </blockquote>
-                            <div className="text-center">
-                                <p className="font-medium">
-                                    Sophia Kim, Head of Engineering
-                                </p>
-                            </div>
-                        </div>
-                        <div className="absolute inset-0 bg-gradient-to-r from-green-500/50 to-teal-500/50"></div>
-                    </div>
+                    <Testimonial />
                 </div>
 
-                {/* Feature Highlights */}
-                <div className="max-w-4xl mx-auto">
-                    <div className="text-center mb-8">
-                        <Badge className="mb-4 bg-blue-500/10 text-blue-600 border-blue-500/20">
-                            No Noise. No Surprises. Just Clarity.
-                        </Badge>
-                        <h2 className="text-2xl font-bold mb-2">
-                            From privacy to accuracy, here&apos;s how PullSight
-                            addresses your key concerns
-                        </h2>
-                    </div>
-
-                    <div className="space-y-4">
-                        <details className="group border rounded-xl p-6 bg-card">
-                            <summary className="flex items-center justify-between cursor-pointer font-semibold">
-                                <span>Worried about spammy AI feedback?</span>
-                                <span className="group-open:rotate-45 transition-transform">
-                                    +
-                                </span>
-                            </summary>
-                            <div className="mt-4 text-muted-foreground">
-                                Our AI is trained specifically for code review,
-                                not generic text generation. We focus on
-                                actionable insights, not verbose explanations.
-                            </div>
-                        </details>
-
-                        <details className="group border rounded-xl p-6 bg-card">
-                            <summary className="flex items-center justify-between cursor-pointer font-semibold">
-                                <span>Concerned about code privacy?</span>
-                                <span className="group-open:rotate-45 transition-transform">
-                                    +
-                                </span>
-                            </summary>
-                            <div className="mt-4 text-muted-foreground">
-                                Zero code retention policy and comprehensive
-                                data protection. Your data is encrypted in
-                                transit and at rest. SOC2 type II certified to
-                                keep data extremely secure.
-                            </div>
-                        </details>
-
-                        <details className="group border rounded-xl p-6 bg-card">
-                            <summary className="flex items-center justify-between cursor-pointer font-semibold">
-                                <span>Think open-source means complexity?</span>
-                                <span className="group-open:rotate-45 transition-transform">
-                                    +
-                                </span>
-                            </summary>
-                            <div className="mt-4 text-muted-foreground">
-                                We believe in transparency and community-driven
-                                development. Our open-source approach means
-                                faster fixes and better features.
-                            </div>
-                        </details>
-
-                        <details className="group border rounded-xl p-6 bg-card">
-                            <summary className="flex items-center justify-between cursor-pointer font-semibold">
-                                <span>Worried automation misses context?</span>
-                                <span className="group-open:rotate-45 transition-transform">
-                                    +
-                                </span>
-                            </summary>
-                            <div className="mt-4 text-muted-foreground">
-                                Our AI understands your codebase context, coding
-                                standards, and team preferences. It learns from
-                                your patterns to provide relevant, contextual
-                                feedback.
-                            </div>
-                        </details>
-                    </div>
-                </div>
+                <FAQs />
             </div>
         </div>
     );

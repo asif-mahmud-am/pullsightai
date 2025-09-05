@@ -142,6 +142,16 @@ def prepare_chunk_for_summary(chunk: Dict, pr_metadata: Dict) -> Dict:
         changed_files.append(file_info["prFileName"])
         pr_diff += f"\n\n--- File: {file_info['prFileName']} ---\n{file_info['prFileDiff']}"
     
+    # Create severity list based on minSeverity (same logic as review)
+    severity_list = ["Info", "Minor", "Major", "Critical", "Blocker"]
+    min_severity = pr_metadata.get("minSeverity", "Major")
+    try:
+        min_severity_index = severity_list.index(min_severity)
+        filtered_severity_list = severity_list[min_severity_index:]
+    except ValueError:
+        # If minSeverity is not found, default to Major
+        filtered_severity_list = ["Major", "Critical", "Blocker"]
+    
     return {
         "prTitle": pr_metadata.get("prTitle", ""),
         "prBody": pr_metadata.get("prBody", ""),
@@ -152,6 +162,7 @@ def prepare_chunk_for_summary(chunk: Dict, pr_metadata: Dict) -> Dict:
         "changed_files": ", ".join(changed_files),
         "repo_structure_summary": pr_metadata.get("repo_structure_summary", ""),
         "pr_diff": pr_diff,
+        "severity_list": str(filtered_severity_list),
         "chunk_info": f"Chunk {chunk['chunk_index'] + 1} of multiple chunks"
     }
 

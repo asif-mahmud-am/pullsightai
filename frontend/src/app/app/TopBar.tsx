@@ -114,7 +114,7 @@ const AppTopBar = () => {
             <AdminGuard>
                 {isTrialPlan && (
                     <div className="text-sm text-gray-400 bg-yellow-400/20 rounded-xl py-2 px-3 mx-auto  hidden lg:inline-flex items-center gap-5">
-                        <ProgressIcon className="animate-spin" />
+                        <ProgressIcon className={"animate-spin"} />
                         <div>
                             <div className="text-white font-semibold">
                                 {getRemainingDays(activePlan?.periodEnd || "")}{" "}

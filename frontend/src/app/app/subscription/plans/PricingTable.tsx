@@ -5,6 +5,7 @@ import Button from "@/components/reusable/Button";
 import { ConfirmDialog } from "@/components/reusable/Dialog";
 import { CheckIcon } from "@/components/reusable/icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getRemainingDays } from "@/lib/dayjs";
 import showToast from "@/lib/toast";
 import { useAuthStore } from "@/store/authStore";
 import { Plan } from "@/types/plan";
@@ -241,6 +242,9 @@ const SinglePlanCard: FC<{
                         size="lg"
                         onClick={() => handleSubscribe(plan)}
                         disabled={
+                            getRemainingDays(
+                                selectedWorkspace?.currentPlan?.periodEnd || ""
+                            ) < 0 &&
                             isSelected &&
                             selectedWorkspace?.currentPlan?.numOfSeat == seats
                         }

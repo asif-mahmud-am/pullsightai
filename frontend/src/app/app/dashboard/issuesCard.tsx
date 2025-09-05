@@ -59,7 +59,7 @@ const columns: ColumnDef<Issue>[] = [
     },
     {
         accessorKey: "prUser",
-        header: "Owner",
+        header: "Author",
         cell: ({ row }) => (
             <Avatar src={""} name={row.original?.prUser} className="" />
         ),

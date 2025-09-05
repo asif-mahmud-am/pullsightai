@@ -31,7 +31,8 @@ export class AuthService {
         const tokenExpiresAt = new Date(Date.now() + expiry * 1000)
         const invitation = await this.dataService.workspaceMembers.findOne({
             provider: provider,
-            providerId: profile.id
+            providerId: profile.id,
+            joinedAt: null
         })
         console.log('invitation-------->', invitation)
         if (!user) {

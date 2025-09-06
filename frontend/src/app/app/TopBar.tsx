@@ -15,10 +15,11 @@ import { useAuthStore } from "@/store/authStore";
 import { ChevronDown, LogOutIcon, Plus, Rocket, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { redirect, usePathname } from "next/navigation";
 import { Fragment, use } from "react";
 
 const AppTopBar = () => {
+    const pathName = usePathname();
     const { user, workspaces, selectedWorkspace } = useAuthStore((s) => s);
     const { toggleSidebar, isSidebarOpen } = useAppStore();
 
@@ -71,35 +72,37 @@ const AppTopBar = () => {
 
     return (
         <div className="xl:h-[88px] h-[60px] flex items-center border-b gap-x-4 xl:px-5 pr-3 pl-1 fixed top-0 left-0 right-0 z-40 bg-background">
-            <Button
-                variant="ghost"
-                className="xl:hidden relative px-3"
-                onClick={toggleSidebar}
-            >
-                <div className="relative w-4 h-4">
-                    {/* Grid Icon */}
-                    <div
-                        className={`absolute inset-0 transition-all duration-300 ${
-                            isSidebarOpen
-                                ? "opacity-0 rotate-90 scale-75"
-                                : "opacity-100 rotate-0 scale-100"
-                        }`}
-                    >
-                        <GridIcon />
-                    </div>
+            {pathName !== ROUTE_CONSTANTS.APP_SUBSCRIPTION_PLANS && (
+                <Button
+                    variant="ghost"
+                    className="xl:hidden relative px-3"
+                    onClick={toggleSidebar}
+                >
+                    <div className="relative w-4 h-4">
+                        {/* Grid Icon */}
+                        <div
+                            className={`absolute inset-0 transition-all duration-300 ${
+                                isSidebarOpen
+                                    ? "opacity-0 rotate-90 scale-75"
+                                    : "opacity-100 rotate-0 scale-100"
+                            }`}
+                        >
+                            <GridIcon />
+                        </div>
 
-                    {/* Cross Icon */}
-                    <div
-                        className={`absolute -left-0.5 -top-0.5 transition-all duration-300 ${
-                            isSidebarOpen
-                                ? "opacity-100 rotate-0 scale-100"
-                                : "opacity-0 rotate-90 scale-75"
-                        }`}
-                    >
-                        <X className="!h-5 !w-5" />
+                        {/* Cross Icon */}
+                        <div
+                            className={`absolute -left-0.5 -top-0.5 transition-all duration-300 ${
+                                isSidebarOpen
+                                    ? "opacity-100 rotate-0 scale-100"
+                                    : "opacity-0 rotate-90 scale-75"
+                            }`}
+                        >
+                            <X className="!h-5 !w-5" />
+                        </div>
                     </div>
-                </div>
-            </Button>
+                </Button>
+            )}
             <Image
                 src="/images/logo-icon.svg"
                 alt="pull sight logo"

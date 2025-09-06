@@ -9,7 +9,7 @@ import {
 const FAQs = () => {
     return (
         <div className="max-w-8xl mx-auto grid grid-cols-12 mb-20">
-            <div className="col-span-4 mb-8">
+            <div className="col-span-12 xl:col-span-4 mb-8">
                 <Badge className="mb-4 bg-gradient-to-r from-blue-300 to-purple-300 text-neutral-800 border-0 rounded-2xl h-7 px-4">
                     FAQ
                 </Badge>
@@ -22,7 +22,7 @@ const FAQs = () => {
                 </p>
             </div>
 
-            <div className="col-span-8 col-start-7">
+            <div className="col-span-12 xl:col-span-8 xl:col-start-7">
                 <Accordion
                     type="single"
                     collapsible

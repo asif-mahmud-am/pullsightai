@@ -14,6 +14,7 @@ import { useState } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useUpgradePlanDialog } from "@/hooks/useUpgradePlanDialog";
 import UpgradePlanDialog from "@/components/reusable/UpgradePlanDialog";
+import { numToHip } from "@/lib/utils";
 
 const MoreToken = () => {
     const { selectedWorkspace } = useAuthStore();
@@ -59,7 +60,7 @@ const MoreToken = () => {
     return (
         <>
             <UpgradePlanDialog ref={dialogRef} />
-            <div className="max-w-8xl mx-auto mb-20 flex justify-between items-center gap-6">
+            <div className="max-w-8xl mx-auto mb-20 flex flex-col lg:flex-row justify-between items-center gap-6">
                 <button
                     className="bg-card px-6 py-7 rounded-3xl flex text-left gap-5 items-center max-w-[450px] hover:bg-card/80 transition-colors cursor-pointer"
                     role="button"
@@ -120,7 +121,7 @@ const MoreToken = () => {
                         <RadioGroup
                             value={selectedPackId}
                             onValueChange={setSelectedPackId}
-                            className="space-y-4 grid grid-cols-2"
+                            className="space-y-4 grid grid-cols-1 xl:grid-cols-2"
                         >
                             {packs?.data
                                 ?.filter(
@@ -168,7 +169,9 @@ const MoreToken = () => {
                                                             <div className="flex items-center justify-between gap-6 mt-4">
                                                                 <div className="">
                                                                     <p className="text-2xl font-bold ">
-                                                                        {pack.token.toLocaleString()}
+                                                                        {numToHip(
+                                                                            pack.token
+                                                                        )}
                                                                     </p>
                                                                     <p className="text-xs text-muted-foreground">
                                                                         Tokens

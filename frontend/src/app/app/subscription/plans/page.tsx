@@ -19,12 +19,21 @@ import MoreToken from "./MoreToken";
 import Image from "next/image";
 import FAQs from "./Faqs";
 import Testimonial from "./Testimonial";
+import { useAuthStore } from "@/store/authStore";
+import Alert from "@/components/reusable/Alert";
 
 const PricingPlansPage = () => {
+    const { selectedWorkspace } = useAuthStore();
+    let noOfActiveMembers = selectedWorkspace?.noOfActiveMembers || 1;
+    noOfActiveMembers =
+        typeof noOfActiveMembers === "number"
+            ? noOfActiveMembers
+            : parseInt(noOfActiveMembers);
+
     const [billingInterval, setBillingInterval] = useState<
         "monthly" | "yearly"
     >("monthly");
-    const [seats, setSeats] = useState<number>(5);
+    const [seats, setSeats] = useState<number>(noOfActiveMembers);
 
     const { data, isFetching } = useGetSubscriptionPlansQuery();
 
@@ -71,7 +80,7 @@ const PricingPlansPage = () => {
             <div className="container mx-auto">
                 <Link
                     href={ROUTE_CONSTANTS.APP_SUBSCRIPTION}
-                    className="absolute right-0 top-0 bg-white/10 w-12 h-12 inline-flex items-center justify-center rounded-full"
+                    className="fixed right-5 top-26 bg-white/10 w-12 h-12 inline-flex items-center justify-center rounded-full"
                 >
                     <X />
                 </Link>
@@ -89,21 +98,21 @@ const PricingPlansPage = () => {
                 <div className="grid grid-cols-12 max-w-8xl mx-auto items-center gap-6 my-12">
                     {/* Seats Selector */}
                     <div className="col-span-4 col-start-5">
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-center">
-                                <Badge
-                                    variant="outline"
-                                    className="text-lg font-semibold"
-                                >
+                        <div className="space-y-4 flex flex-col">
+                            <div className="mx-auto inline-flex items-baseline gap-2 justify-center bg-card rounded-xl p-3">
+                                <span className="text-3xl font-semibold">
                                     {seats}
-                                </Badge>
-                                <label className="text-sm font-medium flex items-center gap-2">
+                                </span>
+                                <label className="text-md font-medium flex items-center gap-2">
                                     Seats Total
                                 </label>
                             </div>
                             <Slider
                                 value={[seats]}
-                                onValueChange={(value) => setSeats(value[0])}
+                                onValueChange={(value) =>
+                                    noOfActiveMembers <= value[0] &&
+                                    setSeats(value[0])
+                                }
                                 max={25}
                                 min={1}
                                 step={1}
@@ -113,6 +122,13 @@ const PricingPlansPage = () => {
                                 <span>1 dev</span>
                                 <span>25 devs</span>
                             </div>
+                            {/* <Alert
+                                variant="info"
+                                title="Note"
+                                description={`You've ${noOfActiveMembers} active member${
+                                    noOfActiveMembers !== 1 ? "s" : ""
+                                }. If you need to add more, please upgrade your plan.`}
+                            /> */}
                         </div>
                     </div>
 

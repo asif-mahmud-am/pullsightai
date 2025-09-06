@@ -27,6 +27,7 @@ export interface Organization {
     updatedAt?: string;
     workspaceSetting?: WorkspaceSetting;
     onboardingStep?: number;
+    noOfActiveMembers?: number;
     currentPlan?: {
         _id: string;
         workspace: string;

@@ -102,10 +102,12 @@ export const columns: ColumnDef<Repository>[] = [
             const active = row.getValue("isActive") as boolean;
             const repositoryId = row.original._id;
             return (
-                <RepositoryStatusSwitch
-                    isActive={active}
-                    repositoryId={repositoryId}
-                />
+                <AdminGuard>
+                    <RepositoryStatusSwitch
+                        isActive={active}
+                        repositoryId={repositoryId}
+                    />
+                </AdminGuard>
             );
         },
     },

@@ -10,7 +10,7 @@ import showToast from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { Plan } from "@/types/plan";
-import { FC, useState } from "react";
+import { FC, useRef, useState, useEffect } from "react";
 
 interface PricingTableProps {
     isLoading: boolean;
@@ -141,6 +141,9 @@ const SinglePlanCard: FC<{
     isSelected: boolean;
 }> = ({ className, plan, seats, isSelected }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [subscribingPlanId, setSubscribingPlanId] = useState<string | null>(
+        null
+    );
     const { selectedWorkspace } = useAuthStore();
 
     const { mutateAsync, isPending } = usePurchasePlanMutation();
@@ -154,6 +157,9 @@ const SinglePlanCard: FC<{
             setIsOpen(true);
             return;
         }
+
+        setSubscribingPlanId(plan._id); // Track which plan is being subscribed to
+
         await mutateAsync({
             gateway: "stripe",
             planId: plan._id,
@@ -163,6 +169,7 @@ const SinglePlanCard: FC<{
                 if (res?.data?.url) {
                     window.location.href = res.data.url;
                 } else {
+                    showToast.success("New Plan Activated");
                     refetch();
                     setIsOpen(false);
                 }
@@ -172,11 +179,27 @@ const SinglePlanCard: FC<{
                     error?.response?.data?.error ||
                         "Failed to initiate subscription"
                 );
+                setSubscribingPlanId(null); // Reset on error
             });
     };
     const handleFreePlanSubscription = async (plan: Plan) => {
         handleSubscribe(plan, true);
     };
+
+    // Reset subscribing state when refetch completes and workspace is updated
+    useEffect(() => {
+        if (
+            !isFetching &&
+            subscribingPlanId &&
+            selectedWorkspace?.currentPlan?.plan?._id === subscribingPlanId
+        ) {
+            setSubscribingPlanId(null);
+        }
+    }, [
+        isFetching,
+        subscribingPlanId,
+        selectedWorkspace?.currentPlan?.plan?._id,
+    ]);
 
     return (
         <>
@@ -253,7 +276,11 @@ const SinglePlanCard: FC<{
                             isSelected &&
                             selectedWorkspace?.currentPlan?.numOfSeat == seats
                         }
-                        isLoading={isPending || isFetching}
+                        isLoading={
+                            isPending ||
+                            subscribingPlanId === plan._id ||
+                            (isFetching && subscribingPlanId === plan._id)
+                        }
                     >
                         Subscribe
                     </Button>
@@ -265,7 +292,7 @@ const SinglePlanCard: FC<{
                                     key={index}
                                     className="flex items-start gap-2 text-sm py-3"
                                 >
-                                    <CheckIcon className="mt-3" />
+                                    <CheckIcon className="mt-1 flex-shrink-0" />
                                     <div>
                                         <div>{feature?.title}</div>
                                         <div className="text-neutral-500">
@@ -376,7 +403,7 @@ const PricingTable: FC<PricingTableProps> = ({
                                                 key={index}
                                                 className="flex items-start gap-2 text-sm py-3"
                                             >
-                                                <CheckIcon className="mt-3" />
+                                                <CheckIcon className="mt-1 flex-shrink-0" />
                                                 <div>
                                                     <div>{feature?.title}</div>
                                                     <div className="text-neutral-500">

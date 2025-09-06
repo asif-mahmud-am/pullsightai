@@ -70,6 +70,8 @@ export const useUpdateUserMutation = () => {
                             ? "admin"
                             : "member"
                     );
+                } else {
+                    setMyRoleInSelectedWorkspace(null);
                 }
             }
         },

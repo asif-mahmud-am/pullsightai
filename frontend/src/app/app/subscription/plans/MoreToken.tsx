@@ -11,8 +11,15 @@ import { Pack } from "@/types/pack";
 import { ShieldCheck, Zap } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
+import { useAuthStore } from "@/store/authStore";
+import { useUpgradePlanDialog } from "@/hooks/useUpgradePlanDialog";
+import UpgradePlanDialog from "@/components/reusable/UpgradePlanDialog";
 
 const MoreToken = () => {
+    const { selectedWorkspace } = useAuthStore();
+
+    const { dialogRef, showUpgradeDialog } = useUpgradePlanDialog();
+
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedPackId, setSelectedPackId] = useState<string>("");
 
@@ -37,14 +44,26 @@ const MoreToken = () => {
             }
         );
     };
+    const handleMoreDialogOpen = () => {
+        if (selectedWorkspace?.currentPlan?.isFree) {
+            showUpgradeDialog({
+                featureName: "Upgrade Plan",
+                featureDescription:
+                    "Upgrade to a paid plan to purchase more tokens.",
+            });
+        } else {
+            setDialogOpen(true);
+        }
+    };
 
     return (
         <>
+            <UpgradePlanDialog ref={dialogRef} />
             <div className="max-w-8xl mx-auto mb-20 flex justify-between items-center gap-6">
                 <button
                     className="bg-card px-6 py-7 rounded-3xl flex text-left gap-5 items-center max-w-[450px] hover:bg-card/80 transition-colors cursor-pointer"
                     role="button"
-                    onClick={() => setDialogOpen(true)}
+                    onClick={handleMoreDialogOpen}
                 >
                     <Image
                         src="/images/icons/shield.svg"
@@ -146,7 +165,7 @@ const MoreToken = () => {
                                                                     </p>
                                                                 </div>
                                                             </div>
-                                                            <div className="flex items-center gap-6 mt-4">
+                                                            <div className="flex items-center justify-between gap-6 mt-4">
                                                                 <div className="">
                                                                     <p className="text-2xl font-bold ">
                                                                         {pack.token.toLocaleString()}
@@ -155,7 +174,7 @@ const MoreToken = () => {
                                                                         Tokens
                                                                     </p>
                                                                 </div>
-                                                                <div className="">
+                                                                <div className="text-right">
                                                                     <p className="text-2xl font-bold">
                                                                         $
                                                                         {

@@ -24,6 +24,9 @@ export class Pack {
 
     @Prop({ default: true })
     isPublic: boolean
+
+    @Prop({ default: 0 })
+    priority: number
 }
 
 const schema = SchemaFactory.createForClass(Pack)

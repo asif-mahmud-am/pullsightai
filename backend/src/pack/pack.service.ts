@@ -88,7 +88,7 @@ export class PackService {
     }
 
     async findAll() {
-        return await this.dataService.packs.find()
+        return await this.dataService.packs.find().sort({ priority: -1 })
     }
 
     async update(id: string, updatePackDto: UpdatePackDto) {

@@ -68,9 +68,9 @@ const DashboardPage = () => {
     };
 
     return (
-        <div>
+        <>
             {/* Header */}
-            <div className="flex flex-wrap items-center gap-3 mb-3 sticky top-0 bg-background pt-3 pb-2 z-10">
+            <div className="flex flex-wrap items-center gap-3 mb-3 lg:sticky lg:top-0 bg-background pt-3 pb-2 z-10 ">
                 <h2 className="text-2xl font-semibold">Dashboard</h2>
                 <div className="ml-auto flex flex-col md:flex-row gap-3 w-full md:w-auto">
                     <Select
@@ -149,7 +149,7 @@ const DashboardPage = () => {
                 open={showCongrats}
                 onOpenChange={setShowCongrats}
             />
-        </div>
+        </>
     );
 };
 

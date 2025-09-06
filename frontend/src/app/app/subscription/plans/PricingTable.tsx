@@ -1,11 +1,16 @@
+import { useUserQuery } from "@/api/queries/auth";
 import { usePurchasePlanMutation } from "@/api/queries/subscription";
 import Badge from "@/components/reusable/Badge";
 import Button from "@/components/reusable/Button";
+import { ConfirmDialog } from "@/components/reusable/Dialog";
 import { CheckIcon } from "@/components/reusable/icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getRemainingDays } from "@/lib/dayjs";
+import showToast from "@/lib/toast";
+import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { Plan } from "@/types/plan";
-import { FC } from "react";
+import { FC, useState } from "react";
 
 interface PricingTableProps {
     isLoading: boolean;
@@ -129,71 +134,101 @@ const enterprisePlanFeatures = [
     },
 ];
 
-interface PricingTableProps {
-    isLoading: boolean;
-    plans: Plan[];
-    seats: number;
-}
-
 const SinglePlanCard: FC<{
+    className?: string;
     plan: Plan;
     seats: number;
     isSelected: boolean;
-}> = ({ plan, seats, isSelected }) => {
+}> = ({ className, plan, seats, isSelected }) => {
+    const [isOpen, setIsOpen] = useState(false);
     const { selectedWorkspace } = useAuthStore();
 
     const { mutateAsync, isPending } = usePurchasePlanMutation();
+    const { refetch, isFetching } = useUserQuery({
+        isEnabled: false,
+    });
 
-    const handleSubscribe = async (plan: Plan) => {
+    const handleSubscribe = async (plan: Plan, skipFreeCheck = false) => {
         // Handle subscription logic here
-        console.log("Subscribing to plan:", plan);
+        if (plan?.isFree && !skipFreeCheck) {
+            setIsOpen(true);
+            return;
+        }
         await mutateAsync({
             gateway: "stripe",
             planId: plan._id,
             noOfSeat: seats,
-        }).then((res) => {
-            if (res.data.url) {
-                window.location.href = res.data.url;
-            }
-        });
+        })
+            .then((res) => {
+                if (res?.data?.url) {
+                    window.location.href = res.data.url;
+                } else {
+                    refetch();
+                    setIsOpen(false);
+                }
+            })
+            .catch((error) => {
+                showToast.error(
+                    error?.response?.data?.error ||
+                        "Failed to initiate subscription"
+                );
+            });
+    };
+    const handleFreePlanSubscription = async (plan: Plan) => {
+        handleSubscribe(plan, true);
     };
 
     return (
-        <Card
-            key={plan._id}
-            className={`relative pt-18 rounded-4xl ${
-                plan.highlight ? "border-white border-2" : "border-0"
-            }`}
-        >
-            {plan.highlight && (
-                <Badge className="bg-white absolute top-8 left-6">
-                    {plan.highlight}
-                </Badge>
-            )}
+        <>
+            <ConfirmDialog
+                open={isOpen}
+                onOpenChange={setIsOpen}
+                title="Confirm Free Plan"
+                description="Are you sure you want to subscribe to this plan? All other members except workspace owner will be disabled."
+                onConfirm={() => handleFreePlanSubscription(plan)}
+            />
+            <Card
+                key={plan._id}
+                className={cn(
+                    `relative pt-18 rounded-4xl`,
+                    {
+                        "border-white border-2": plan.highlight,
+                        "border-0": !plan.highlight,
+                    },
+                    className
+                )}
+            >
+                {plan.highlight && (
+                    <Badge className="bg-white absolute top-8 left-6">
+                        {plan.highlight}
+                    </Badge>
+                )}
 
-            <CardHeader className="pb-4 h-[200px]">
-                <CardTitle className="text-xl">{plan.title}</CardTitle>
-                <p className="text-muted-foreground text-sm mb-8">
-                    {plan.description}
-                </p>
-                <div className="mt-auto flex items-center">
-                    <div className="flex-1">
-                        <span className="text-3xl font-semibold">$</span>
-                        <span className="text-5xl font-bold">
-                            {plan.pricePerDev}
-                        </span>
-                        <span className="text-lg font-semibold text-muted-foreground">
-                            /dev
-                        </span>
+                <CardHeader className="pb-4 h-[200px]">
+                    <CardTitle className="text-xl">{plan.title}</CardTitle>
+                    <p className="text-muted-foreground text-sm mb-8">
+                        {plan.description}
+                    </p>
+                    <div className="mt-auto flex items-center">
+                        <div className="flex-1">
+                            <span className="text-3xl font-semibold">$</span>
+                            <span className="text-5xl font-bold">
+                                {plan.pricePerDev}
+                            </span>
+                            <span className="text-lg font-semibold text-muted-foreground">
+                                /dev
+                            </span>
+                        </div>
+                        {isSelected && (
+                            <Badge className="bg-neutral-500">
+                                Current Plan
+                            </Badge>
+                        )}
                     </div>
-                    {isSelected && (
-                        <Badge className="bg-neutral-500">Current Plan</Badge>
-                    )}
-                </div>
-            </CardHeader>
+                </CardHeader>
 
-            <CardContent className="space-y-6">
-                {/* <div className="text-center p-4 bg-muted/50 rounded-lg">
+                <CardContent className="space-y-6">
+                    {/* <div className="text-center p-4 bg-muted/50 rounded-lg">
                     <div className="flex items-center justify-center gap-2 text-lg font-semibold">
                         <Zap className="w-5 h-5" />
                         {(
@@ -207,43 +242,62 @@ const SinglePlanCard: FC<{
                     </p>
                 </div> */}
 
-                <Button
-                    className={`w-full font-semibold h-[56px]`}
-                    size="lg"
-                    onClick={() => handleSubscribe(plan)}
-                    disabled={
-                        isSelected &&
-                        selectedWorkspace?.currentPlan?.numOfSeat == seats
-                    }
-                    isLoading={isPending}
-                >
-                    Subscribe
-                </Button>
+                    <Button
+                        className={`w-full font-semibold h-[56px]`}
+                        size="lg"
+                        onClick={() => handleSubscribe(plan)}
+                        disabled={
+                            (selectedWorkspace?.currentPlan?.isFree &&
+                                plan?.isFree) ||
+                            (getRemainingDays(
+                                selectedWorkspace?.currentPlan?.periodEnd || ""
+                            ) < 0 &&
+                                isSelected &&
+                                selectedWorkspace?.currentPlan?.numOfSeat ==
+                                    seats)
+                        }
+                        isLoading={isPending || isFetching}
+                    >
+                        Subscribe
+                    </Button>
 
-                <div>
-                    <ul className="space-y-2 divide-y">
-                        {plan.features.map((feature, index) => (
-                            <li
-                                key={index}
-                                className="flex items-start gap-2 text-sm py-3"
-                            >
-                                <CheckIcon className="mt-3" />
-                                <div>
-                                    <div>{feature?.title}</div>
-                                    <div className="text-neutral-500">
-                                        {feature?.description}
+                    <div>
+                        <ul className="space-y-2 divide-y">
+                            {plan.features.map((feature, index) => (
+                                <li
+                                    key={index}
+                                    className="flex items-start gap-2 text-sm py-3"
+                                >
+                                    <CheckIcon className="mt-3" />
+                                    <div>
+                                        <div>{feature?.title}</div>
+                                        <div className="text-neutral-500">
+                                            {feature?.description}
+                                        </div>
                                     </div>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </CardContent>
-        </Card>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </CardContent>
+            </Card>
+        </>
     );
 };
 
-const PricingTable: FC<PricingTableProps> = ({ isLoading, plans, seats }) => {
+interface PricingTableProps {
+    className?: string;
+    isLoading: boolean;
+    plans: Plan[];
+    seats: number;
+}
+
+const PricingTable: FC<PricingTableProps> = ({
+    className,
+    isLoading,
+    plans,
+    seats,
+}) => {
     const { selectedWorkspace } = useAuthStore();
 
     return (
@@ -256,8 +310,16 @@ const PricingTable: FC<PricingTableProps> = ({ isLoading, plans, seats }) => {
                     ))}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-7 max-w-8xl mx-auto mb-20 justify-center">
-                    {plans?.map((plan: Plan) => {
+                <div
+                    className={cn(
+                        "grid grid-cols-1  gap-7 max-w-8xl mx-auto mb-20 justify-center",
+                        {
+                            "lg:grid-cols-3": plans?.length == 2,
+                            "lg:grid-cols-4": plans?.length != 2,
+                        }
+                    )}
+                >
+                    {plans?.map((plan: Plan, index) => {
                         const isSelected =
                             selectedWorkspace?.currentPlan?.plan?._id ===
                             plan._id;

@@ -51,13 +51,21 @@ export class PlanService {
         ) {
             throw new NotFoundException('You are already on this plan')
         }
-        let totalToken = planData.tokenLimitPerDev * purchasePlanDto.noOfSeat
+        let totalToken = planData.isFree
+            ? planData.tokenLimitPerDev
+            : planData.tokenLimitPerDev * purchasePlanDto.noOfSeat
         let remainingToken = totalToken
-        if (userData?.currentWorkspace?.currentPlan) {
-            remainingToken =
+        if (
+            userData?.currentWorkspace?.currentPlan &&
+            !userData?.currentWorkspace?.currentPlan?.isFree
+        ) {
+            remainingToken = Math.max(
                 totalToken -
-                (userData?.currentWorkspace?.currentPlan?.totalToken -
-                    userData?.currentWorkspace?.currentPlan?.remainingToken)
+                    (userData?.currentWorkspace?.currentPlan?.totalToken -
+                        userData?.currentWorkspace?.currentPlan
+                            ?.remainingToken),
+                0
+            )
         }
         const period = getTimePeriod(planData.billingCycle)
         const purchasedPlan = await this.dataService.purchasedPlans.create({
@@ -100,6 +108,15 @@ export class PlanService {
             { _id: userData?.currentWorkspace?._id },
             { currentPlan: purchasedPlan._id }
         )
+        await this.dataService.workspaceMembers.updateMany(
+            {
+                workspace: userData?.currentWorkspace?._id,
+                user: { $ne: userData._id }
+            },
+            { isActive: false }
+        )
+        userData.currentWorkspace.noOfActiveMembers = 1
+        await userData.currentWorkspace.save()
         return {}
     }
 
@@ -109,10 +126,12 @@ export class PlanService {
         purchasePlanDto: PurchasePlanDto,
         purchasedPlan: any
     ) {
-        console.log(
-            'userData?.currentWorkspace?.currentPlan?.subscriptionId',
-            userData?.currentWorkspace?.currentPlan
-        )
+        userData.currentWorkspace.noOfActiveMembers =
+            await this.dataService.workspaceMembers.countDocuments({
+                workspace: userData?.currentWorkspace?._id,
+                isActive: true
+            })
+        await userData.currentWorkspace.save()
         if (userData?.currentWorkspace?.currentPlan?.subscriptionId) {
             return await this.paymentsService.updateSubscription({
                 serviceId: planData?._id as any,
@@ -148,7 +167,7 @@ export class PlanService {
     }
 
     async findAll() {
-        return await this.dataService.plans.find()
+        return await this.dataService.plans.find().sort({ priority: -1 })
     }
 
     async currentActivePlan(user: any) {

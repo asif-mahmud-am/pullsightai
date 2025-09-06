@@ -8,6 +8,7 @@ import PrStateBadge from "@/components/reusable/PrStateBadge";
 import Select from "@/components/reusable/Select";
 import SeverityBadge from "@/components/reusable/SeverityBadge";
 import Tabs from "@/components/reusable/Tabs";
+import usePagination from "@/hooks/usePagination";
 import { formatDate } from "@/lib/dayjs";
 import { cn } from "@/lib/utils";
 import { Issue } from "@/types/issue";
@@ -50,7 +51,11 @@ const columns: ColumnDef<Issue>[] = [
                 <span className="text-white mb-1 text-md">
                     {row.getValue("pr")}
                 </span>
-                <a className="opacity-50" href="" target="_blank">
+                <a
+                    className="opacity-50"
+                    href={row.original?.prUrl}
+                    target="_blank"
+                >
                     <ExternalLink className="w-auto h-4" />
                 </a>
             </div>
@@ -58,7 +63,7 @@ const columns: ColumnDef<Issue>[] = [
     },
     {
         accessorKey: "prUser",
-        header: "Owner",
+        header: "Author",
         cell: ({ row }) => (
             <Avatar src={""} name={row.original?.prUser} className="" />
         ),
@@ -92,6 +97,7 @@ const columns: ColumnDef<Issue>[] = [
 ];
 
 const IssuesCard = ({ className, fromDate, toDate, repo }: Props) => {
+    const [currentPage, setCurrentPage] = useState(1);
     const [prUser, setPrUser] = useState<string | null>(null);
     const [prState, setPrState] = useState<string | null>(null);
     const [severity, setSeverity] = useState<string | null>(null);
@@ -105,12 +111,20 @@ const IssuesCard = ({ className, fromDate, toDate, repo }: Props) => {
     });
 
     const { data, isFetching } = useDashboardIssuesQuery({
+        page: currentPage,
+        limit: 10,
         from: fromDate,
         to: toDate,
         repo,
         prUser,
         prState,
         severity: severity ? severity : undefined,
+    });
+
+    const { Pagination } = usePagination({
+        totalPages: data?.data?.totalPages || 1,
+        currentPage,
+        onPageChange: setCurrentPage,
     });
 
     // Update the stored counts when new data arrives
@@ -183,7 +197,7 @@ const IssuesCard = ({ className, fromDate, toDate, repo }: Props) => {
                             { value: "open", label: "PR Status: Open" },
                             {
                                 value: "merged",
-                                label: "PR Status: Closed",
+                                label: "PR Status: Merged",
                             },
                             {
                                 value: "declined",
@@ -200,6 +214,7 @@ const IssuesCard = ({ className, fromDate, toDate, repo }: Props) => {
                     isLoading={isFetching}
                     data={data?.data?.issueCardData || []}
                 />
+                <Pagination />
             </ContentCard.Body>
         </ContentCard>
     );

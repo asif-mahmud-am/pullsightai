@@ -66,6 +66,8 @@ export const useDashboardTimeMoneySavedQuery = ({
 
 export const useDashboardIssuesQuery = ({
     isEnabled,
+    page,
+    limit,
     from,
     to,
     repo,
@@ -74,6 +76,8 @@ export const useDashboardIssuesQuery = ({
     severity,
 }: {
     isEnabled?: boolean;
+    page?: number;
+    limit?: number;
     from?: string;
     to?: string;
     repo?: string | null;
@@ -84,7 +88,7 @@ export const useDashboardIssuesQuery = ({
     return useQuery({
         queryKey: [
             "dashboardIssues",
-            { from, to, repo, prUser, prState, severity },
+            { from, to, repo, prUser, prState, severity, page, limit },
         ],
         queryFn: () =>
             dashboardEndpoints.getIssues({
@@ -94,6 +98,8 @@ export const useDashboardIssuesQuery = ({
                 prUser,
                 prState,
                 severity,
+                page,
+                limit,
             }),
         enabled: isEnabled,
     });

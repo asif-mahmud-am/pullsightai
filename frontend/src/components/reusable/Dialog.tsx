@@ -86,7 +86,11 @@ const Dialog = ({
 
             <DialogOverlay className="backdrop-blur-xs bg-black/10" />
             <DialogContent
-                className={cn(sizeVariants[size], contentClassName)}
+                className={cn(
+                    "max-h-[calc(100vh-100px)] overflow-y-auto",
+                    sizeVariants[size],
+                    contentClassName
+                )}
                 showCloseButton={showCloseButton}
                 onPointerDownOutside={
                     closeOnOverlayClick ? undefined : (e) => e.preventDefault()

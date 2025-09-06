@@ -13,7 +13,9 @@ const PlanExpiredDialog = () => {
     const pathname = usePathname();
 
     // Don't show dialog on subscription/plan pages
-    const isOnPlanPage = pathname?.includes("/subscription/plans");
+    const isOnPlanPage = pathname?.includes(
+        ROUTE_CONSTANTS.APP_SUBSCRIPTION_PLANS
+    );
 
     // Check if plan is expired
     const isPlanExpired = React.useMemo(() => {

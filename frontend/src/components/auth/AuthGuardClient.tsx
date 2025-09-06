@@ -49,6 +49,7 @@ export default function AuthGuardClient({ children }: { children: ReactNode }) {
 
         // redirect to dashboard if user is authenticated and workspace is selected
         if (
+            !pathname.includes(ROUTE_CONSTANTS.APP_SUBSCRIPTION_PLANS) &&
             user &&
             selectedWorkspace &&
             (!selectedWorkspace.onboardingStep ||

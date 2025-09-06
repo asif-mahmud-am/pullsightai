@@ -19,16 +19,16 @@ interface RepositorySettingsModalProps {
 }
 
 interface RepositorySettings {
-    minSeverity: "info" | "minor" | "major" | "critical" | "blocker";
+    minSeverity: "Info" | "Minor" | "Major" | "Critical" | "Blocker";
     ignore: string;
 }
 
 const severityOptions = [
-    { value: "info", label: "Info" },
-    { value: "minor", label: "Minor" },
-    { value: "major", label: "Major" },
-    { value: "critical", label: "Critical" },
-    { value: "blocker", label: "Blocker" },
+    { value: "Info", label: "Info" },
+    { value: "Minor", label: "Minor" },
+    { value: "Major", label: "Major" },
+    { value: "Critical", label: "Critical" },
+    { value: "Blocker", label: "Blocker" },
 ];
 
 const RepositorySettingsModal = ({
@@ -37,7 +37,7 @@ const RepositorySettingsModal = ({
     onOpenChange,
 }: RepositorySettingsModalProps) => {
     const [settings, setSettings] = useState<RepositorySettings>({
-        minSeverity: "major",
+        minSeverity: "Major",
         ignore: "",
     });
 
@@ -69,7 +69,7 @@ const RepositorySettingsModal = ({
             onOpenChange(false);
             // Reset settings to original values
             setSettings({
-                minSeverity: "info",
+                minSeverity: "Info",
                 ignore: "",
             });
         }

@@ -120,7 +120,7 @@ const TimeMoneySavedCard = ({
                             width={35}
                             tickLine={false}
                             axisLine={false}
-                            tickMargin={5}
+                            tickMargin={0}
                         />
                         <ChartTooltip
                             cursor={false}

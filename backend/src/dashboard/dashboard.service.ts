@@ -341,6 +341,12 @@ export class DashboardService {
             breakdown
         )
 
+        // Calculate ROI properly with error handling
+        let roi = 0
+        if (totalCost > 0) {
+            roi = totalMoneySaved / totalCost
+        }
+
         return {
             graphChart,
             totalTimeSaved: Math.round(totalTimeSaved * 100) / 100, // Hours, rounded to 2 decimal places
@@ -348,7 +354,7 @@ export class DashboardService {
             averageTimePerPR: Math.round(averageTimePerPR * 100) / 100, // Hours, rounded to 2 decimal places
             totalLinesReviewed,
             totalPRsAnalyzed: prAnalyses.length,
-            ROI: Math.round(totalMoneySaved / totalCost).toFixed(2)
+            ROI: `${roi.toFixed(2)}`
         }
     }
 

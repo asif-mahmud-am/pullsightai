@@ -28,6 +28,11 @@ const PlanExpiredDialog = () => {
         return currentDate > periodEnd;
     }, [selectedWorkspace]);
 
+    // Check if there's no current plan (cancelled or never subscribed)
+    const hasNoPlan = React.useMemo(() => {
+        return !selectedWorkspace?.currentPlan;
+    }, [selectedWorkspace]);
+
     // Check if it's a trial that has expired
     const isTrialPlan = React.useMemo(() => {
         if (!selectedWorkspace?.currentPlan) return false;
@@ -40,8 +45,8 @@ const PlanExpiredDialog = () => {
         router.push(ROUTE_CONSTANTS.APP_SUBSCRIPTION_PLANS);
     };
 
-    // Don't show dialog if plan is not expired or if user is already on plan page
-    if (!isPlanExpired) {
+    // Don't show dialog if plan is not expired and user has a plan, or if user is already on plan page
+    if (!isPlanExpired && !hasNoPlan) {
         return null;
     }
 
@@ -50,13 +55,20 @@ const PlanExpiredDialog = () => {
         return null;
     }
 
-    const dialogTitle = isTrialPlan ? "Trial Expired" : "Plan Expired";
-    const dialogDescription = isTrialPlan
+    const dialogTitle = hasNoPlan
+        ? "No Active Plan"
+        : isTrialPlan
+        ? "Trial Expired"
+        : "Plan Expired";
+    const dialogDescription = hasNoPlan
+        ? "You don't have an active plan. Subscribe to continue using PullSight."
+        : isTrialPlan
         ? "Your free trial has ended. Upgrade to continue using PullSight."
         : "Your subscription has expired. Please renew to continue using PullSight.";
 
     return (
         <Dialog
+            showCloseButton={false}
             open={true}
             onOpenChange={() => {}} // Prevent closing
             title={dialogTitle}
@@ -64,7 +76,11 @@ const PlanExpiredDialog = () => {
             size="md"
             actions={[
                 {
-                    label: isTrialPlan ? "Upgrade Now" : "Renew Plan",
+                    label: hasNoPlan
+                        ? "Subscribe Now"
+                        : isTrialPlan
+                        ? "Upgrade Now"
+                        : "Renew Plan",
                     onClick: handleUpgrade,
                     variant: "default",
                 },
@@ -74,7 +90,9 @@ const PlanExpiredDialog = () => {
                 {/* Icon */}
                 <div className="flex justify-center">
                     <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center">
-                        {isTrialPlan ? (
+                        {hasNoPlan ? (
+                            <AlertTriangle className="w-10 h-10 text-red-600" />
+                        ) : isTrialPlan ? (
                             <Clock className="w-10 h-10 text-red-600" />
                         ) : (
                             <AlertTriangle className="w-10 h-10 text-red-600" />
@@ -85,12 +103,16 @@ const PlanExpiredDialog = () => {
                 {/* Message */}
                 <div className="space-y-3">
                     <h3 className="text-2xl font-bold ">
-                        {isTrialPlan
+                        {hasNoPlan
+                            ? "No Active Plan"
+                            : isTrialPlan
                             ? "Trial Period Ended"
                             : "Subscription Expired"}
                     </h3>
                     <p className="text-gray-600 max-w-md mx-auto">
-                        {isTrialPlan
+                        {hasNoPlan
+                            ? "You don't have an active subscription plan. Subscribe to access all PullSight features and start analyzing your pull requests."
+                            : isTrialPlan
                             ? "Your 14-day free trial has ended. Upgrade to a paid plan to continue accessing all features and analyzing your pull requests."
                             : "Your subscription has expired. Please renew your plan to continue using PullSight and maintain access to your data."}
                     </p>

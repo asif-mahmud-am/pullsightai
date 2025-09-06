@@ -42,10 +42,11 @@ export const useUpdateUserMutation = () => {
     const queryClient = useQueryClient();
     const {
         user,
+        workspaces,
         setUser,
         setSelectedWorkspace,
         setMyRoleInSelectedWorkspace,
-    } = useAuthStore((s) => s);
+    } = useAuthStore();
 
     return useMutation({
         mutationFn: (variables: any) => {
@@ -61,11 +62,16 @@ export const useUpdateUserMutation = () => {
                 queryClient.invalidateQueries({ queryKey: ["user", "repos"] });
                 // if current workspace is changed, update myRoleInSelectedWorkspace
                 if (variables.currentWorkspace) {
+                    const selectedWorkspace = workspaces?.find(
+                        (ws) => ws._id === variables.currentWorkspace
+                    );
                     setMyRoleInSelectedWorkspace(
-                        user?._id == variables.currentWorkspace?.ownerId
+                        user?._id == selectedWorkspace?.ownerId
                             ? "admin"
                             : "member"
                     );
+                } else {
+                    setMyRoleInSelectedWorkspace(null);
                 }
             }
         },

@@ -46,11 +46,11 @@ const MoreToken = () => {
         );
     };
     const handleMoreDialogOpen = () => {
-        if (selectedWorkspace?.currentPlan?.isFree) {
+        if (selectedWorkspace?.currentPlan?.isDefault) {
             showUpgradeDialog({
                 featureName: "Upgrade Plan",
                 featureDescription:
-                    "Upgrade to a paid plan to purchase more tokens.",
+                    "Change your plan to purchase more tokens. You can not purchase token when you are on the trial plan.",
             });
         } else {
             setDialogOpen(true);

@@ -28,13 +28,17 @@ export interface Organization {
     workspaceSetting?: WorkspaceSetting;
     onboardingStep?: number;
     noOfActiveMembers?: number;
+    planTotalToken?: number;
+    planRemainingToken?: number;
+    packTotalToken?: number;
+    packRemainingToken?: number;
     currentPlan?: {
         _id: string;
         workspace: string;
         plan?: Plan;
         amount: number;
-        totalToken: number;
-        remainingToken: number;
+        // totalToken: number;
+        // remainingToken: number;
         numOfSeat: number;
         billingCycle: string;
         status: string;
@@ -56,8 +60,8 @@ export interface Organization {
         pack?: Pack;
         amount: number;
         gatewayCharge: number;
-        totalToken: number;
-        remainingToken: number;
+        // totalToken: number;
+        // remainingToken: number;
         isActive: boolean;
         createdAt: string;
         updatedAt: string;

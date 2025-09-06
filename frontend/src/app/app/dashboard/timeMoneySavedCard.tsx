@@ -121,10 +121,49 @@ const TimeMoneySavedCard = ({
                             tickLine={false}
                             axisLine={false}
                             tickMargin={0}
+                            tickFormatter={(value) =>
+                                value % 1 === 0
+                                    ? value.toString()
+                                    : value.toFixed(2)
+                            }
                         />
                         <ChartTooltip
                             cursor={false}
-                            content={<ChartTooltipContent hideLabel />}
+                            content={({ active, payload, label }) => {
+                                if (active && payload && payload.length) {
+                                    const data = payload[0];
+                                    return (
+                                        <div className="bg-background border rounded-lg shadow-md p-3 space-y-1">
+                                            <p className="text-sm font-medium">
+                                                {formatDate(
+                                                    label,
+                                                    breakdown == "year"
+                                                        ? "YYYY"
+                                                        : breakdown == "month"
+                                                        ? "MMM YYYY"
+                                                        : "DD MMM YYYY"
+                                                )}
+                                            </p>
+                                            <div className="flex items-center gap-2">
+                                                <div
+                                                    className="w-3 h-3 rounded"
+                                                    style={{
+                                                        backgroundColor:
+                                                            data.color,
+                                                    }}
+                                                />
+                                                <span className="text-sm text-muted-foreground">
+                                                    Time Saved:
+                                                </span>
+                                                <span className="text-sm font-medium">
+                                                    {data.value}h
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            }}
                         />
                         <Bar
                             dataKey="timeSaved"

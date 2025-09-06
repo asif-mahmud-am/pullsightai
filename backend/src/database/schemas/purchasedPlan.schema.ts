@@ -50,9 +50,6 @@ export class PurchasedPlan {
     @Prop({ required: true, min: 0 })
     totalToken: number
 
-    @Prop({ required: true })
-    remainingToken: number
-
     @Prop({ required: true, min: 0 })
     numOfSeat: number
 

@@ -235,14 +235,12 @@ export class WorkspaceService {
             throw new NotFoundException('No free plan found')
         }
         let totalToken = planData.tokenLimitPerDev * noOfSeat
-        let remainingToken = totalToken
         const period = getTimePeriod(planData.billingCycle)
         const purchasedPlan = await this.dataService.purchasedPlans.create({
             workspace: userData?.currentWorkspace?._id,
             plan: planData._id,
             amount: 0,
             totalToken: totalToken,
-            remainingToken: remainingToken,
             numOfSeat: noOfSeat,
             billingCycle: planData.billingCycle,
             periodStart: period.periodStart,
@@ -259,7 +257,9 @@ export class WorkspaceService {
             { _id: userData?.currentWorkspace?._id },
             {
                 $set: {
-                    currentPlan: purchasedPlan._id
+                    currentPlan: purchasedPlan._id,
+                    planTotalToken: totalToken,
+                    planRemainingToken: totalToken
                 }
             }
         )

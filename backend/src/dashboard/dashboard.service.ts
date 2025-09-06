@@ -49,9 +49,14 @@ export class DashboardService {
         const toDate = prAnalysisCardFilterDto.to
             ? new Date(prAnalysisCardFilterDto.to)
             : new Date()
+
+        // Adjust toDate to include the entire day
+        toDate.setUTCHours(23, 59, 59, 999)
         const fromDate = prAnalysisCardFilterDto.from
             ? new Date(prAnalysisCardFilterDto.from)
             : new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+        // Adjust toDate to include the entire day
+        fromDate.setUTCHours(23, 59, 59, 999)
 
         const match: any = {
             owner: findWorkspace.slug,
@@ -120,35 +125,11 @@ export class DashboardService {
         )
         if (!findUser || !findUser.currentWorkspace) {
             return {
-                pieChart: [],
-                completeRate: 0,
-                total: 0
-            }
-        }
-
-        const findWorkspace = await this.dataService.workspaces.findOne(
-            { _id: findUser.currentWorkspace },
-            'slug'
-        )
-
-        if (!findWorkspace) {
-            return {
-                pieChart: [],
-                completeRate: 0,
-                total: 0
-            }
-        }
-
-        const pullRequestAnalysisIds =
-            await this.dataService.pullRequestAnalysis.find(
-                { workspaceSlug: findWorkspace.slug },
-                '_id'
-            )
-
-        if (!pullRequestAnalysisIds || pullRequestAnalysisIds.length === 0) {
-            return {
-                pieChart: [],
-                completeRate: 0,
+                major: 0,
+                minor: 0,
+                info: 0,
+                critical: 0,
+                blocker: 0,
                 total: 0
             }
         }
@@ -157,74 +138,35 @@ export class DashboardService {
         const toDate = issueAnalysisCardFilterDto.to
             ? new Date(issueAnalysisCardFilterDto.to)
             : new Date()
+
+        // Adjust toDate to include the entire day
+        toDate.setUTCHours(23, 59, 59, 999)
         const fromDate = issueAnalysisCardFilterDto.from
             ? new Date(issueAnalysisCardFilterDto.from)
             : new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+        // Adjust toDate to include the entire day
+        fromDate.setUTCHours(23, 59, 59, 999)
 
-        // Fix 3: Use $in to match multiple IDs
-        const match = {
-            pullRequestAnalysisId: {
-                $in: pullRequestAnalysisIds.map((item) => item._id)
-            },
+        // Build the simplified match query using direct workspace reference
+        const match: any = {
+            workspace: findUser.currentWorkspace,
             createdAt: {
                 $gte: fromDate,
                 $lte: toDate
             }
         }
 
-        // if (issueAnalysisCardFilterDto.repo) {
-        //     match.repo = issueAnalysisCardFilterDto.repo
-        // }
-        // // Get overall totals
-        // const prAnalysisReviewSeveritys =
-        //     await this.dataService.pullRequestAnalysisComments.aggregate([
-        //         { $match: match },
-        //         { $group: { _id: '$severity', count: { $sum: 1 } } }
-        //     ])
-        let prAnalysisReviewSeveritys
+        // Add repository filter if provided
         if (issueAnalysisCardFilterDto.repo) {
-            prAnalysisReviewSeveritys =
-                await this.dataService.pullRequestAnalysisComments.aggregate([
-                    {
-                        $lookup: {
-                            from: 'pullrequestanalyses',
-                            let: { analysisId: '$pullRequestAnalysisId' },
-                            pipeline: [
-                                {
-                                    $match: {
-                                        $expr: {
-                                            $and: [
-                                                {
-                                                    $eq: [
-                                                        '$_id',
-                                                        '$$analysisId'
-                                                    ]
-                                                },
-                                                {
-                                                    $eq: [
-                                                        '$repositorySlug',
-                                                        issueAnalysisCardFilterDto.repo
-                                                    ]
-                                                }
-                                            ]
-                                        }
-                                    }
-                                }
-                            ],
-                            as: 'analysis'
-                        }
-                    },
-                    { $match: { analysis: { $ne: [] } } },
-                    { $match: match },
-                    { $group: { _id: '$severity', count: { $sum: 1 } } }
-                ])
-        } else {
-            prAnalysisReviewSeveritys =
-                await this.dataService.pullRequestAnalysisComments.aggregate([
-                    { $match: match },
-                    { $group: { _id: '$severity', count: { $sum: 1 } } }
-                ])
+            match.repositorySlug = issueAnalysisCardFilterDto.repo
         }
+
+        // Simplified aggregation - no need for complex lookups
+        const prAnalysisReviewSeveritys =
+            await this.dataService.pullRequestAnalysisComments.aggregate([
+                { $match: match },
+                { $group: { _id: '$severity', count: { $sum: 1 } } }
+            ])
 
         // Transform aggregation result to required format
         const totals = {
@@ -272,7 +214,8 @@ export class DashboardService {
                 totalTimeSaved: 0,
                 totalMoneySaved: 0,
                 hourlyRate: 50,
-                averageTimePerPR: 0
+                averageTimePerPR: 0,
+                ROI: 0
             }
         }
 
@@ -287,7 +230,8 @@ export class DashboardService {
                 totalTimeSaved: 0,
                 totalMoneySaved: 0,
                 hourlyRate: 50,
-                averageTimePerPR: 0
+                averageTimePerPR: 0,
+                ROI: 0
             }
         }
 
@@ -298,9 +242,34 @@ export class DashboardService {
         const toDate = timeAndMoneySaveCardFilterDto.to
             ? new Date(timeAndMoneySaveCardFilterDto.to)
             : new Date()
+
+        // Adjust toDate to include the entire day
+        toDate.setUTCHours(23, 59, 59, 999)
         const fromDate = timeAndMoneySaveCardFilterDto.from
             ? new Date(timeAndMoneySaveCardFilterDto.from)
             : new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+        // Adjust toDate to include the entire day
+        fromDate.setUTCHours(23, 59, 59, 999)
+
+        const userTotalSpent = await this.dataService.transactions.aggregate([
+            {
+                $match: {
+                    workspace: findWorkspace._id,
+                    paymentStatus: 'paid',
+                    createdAt: {
+                        $gte: fromDate,
+                        $lte: toDate
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalAmount: { $sum: '$amount' }
+                }
+            }
+        ])
+        const totalCost = userTotalSpent?.[0]?.totalAmount || 0
 
         // Build match criteria for pull request analysis
         const analysisMatch: any = {
@@ -377,13 +346,20 @@ export class DashboardService {
             breakdown
         )
 
+        // Calculate ROI properly with error handling
+        let roi = 0
+        if (totalCost > 0) {
+            roi = totalMoneySaved / totalCost
+        }
+
         return {
             graphChart,
             totalTimeSaved: Math.round(totalTimeSaved * 100) / 100, // Hours, rounded to 2 decimal places
             totalMoneySaved: Math.round(totalMoneySaved * 100) / 100, // Currency, rounded to 2 decimal places
             averageTimePerPR: Math.round(averageTimePerPR * 100) / 100, // Hours, rounded to 2 decimal places
             totalLinesReviewed,
-            totalPRsAnalyzed: prAnalyses.length
+            totalPRsAnalyzed: prAnalyses.length,
+            ROI: `${roi.toFixed(2)}`
         }
     }
 
@@ -411,9 +387,14 @@ export class DashboardService {
         const toDate = issueCardFilterDto.to
             ? new Date(issueCardFilterDto.to)
             : new Date()
+
+        // Adjust toDate to include the entire day
+        toDate.setUTCHours(23, 59, 59, 999)
         const fromDate = issueCardFilterDto.from
             ? new Date(issueCardFilterDto.from)
             : new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+        // Adjust toDate to include the entire day
+        fromDate.setUTCHours(23, 59, 59, 999)
 
         // Build the base match query
         const baseMatch: any = {
@@ -428,6 +409,9 @@ export class DashboardService {
         if (issueCardFilterDto.repo) {
             baseMatch.repositorySlug = issueCardFilterDto.repo
         }
+
+        // Match for total docs
+        const baseMatchForTotalCount = { ...baseMatch }
 
         // Add severity filter if provided
         if (issueCardFilterDto.severity) {
@@ -539,7 +523,7 @@ export class DashboardService {
                             }
                         ]
                     },
-                    prTitle: '$pullRequest.title',
+                    prTitle: '$pullRequest.prTitle',
                     prUrl: '$pullRequest.prUrl',
                     avatarUrl: '$workspace.avatarUrl',
                     owner: {
@@ -590,7 +574,7 @@ export class DashboardService {
 
         // Create severity counts aggregation pipeline
         const severityCountsPipeline: any[] = [
-            { $match: baseMatch },
+            { $match: baseMatchForTotalCount },
             {
                 $lookup: {
                     from: 'pullrequests',
@@ -600,9 +584,9 @@ export class DashboardService {
                 }
             },
             { $unwind: '$pullRequest' },
-            ...(Object.keys(pullRequestMatch).length > 0
-                ? [{ $match: pullRequestMatch }]
-                : []),
+            // ...(Object.keys(pullRequestMatch).length > 0
+            //     ? [{ $match: pullRequestMatch }]
+            //     : []),
             {
                 $group: {
                     _id: '$severity',

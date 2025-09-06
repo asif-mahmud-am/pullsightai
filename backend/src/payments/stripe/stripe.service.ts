@@ -52,9 +52,12 @@ export class StripeService {
             ],
             success_url: SUCCESS_URL,
             cancel_url: CANCEL_URL,
-            metadata: {
-                serviceBookingId: createPaymentDto.serviceBookingId.toString(),
-                serviceBookingRef: createPaymentDto.serviceBookingRef
+            subscription_data: {
+                metadata: {
+                    serviceBookingId:
+                        createPaymentDto.serviceBookingId.toString(),
+                    serviceBookingRef: createPaymentDto.serviceBookingRef
+                }
             }
         })
         return {

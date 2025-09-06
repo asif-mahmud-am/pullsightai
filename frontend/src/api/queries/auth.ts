@@ -40,7 +40,12 @@ export const useLogoutMutation = () => {
 
 export const useUpdateUserMutation = () => {
     const queryClient = useQueryClient();
-    const { user, setUser, setSelectedWorkspace } = useAuthStore((s) => s);
+    const {
+        user,
+        setUser,
+        setSelectedWorkspace,
+        setMyRoleInSelectedWorkspace,
+    } = useAuthStore((s) => s);
 
     return useMutation({
         mutationFn: (variables: any) => {
@@ -54,6 +59,14 @@ export const useUpdateUserMutation = () => {
                 setUser({ ...user, ...data.data });
                 setSelectedWorkspace(data.data.currentWorkspace || null);
                 queryClient.invalidateQueries({ queryKey: ["user", "repos"] });
+                // if current workspace is changed, update myRoleInSelectedWorkspace
+                if (variables.currentWorkspace) {
+                    setMyRoleInSelectedWorkspace(
+                        user?._id == variables.currentWorkspace?.ownerId
+                            ? "admin"
+                            : "member"
+                    );
+                }
             }
         },
     });

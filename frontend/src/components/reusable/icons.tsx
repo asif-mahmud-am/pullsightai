@@ -627,9 +627,10 @@ export const LoadingIcon: FC<IconProps> = ({ className = "" }) => {
     );
 };
 
-export const CheckIcon: FC<IconProps> = () => {
+export const CheckIcon: FC<IconProps> = ({ className }) => {
     return (
         <svg
+            className={className}
             width="17"
             height="16"
             viewBox="0 0 17 16"

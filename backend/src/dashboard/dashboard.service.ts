@@ -518,7 +518,7 @@ export class DashboardService {
                             }
                         ]
                     },
-                    prTitle: '$pullRequest.title',
+                    prTitle: '$pullRequest.prTitle',
                     prUrl: '$pullRequest.prUrl',
                     avatarUrl: '$workspace.avatarUrl',
                     owner: {

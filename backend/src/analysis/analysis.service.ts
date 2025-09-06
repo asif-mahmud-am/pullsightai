@@ -331,6 +331,9 @@ export class AnalysisService {
                 this.configService.get('AI_AGENT_PR_POST_URL'),
                 requestBody
             )
+            requestBody?.pullRequest?.prFiles?.map((file) => {
+                console.log('PR File:', file.prFileName, file.prFileDiffHunks)
+            })
             await this.httpService.post(
                 this.configService.get('AI_AGENT_PR_POST_URL') as string,
                 requestBody,

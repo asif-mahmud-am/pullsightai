@@ -15,19 +15,21 @@ import IssuesCard from "./issuesCard";
 
 const DashboardPage = () => {
     const [selectedPeriod, setSelectedPeriod] = useState<string>("7");
-    
+
     // Initialize dates immediately based on default period
     const initializeDates = (period: string) => {
         const days = parseInt(period);
         const today = new Date();
         return {
             fromDate: formatDate(subtractDays(today, days - 1), "YYYY-MM-DD"),
-            toDate: formatDate(today, "YYYY-MM-DD")
+            toDate: formatDate(today, "YYYY-MM-DD"),
         };
     };
-    
+
     const initialDates = initializeDates(selectedPeriod);
-    const [fromDate, setFromDate] = useState<string | null>(initialDates.fromDate);
+    const [fromDate, setFromDate] = useState<string | null>(
+        initialDates.fromDate
+    );
     const [toDate, setToDate] = useState<string | null>(initialDates.toDate);
     const [repo, setRepo] = useState<string | null>(null);
     const [breakdown, setBreakdown] = useState<string>("day");

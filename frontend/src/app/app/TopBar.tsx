@@ -121,9 +121,9 @@ const AppTopBar = () => {
                                 day(s) left in your free trial
                             </div>
                             <div>
-                                {numToHip(activePlan?.remainingToken || 0, 0)}/
-                                {numToHip(activePlan?.totalToken || 0, 0)}{" "}
-                                tokens used
+                                {numToHip(activePlan?.remainingToken || 0, 1)}/
+                                {numToHip(activePlan?.totalToken || 0, 1)}{" "}
+                                tokens are left
                             </div>
                         </div>
                         <Link

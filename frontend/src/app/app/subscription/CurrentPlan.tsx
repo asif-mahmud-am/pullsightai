@@ -51,7 +51,7 @@ const CurrentPlan = () => {
                             (activePlan?.remainingToken || 0) +
                                 (selectedWorkspace?.currentPack
                                     ?.remainingToken || 0),
-                            0
+                            1
                         )}{" "}
                         /{" "}
                         <span className="text-muted-foreground text-sm">
@@ -59,7 +59,7 @@ const CurrentPlan = () => {
                                 (activePlan?.totalToken || 0) +
                                     (selectedWorkspace?.currentPack
                                         ?.totalToken || 0),
-                                0
+                                1
                             )}
                         </span>
                     </p>
@@ -173,7 +173,7 @@ const CurrentPlan = () => {
                                                 ? numToHip(
                                                       activePlan?.plan
                                                           ?.tokenLimitPerDev,
-                                                      0
+                                                      1
                                                   )
                                                 : "-"}
                                         </p>

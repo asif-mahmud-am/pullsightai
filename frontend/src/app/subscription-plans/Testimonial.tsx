@@ -13,6 +13,7 @@ const testimonials = [
         id: 1,
         quote: "PullSight gave us the speed and confidence we needed—without ever risking our IP. Our 150-person engineering team now ships 40% faster.",
         author: "Sophia Kim",
+        avatar: "/images/avatars/1.png",
         position: "Head of Engineering",
         company: "TechCorp",
     },
@@ -20,6 +21,7 @@ const testimonials = [
         id: 2,
         quote: "The AI-powered code reviews have significantly improved our code quality. We've reduced bugs by 60% since implementing PullSight.",
         author: "Michael Chen",
+        avatar: "/images/avatars/2.png",
         position: "Senior Developer",
         company: "StartupX",
     },
@@ -27,6 +29,7 @@ const testimonials = [
         id: 3,
         quote: "PullSight's privacy-first approach gave us the confidence to use AI for code review. SOC2 compliance was exactly what we needed.",
         author: "Sarah Johnson",
+        avatar: "/images/avatars/1.png",
         position: "CTO",
         company: "SecureApp Inc",
     },
@@ -62,7 +65,7 @@ const Testimonial = () => {
                                         <div className="flex items-center justify-center mb-6">
                                             <Image
                                                 className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center"
-                                                src="/images/avatars/1.png"
+                                                src={testimonial.avatar}
                                                 alt="User Avatar"
                                                 width={64}
                                                 height={64}

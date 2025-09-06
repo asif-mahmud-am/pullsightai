@@ -469,29 +469,27 @@ export class AnalysisService {
         if (!analysis) {
             throw new Error('Pull request analysis not found')
         }
-
-        switch (analysis.provider) {
-            case 'github':
-                await this.githubEventService.addPRSummery(analysis)
-                break
-            case 'bitbucket':
-                await this.bitbucketEventsService.addPRSummery(analysis)
-                break
-            case 'gitlab':
-                await this.gitlabEventsService.addPRSummery(analysis)
-                break
-            default:
-                throw new Error('Unsupported provider')
+        if (postSummery.summary) {
+            switch (analysis.provider) {
+                case 'github':
+                    await this.githubEventService.addPRSummery(analysis)
+                    break
+                case 'bitbucket':
+                    await this.bitbucketEventsService.addPRSummery(analysis)
+                    break
+                case 'gitlab':
+                    await this.gitlabEventsService.addPRSummery(analysis)
+                    break
+                default:
+                    throw new Error('Unsupported provider')
+            }
         }
         await this.updateTokenUsage(
             analysis.workspace,
             postSummery.usageInfo.input_tokens +
                 postSummery.usageInfo.output_tokens || 0
         )
-        return {
-            summary: postSummery.summary,
-            status: 'added'
-        }
+        return {}
     }
 
     async getExistingPullRequestAndAnalysis(

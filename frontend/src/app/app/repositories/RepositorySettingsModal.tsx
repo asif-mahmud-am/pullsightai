@@ -1,16 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Settings, Save, X } from "lucide-react";
+import { useUpdateRepositoryMutation } from "@/api/queries/workspace";
 import Dialog from "@/components/reusable/Dialog";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
+import Select from "@/components/reusable/Select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Repository } from "@/types/repository";
 import { showToast } from "@/lib/toast";
-import Select from "@/components/reusable/Select";
-import { useUpdateRepositoryMutation } from "@/api/queries/workspace";
+import { Repository } from "@/types/repository";
+import { useEffect, useState } from "react";
 
 interface RepositorySettingsModalProps {
     repository: Repository;
@@ -19,16 +16,16 @@ interface RepositorySettingsModalProps {
 }
 
 interface RepositorySettings {
-    minSeverity: "info" | "minor" | "major" | "critical" | "blocker";
+    minSeverity: "Info" | "Minor" | "Major" | "Critical" | "Blocker";
     ignore: string;
 }
 
 const severityOptions = [
-    { value: "info", label: "Info" },
-    { value: "minor", label: "Minor" },
-    { value: "major", label: "Major" },
-    { value: "critical", label: "Critical" },
-    { value: "blocker", label: "Blocker" },
+    { value: "Info", label: "Info" },
+    { value: "Minor", label: "Minor" },
+    { value: "Major", label: "Major" },
+    { value: "Critical", label: "Critical" },
+    { value: "Blocker", label: "Blocker" },
 ];
 
 const RepositorySettingsModal = ({
@@ -37,7 +34,7 @@ const RepositorySettingsModal = ({
     onOpenChange,
 }: RepositorySettingsModalProps) => {
     const [settings, setSettings] = useState<RepositorySettings>({
-        minSeverity: "major",
+        minSeverity: "Major",
         ignore: "",
     });
 
@@ -69,7 +66,7 @@ const RepositorySettingsModal = ({
             onOpenChange(false);
             // Reset settings to original values
             setSettings({
-                minSeverity: "info",
+                minSeverity: "Info",
                 ignore: "",
             });
         }

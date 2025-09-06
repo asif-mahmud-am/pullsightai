@@ -9,7 +9,7 @@ export interface Repository {
     };
     slug: string;
     ignore: string[];
-    minSeverity: "info" | "minor" | "major" | "critical" | "blocker";
+    minSeverity: "Info" | "Minor" | "Major" | "Critical" | "Blocker";
     createdOn?: string;
     createdAt: string;
     updatedAt: string;

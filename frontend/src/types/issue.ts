@@ -16,4 +16,5 @@ export interface Issue {
     updated: string;
     prNumber: string;
     prState: string;
+    prUrl: string;
 }

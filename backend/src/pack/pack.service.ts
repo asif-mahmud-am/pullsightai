@@ -58,8 +58,6 @@ export class PackService {
             remainingToken =
                 totalToken +
                 userData?.currentWorkspace?.currentPack?.remainingToken
-            totalToken =
-                totalToken + userData?.currentWorkspace?.currentPack?.totalToken
         }
 
         const purchasedPack = await this.dataService.purchasedPacks.create({

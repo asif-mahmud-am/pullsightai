@@ -25,6 +25,7 @@ export const ROUTE_CONSTANTS = {
     APP_PULL_REQUESTS: "/app/pull-requests",
     APP_TEAM_MEMBERS: "/app/team-members",
     APP_SUBSCRIPTION: "/app/subscription",
-    APP_SUBSCRIPTION_PLANS: "/app/subscription/plans",
     APP_SETTINGS: "/app/settings",
+
+    APP_SUBSCRIPTION_PLANS: "/subscription-plans",
 };

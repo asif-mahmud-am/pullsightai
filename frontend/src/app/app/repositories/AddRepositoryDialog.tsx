@@ -203,7 +203,7 @@ const AddRepositoryDialog = ({
         >
             <div className="space-y-4">
                 {selectedWorkspace?.provider == "github" && (
-                    <div className="border rounded-lg p-3 flex gap-3">
+                    <div className="border rounded-lg p-3 flex flex-col lg:flex-row gap-3">
                         <p className="text-sm text-muted-foreground">
                             Missing repositories? Ensure that PullSight has
                             access to your GitHub repositories.

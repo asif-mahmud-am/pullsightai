@@ -76,11 +76,11 @@ const PricingPlansPage = () => {
     };
 
     return (
-        <div className="space-y-8 pt-8 xl:-ml-[260px] bg-background relative">
+        <div className="space-y-8 pt-15 bg-background relative">
             <div className="container mx-auto">
                 <Link
                     href={ROUTE_CONSTANTS.APP_SUBSCRIPTION}
-                    className="fixed right-5 top-26 bg-white/10 w-12 h-12 inline-flex items-center justify-center rounded-full"
+                    className="fixed right-5 top-18 z-10 xl:top-26 bg-white/50 lg:bg-white/10 w-12 h-12 inline-flex items-center justify-center rounded-full"
                 >
                     <X />
                 </Link>
@@ -97,7 +97,7 @@ const PricingPlansPage = () => {
 
                 <div className="grid grid-cols-12 max-w-8xl mx-auto items-center gap-6 my-12">
                     {/* Seats Selector */}
-                    <div className="col-span-4 col-start-5">
+                    <div className="col-span-12 lg:col-span-4 xl:col-start-5">
                         <div className="space-y-4 flex flex-col">
                             <div className="mx-auto inline-flex items-baseline gap-2 justify-center bg-card rounded-xl p-3">
                                 <span className="text-3xl font-semibold">
@@ -133,7 +133,7 @@ const PricingPlansPage = () => {
                     </div>
 
                     {/* Billing Toggle */}
-                    <div className="flex justify-end col-span-3 col-start-10">
+                    <div className="flex justify-center lg:justify-end col-span-12 lg:col-span-3 lg:col-start-10">
                         <div className="flex items-center bg-card rounded-lg p-1">
                             <button
                                 onClick={() => setBillingInterval("monthly")}
@@ -186,8 +186,8 @@ const PricingPlansPage = () => {
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-9 gap-6 mb-20">
-                        <div className="p-8 bg-card rounded-xl col-span-5">
+                    <div className="grid grid-cols-1 lg:grid-cols-9 gap-6 mb-20">
+                        <div className="p-8 bg-card rounded-xl col-span-1 lg:col-span-5">
                             <Image
                                 className="mb-10"
                                 src="/images/icons/lock.svg"
@@ -203,7 +203,7 @@ const PricingPlansPage = () => {
                             </p>
                         </div>
 
-                        <div className="p-8 bg-card rounded-xl col-span-4">
+                        <div className="p-8 bg-card rounded-xl col-span-1 lg:col-span-4">
                             <Image
                                 className="mb-10"
                                 src="/images/icons/thumbs-up.svg"
@@ -219,7 +219,7 @@ const PricingPlansPage = () => {
                             </p>
                         </div>
 
-                        <div className="p-8 bg-card rounded-xl col-span-4">
+                        <div className="p-8 bg-card rounded-xl col-span-1 lg:col-span-4">
                             <Image
                                 className="mb-10"
                                 src="/images/icons/clock.svg"
@@ -235,7 +235,7 @@ const PricingPlansPage = () => {
                             </p>
                         </div>
 
-                        <div className="p-8 bg-card rounded-xl col-span-5">
+                        <div className="p-8 bg-card rounded-xl col-span-1 lg:col-span-5">
                             <Image
                                 className="mb-10"
                                 src="/images/icons/bug.svg"

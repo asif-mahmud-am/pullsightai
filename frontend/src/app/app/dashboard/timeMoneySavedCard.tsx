@@ -78,10 +78,10 @@ const TimeMoneySavedCard = ({
                             )}
                         </div>
                     </div>
-                    {/* <div className="pr-5 lg:pr-9">
+                    <div className="pr-5 lg:pr-9">
                         <div className="opacity-50 text-xs mb-1">ROI</div>
-                        <div className="text-3xl">3.2x</div>
-                    </div> */}
+                        <div className="text-3xl">{data?.data?.ROI || 0}x</div>
+                    </div>
                 </div>
                 <ChartContainer
                     className="border py-3 pr-3 rounded-xl flex-1"

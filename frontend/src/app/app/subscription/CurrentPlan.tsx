@@ -48,17 +48,15 @@ const CurrentPlan = () => {
                     </p>
                     <p className="text-xl font-bold">
                         {numToHip(
-                            (activePlan?.remainingToken || 0) +
-                                (selectedWorkspace?.currentPack
-                                    ?.remainingToken || 0),
+                            (selectedWorkspace?.planRemainingToken || 0) +
+                                (selectedWorkspace?.packRemainingToken || 0),
                             1
                         )}{" "}
                         /{" "}
                         <span className="text-muted-foreground text-sm">
                             {numToHip(
-                                (activePlan?.totalToken || 0) +
-                                    (selectedWorkspace?.currentPack
-                                        ?.totalToken || 0),
+                                (selectedWorkspace?.planTotalToken || 0) +
+                                    (selectedWorkspace?.packTotalToken || 0),
                                 1
                             )}
                         </span>

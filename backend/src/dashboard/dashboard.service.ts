@@ -234,21 +234,6 @@ export class DashboardService {
                 ROI: 0
             }
         }
-        const userTotalSpent = await this.dataService.transactions.aggregate([
-            {
-                $match: {
-                    workspace: findWorkspace._id,
-                    paymentStatus: 'paid'
-                }
-            },
-            {
-                $group: {
-                    _id: null,
-                    totalAmount: { $sum: '$amount' }
-                }
-            }
-        ])
-        const totalCost = userTotalSpent?.[0]?.totalAmount || 0
 
         // Get hourly rate from workspace prFiles (default to 50 if not set)
         const hourlyRate = findWorkspace.workspaceSetting?.hourlyRate || 50
@@ -265,6 +250,26 @@ export class DashboardService {
             : new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
         // Adjust toDate to include the entire day
         fromDate.setUTCHours(23, 59, 59, 999)
+
+        const userTotalSpent = await this.dataService.transactions.aggregate([
+            {
+                $match: {
+                    workspace: findWorkspace._id,
+                    paymentStatus: 'paid',
+                    createdAt: {
+                        $gte: fromDate,
+                        $lte: toDate
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalAmount: { $sum: '$amount' }
+                }
+            }
+        ])
+        const totalCost = userTotalSpent?.[0]?.totalAmount || 0
 
         // Build match criteria for pull request analysis
         const analysisMatch: any = {
@@ -341,6 +346,12 @@ export class DashboardService {
             breakdown
         )
 
+        // Calculate ROI properly with error handling
+        let roi = 0
+        if (totalCost > 0) {
+            roi = totalMoneySaved / totalCost
+        }
+
         return {
             graphChart,
             totalTimeSaved: Math.round(totalTimeSaved * 100) / 100, // Hours, rounded to 2 decimal places
@@ -348,7 +359,7 @@ export class DashboardService {
             averageTimePerPR: Math.round(averageTimePerPR * 100) / 100, // Hours, rounded to 2 decimal places
             totalLinesReviewed,
             totalPRsAnalyzed: prAnalyses.length,
-            ROI: Math.round(totalMoneySaved / totalCost).toFixed(2)
+            ROI: `${roi.toFixed(2)}`
         }
     }
 
@@ -512,7 +523,7 @@ export class DashboardService {
                             }
                         ]
                     },
-                    prTitle: '$pullRequest.title',
+                    prTitle: '$pullRequest.prTitle',
                     prUrl: '$pullRequest.prUrl',
                     avatarUrl: '$workspace.avatarUrl',
                     owner: {

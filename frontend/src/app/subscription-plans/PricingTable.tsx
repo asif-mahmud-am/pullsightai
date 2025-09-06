@@ -247,14 +247,11 @@ const SinglePlanCard: FC<{
                         size="lg"
                         onClick={() => handleSubscribe(plan)}
                         disabled={
-                            (selectedWorkspace?.currentPlan?.isFree &&
-                                plan?.isFree) ||
-                            (getRemainingDays(
+                            getRemainingDays(
                                 selectedWorkspace?.currentPlan?.periodEnd || ""
                             ) < 0 &&
-                                isSelected &&
-                                selectedWorkspace?.currentPlan?.numOfSeat ==
-                                    seats)
+                            isSelected &&
+                            selectedWorkspace?.currentPlan?.numOfSeat == seats
                         }
                         isLoading={isPending || isFetching}
                     >

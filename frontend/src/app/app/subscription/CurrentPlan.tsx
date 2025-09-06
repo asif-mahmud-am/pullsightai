@@ -33,7 +33,7 @@ const CurrentPlan = () => {
     return (
         <div className="space-y-6">
             {/* Your current plan header */}
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
+            <div className="flex flex-col lg:flex-row xl:items-center justify-between gap-3">
                 <div className="mr-7">
                     <h2 className="text-xl font-semibold ">
                         Your current plan
@@ -64,8 +64,11 @@ const CurrentPlan = () => {
                         </span>
                     </p>
                 </div>
-                <Link href={ROUTE_CONSTANTS.APP_SUBSCRIPTION_PLANS}>
-                    <Button>
+                <Link
+                    href={ROUTE_CONSTANTS.APP_SUBSCRIPTION_PLANS}
+                    className=""
+                >
+                    <Button className="w-full">
                         {isFreeOrTrialPlan ? "Upgrade Plan" : "Change Plan"}
                     </Button>
                 </Link>
@@ -81,7 +84,7 @@ const CurrentPlan = () => {
             {/* Plan details card */}
             <Card className="border-0">
                 <CardContent className="px-5 py-1">
-                    <div className="grid grid-cols-3 gap-7">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-7">
                         <div className="border rounded-2xl p-4">
                             <p className="text-sm text-gray-400 mb-1">Plan</p>
                             <div className="flex justify-between">
@@ -224,7 +227,7 @@ const CurrentPlan = () => {
             )}
             {/* Alerts for trial/subscription ending */}
             {isTrialPlan &&
-                getRemainingDays(activePlan?.periodEnd || "") <= 15 && (
+                getRemainingDays(activePlan?.periodEnd || "") <= 7 && (
                     <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
                         <div className="flex items-start gap-2">
                             <AlertCircle className="w-5 h-5 text-primary mt-0.5" />
@@ -244,24 +247,6 @@ const CurrentPlan = () => {
                                         Upgrade now
                                     </Link>{" "}
                                     to continue using premium features.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            {isPaidPlan &&
-                getRemainingDays(activePlan?.periodEnd || "") < 15 && (
-                    <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                        <div className="flex items-start gap-2">
-                            <AlertCircle className="w-5 h-5 text-yellow-500 mt-0.5" />
-                            <div>
-                                <p className="font-medium text-yellow-600">
-                                    Subscription Ending
-                                </p>
-                                <p className="text-sm text-yellow-600/80">
-                                    Your subscription will end on{" "}
-                                    {formatDate(activePlan?.periodEnd || "")}.
-                                    You{`'`}ll still have access until then.
                                 </p>
                             </div>
                         </div>

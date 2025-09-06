@@ -52,20 +52,11 @@ export class PackService {
         if (packData == null) {
             throw new NotFoundException('Pack not found')
         }
-        let totalToken = packData.token
-        let remainingToken = totalToken
-        if (userData?.currentWorkspace?.currentPack) {
-            remainingToken =
-                totalToken +
-                userData?.currentWorkspace?.currentPack?.remainingToken
-        }
-
         const purchasedPack = await this.dataService.purchasedPacks.create({
             workspace: userData?.currentWorkspace?._id,
             pack: purchasePlanDto.packId,
             amount: packData.price,
-            totalToken: totalToken,
-            remainingToken: remainingToken,
+            totalToken: packData.token,
             title: packData.title
         })
 

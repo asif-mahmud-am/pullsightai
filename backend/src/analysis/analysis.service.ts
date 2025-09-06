@@ -105,12 +105,11 @@ export class AnalysisService {
                 workspace.currentPlan.isFree &&
                 workspace.currentPlan.billingCycle == BillingCycle.MONTHLY
             ) {
-                workspace.currentPlan.remainingToken =
-                    await this.assignPlanToWorkspace(
-                        workspaceId,
-                        workspace.currentPlan.numOfSeat,
-                        workspace.currentPlan.plan
-                    )
+                workspace.planRemainingToken = await this.assignPlanToWorkspace(
+                    workspaceId,
+                    workspace.currentPlan.numOfSeat,
+                    workspace.currentPlan.plan
+                )
             } else {
                 flag = false
             }
@@ -118,8 +117,8 @@ export class AnalysisService {
 
         if (
             flag &&
-            (workspace?.currentPlan?.remainingToken > 0 ||
-                workspace?.currentPack?.remainingToken > 0)
+            (workspace?.planRemainingToken > 0 ||
+                workspace?.packRemainingToken > 0)
         ) {
             return true
         } else {
@@ -146,7 +145,6 @@ export class AnalysisService {
             plan: planData._id,
             amount: 0,
             totalToken: totalToken,
-            remainingToken: remainingToken,
             numOfSeat: noOfSeat,
             billingCycle: planData.billingCycle,
             periodStart: period.periodStart,
@@ -163,11 +161,13 @@ export class AnalysisService {
             { _id: workspaceId },
             {
                 $set: {
-                    currentPlan: purchasedPlan._id
+                    currentPlan: purchasedPlan._id,
+                    planTotalToken: totalToken,
+                    planRemainingToken: remainingToken
                 }
             }
         )
-        return purchasedPlan.remainingToken
+        return remainingToken
     }
 
     async updateTokenUsage(workspaceId: any, tokenUsage: number) {
@@ -180,32 +180,31 @@ export class AnalysisService {
         let remainingTokenUsage = tokenUsage
 
         // First, try to deduct from currentPlan if available
-        if (workspace?.currentPlan?.remainingToken && remainingTokenUsage > 0) {
+        if (workspace?.planRemainingToken && remainingTokenUsage > 0) {
             const planTokensToDeduct = Math.min(
-                workspace.currentPlan.remainingToken,
+                workspace.planRemainingToken,
                 remainingTokenUsage
             )
-            workspace.currentPlan.remainingToken = Math.max(
+            workspace.planRemainingToken = Math.max(
                 0,
-                workspace.currentPlan.remainingToken - planTokensToDeduct
+                workspace.planRemainingToken - planTokensToDeduct
             )
             remainingTokenUsage -= planTokensToDeduct
-            await workspace.currentPlan.save()
         }
 
         // Then, deduct remaining tokens from currentPack if available
-        if (workspace?.currentPack?.remainingToken && remainingTokenUsage > 0) {
+        if (workspace?.packRemainingToken && remainingTokenUsage > 0) {
             const packTokensToDeduct = Math.min(
-                workspace.currentPack.remainingToken,
+                workspace.packRemainingToken,
                 remainingTokenUsage
             )
-            workspace.currentPack.remainingToken = Math.max(
+            workspace.packRemainingToken = Math.max(
                 0,
-                workspace.currentPack.remainingToken - packTokensToDeduct
+                workspace.packRemainingToken - packTokensToDeduct
             )
             remainingTokenUsage -= packTokensToDeduct
-            await workspace.currentPack.save()
         }
+        await workspace.save()
         return tokenUsage - remainingTokenUsage
     }
 

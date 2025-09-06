@@ -54,26 +54,13 @@ export class PlanService {
         let totalToken = planData.isFree
             ? planData.tokenLimitPerDev
             : planData.tokenLimitPerDev * purchasePlanDto.noOfSeat
-        let remainingToken = totalToken
-        if (
-            userData?.currentWorkspace?.currentPlan &&
-            !userData?.currentWorkspace?.currentPlan?.isFree
-        ) {
-            remainingToken = Math.max(
-                totalToken -
-                    (userData?.currentWorkspace?.currentPlan?.totalToken -
-                        userData?.currentWorkspace?.currentPlan
-                            ?.remainingToken),
-                0
-            )
-        }
+
         const period = getTimePeriod(planData.billingCycle)
         const purchasedPlan = await this.dataService.purchasedPlans.create({
             workspace: userData?.currentWorkspace?._id,
             plan: purchasePlanDto.planId,
             amount: 0,
             totalToken: totalToken,
-            remainingToken: remainingToken,
             numOfSeat: purchasePlanDto.noOfSeat,
             billingCycle: planData.billingCycle,
             periodStart: period.periodStart,
@@ -104,9 +91,14 @@ export class PlanService {
                 userData?.currentWorkspace?.currentPlan?.subscriptionId
             )
         }
+
         await this.dataService.workspaces.updateOne(
             { _id: userData?.currentWorkspace?._id },
-            { currentPlan: purchasedPlan._id }
+            {
+                currentPlan: purchasedPlan._id,
+                planTotalToken: purchasedPlan.totalToken,
+                planRemainingToken: purchasedPlan.totalToken
+            }
         )
         await this.dataService.workspaceMembers.updateMany(
             {

@@ -100,25 +100,25 @@ export class PaymentsService {
         }
         currentPlan.status = Status.RENEWED
         await currentPlan.save()
-        const newPurchasePlan = await this.dataServices.purchasedPlans.create({
-            workspace: currentPlan.workspace,
-            plan: currentPlan.plan,
-            amount: transaction.amount,
-            totalToken: currentPlan.totalToken,
-            remainingToken: currentPlan.totalToken,
-            numOfSeat: currentPlan.numOfSeat,
-            billingCycle: currentPlan.billingCycle,
-            paymentStatus: PaymentStatus.PAID,
-            subscriptionId: transaction.subscriptionId,
-            status: Status.ACTIVE,
-            title: currentPlan.title,
-            pricePerDev: currentPlan.pricePerDev,
-            tokenLimitPerDev: currentPlan.tokenLimitPerDev,
-            isFree: currentPlan.isFree,
-            isDefault: currentPlan.isDefault,
-            periodStart: transaction.periodStart,
-            periodEnd: transaction.periodEnd
-        })
+        const newPurchasePlan: any =
+            await this.dataServices.purchasedPlans.create({
+                workspace: currentPlan.workspace,
+                plan: currentPlan.plan,
+                amount: transaction.amount,
+                totalToken: currentPlan.totalToken,
+                numOfSeat: currentPlan.numOfSeat,
+                billingCycle: currentPlan.billingCycle,
+                paymentStatus: PaymentStatus.PAID,
+                subscriptionId: transaction.subscriptionId,
+                status: Status.ACTIVE,
+                title: currentPlan.title,
+                pricePerDev: currentPlan.pricePerDev,
+                tokenLimitPerDev: currentPlan.tokenLimitPerDev,
+                isFree: currentPlan.isFree,
+                isDefault: currentPlan.isDefault,
+                periodStart: transaction.periodStart,
+                periodEnd: transaction.periodEnd
+            })
         const newTransaction = await this.dataServices.transactions.create({
             serviceId: currentPlan.plan,
             service: Service.PLAN,
@@ -134,17 +134,17 @@ export class PaymentsService {
             subscriptionId: transaction.subscriptionId,
             response: transaction.response
         })
-        await this.dataServices.workspaces.findOneAndUpdate(
-            {
-                _id: currentPlan.workspace
-            },
-            {
-                currentPlan: newPurchasePlan._id
-            },
-            {
-                new: true
-            }
-        )
+        const workspace: any = await this.dataServices.workspaces.findOne({
+            _id: currentPlan.workspace
+        })
+        if (!workspace) {
+            throw new BadGatewayException('Workspace not found')
+        }
+        workspace.currentPlan = newPurchasePlan._id
+        workspace.planRemainingToken = newPurchasePlan.totalToken
+        workspace.planTotalToken = newPurchasePlan.totalToken
+        workspace.isFreePlan = newPurchasePlan.isFree
+        await workspace.save()
         return newPurchasePlan
     }
 
@@ -217,6 +217,17 @@ export class PaymentsService {
             )
         }
         workspace.currentPlan = purchasedPlans._id
+        if (workspace.isFreePlan) {
+            workspace.planRemainingToken = purchasedPlans.totalToken
+        } else {
+            workspace.planRemainingToken = Math.max(
+                0,
+                purchasedPlans.totalToken -
+                    (workspace.planTotalToken - workspace.planRemainingToken)
+            )
+        }
+        workspace.planTotalToken = purchasedPlans.totalToken
+        workspace.isFreePlan = purchasedPlans.isFree
         return await workspace.save()
     }
 
@@ -233,17 +244,21 @@ export class PaymentsService {
                 },
                 { new: true }
             )
-        const workspace = await this.dataServices.workspaces.findOneAndUpdate(
-            {
-                _id: purchasedPack?.workspace
-            },
-            {
-                currentPack: purchasedPack?._id
-            },
-            {
-                new: true
-            }
-        )
+        if (!purchasedPack) {
+            throw new BadGatewayException('Purchased pack not found')
+        }
+        const workspace: any = await this.dataServices.workspaces.findOne({
+            _id: purchasedPack?.workspace
+        })
+        if (!workspace) {
+            throw new BadGatewayException('Workspace not found')
+        }
+        workspace.currentPack = purchasedPack?._id
+        workspace.packTotalToken =
+            purchasedPack.totalToken + workspace.packRemainingToken
+        workspace.packRemainingToken =
+            purchasedPack.totalToken + workspace.packRemainingToken
+        await workspace.save()
         return workspace
     }
 

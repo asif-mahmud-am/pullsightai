@@ -442,22 +442,26 @@ export class AnalysisService {
     }
 
     async addPRSummery(postSummery: PullRequestAnalysisDto) {
+        const updateBody: any = {
+            summary: postSummery.summary,
+            modelInfo: postSummery.modelInfo,
+            usageInfo: postSummery.usageInfo,
+            estimatedCodeReviewEffort:
+                postSummery?.summary_info?.estimated_code_review_effort,
+            potentialIssueCount:
+                postSummery?.summary_info?.potential_issue_count
+        }
+        if (!postSummery.summary) {
+            updateBody.status = Status.COMPLETED
+            updateBody.completedAt = new Date()
+        }
         const analysis =
             await this.dataService.pullRequestAnalysis.findOneAndUpdate(
                 {
                     _id: postSummery.pullRequestAnalysisId
                 },
                 {
-                    $set: {
-                        summary: postSummery.summary,
-                        modelInfo: postSummery.modelInfo,
-                        usageInfo: postSummery.usageInfo,
-                        estimatedCodeReviewEffort:
-                            postSummery?.summary_info
-                                ?.estimated_code_review_effort,
-                        potentialIssueCount:
-                            postSummery?.summary_info?.potential_issue_count
-                    }
+                    $set: updateBody
                 },
                 { new: true }
             )

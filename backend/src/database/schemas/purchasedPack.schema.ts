@@ -38,9 +38,6 @@ export class PurchasedPack {
     @Prop({ required: true, min: 0 })
     totalToken: number
 
-    @Prop({ required: true })
-    remainingToken: number
-
     @Prop({ default: false })
     isActive: boolean
 

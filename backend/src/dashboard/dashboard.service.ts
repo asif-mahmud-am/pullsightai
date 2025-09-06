@@ -593,7 +593,7 @@ export class DashboardService {
 
         // Create severity counts aggregation pipeline
         const severityCountsPipeline: any[] = [
-            { $match: totalDocsMatch },
+            { $match: baseMatchForTotalCount },
             {
                 $lookup: {
                     from: 'pullrequests',

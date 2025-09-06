@@ -14,11 +14,25 @@ import { useSearchParams, useRouter } from "next/navigation";
 import IssuesCard from "./issuesCard";
 
 const DashboardPage = () => {
-    const [fromDate, setFromDate] = useState<string | null>(null);
-    const [toDate, setToDate] = useState<string | null>(null);
+    const [selectedPeriod, setSelectedPeriod] = useState<string>("7");
+
+    // Initialize dates immediately based on default period
+    const initializeDates = (period: string) => {
+        const days = parseInt(period);
+        const today = new Date();
+        return {
+            fromDate: formatDate(subtractDays(today, days - 1), "YYYY-MM-DD"),
+            toDate: formatDate(today, "YYYY-MM-DD"),
+        };
+    };
+
+    const initialDates = initializeDates(selectedPeriod);
+    const [fromDate, setFromDate] = useState<string | null>(
+        initialDates.fromDate
+    );
+    const [toDate, setToDate] = useState<string | null>(initialDates.toDate);
     const [repo, setRepo] = useState<string | null>(null);
     const [breakdown, setBreakdown] = useState<string>("day");
-    const [selectedPeriod, setSelectedPeriod] = useState<string>("7");
     const [showCongrats, setShowCongrats] = useState(false);
 
     const searchParams = useSearchParams();
@@ -55,13 +69,6 @@ const DashboardPage = () => {
         setFromDate(newFromDate);
         setToDate(newToDate);
     };
-
-    // Set initial dates on component mount
-    useEffect(() => {
-        if (!fromDate || !toDate) {
-            handlePeriodChange(selectedPeriod);
-        }
-    }, [fromDate, toDate, selectedPeriod]);
 
     const handleRepoChange = (value: string) => {
         setRepo(value || null);

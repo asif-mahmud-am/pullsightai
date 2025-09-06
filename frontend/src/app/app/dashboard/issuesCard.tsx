@@ -51,7 +51,11 @@ const columns: ColumnDef<Issue>[] = [
                 <span className="text-white mb-1 text-md">
                     {row.getValue("pr")}
                 </span>
-                <a className="opacity-50" href="" target="_blank">
+                <a
+                    className="opacity-50"
+                    href={row.original?.prUrl}
+                    target="_blank"
+                >
                     <ExternalLink className="w-auto h-4" />
                 </a>
             </div>

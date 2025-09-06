@@ -7,6 +7,7 @@ import { CheckIcon } from "@/components/reusable/icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getRemainingDays } from "@/lib/dayjs";
 import showToast from "@/lib/toast";
+import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { Plan } from "@/types/plan";
 import { FC, useState } from "react";
@@ -133,17 +134,12 @@ const enterprisePlanFeatures = [
     },
 ];
 
-interface PricingTableProps {
-    isLoading: boolean;
-    plans: Plan[];
-    seats: number;
-}
-
 const SinglePlanCard: FC<{
+    className?: string;
     plan: Plan;
     seats: number;
     isSelected: boolean;
-}> = ({ plan, seats, isSelected }) => {
+}> = ({ className, plan, seats, isSelected }) => {
     const [isOpen, setIsOpen] = useState(false);
     const { selectedWorkspace } = useAuthStore();
 
@@ -168,10 +164,14 @@ const SinglePlanCard: FC<{
                     window.location.href = res.data.url;
                 } else {
                     refetch();
+                    setIsOpen(false);
                 }
             })
             .catch((error) => {
-                showToast.error("Failed to initiate subscription");
+                showToast.error(
+                    error?.response?.data?.error ||
+                        "Failed to initiate subscription"
+                );
             });
     };
     const handleFreePlanSubscription = async (plan: Plan) => {
@@ -189,9 +189,14 @@ const SinglePlanCard: FC<{
             />
             <Card
                 key={plan._id}
-                className={`relative pt-18 rounded-4xl ${
-                    plan.highlight ? "border-white border-2" : "border-0"
-                }`}
+                className={cn(
+                    `relative pt-18 rounded-4xl`,
+                    {
+                        "border-white border-2": plan.highlight,
+                        "border-0": !plan.highlight,
+                    },
+                    className
+                )}
             >
                 {plan.highlight && (
                     <Badge className="bg-white absolute top-8 left-6">
@@ -242,11 +247,14 @@ const SinglePlanCard: FC<{
                         size="lg"
                         onClick={() => handleSubscribe(plan)}
                         disabled={
-                            getRemainingDays(
+                            (selectedWorkspace?.currentPlan?.isFree &&
+                                plan?.isFree) ||
+                            (getRemainingDays(
                                 selectedWorkspace?.currentPlan?.periodEnd || ""
                             ) < 0 &&
-                            isSelected &&
-                            selectedWorkspace?.currentPlan?.numOfSeat == seats
+                                isSelected &&
+                                selectedWorkspace?.currentPlan?.numOfSeat ==
+                                    seats)
                         }
                         isLoading={isPending || isFetching}
                     >
@@ -277,7 +285,19 @@ const SinglePlanCard: FC<{
     );
 };
 
-const PricingTable: FC<PricingTableProps> = ({ isLoading, plans, seats }) => {
+interface PricingTableProps {
+    className?: string;
+    isLoading: boolean;
+    plans: Plan[];
+    seats: number;
+}
+
+const PricingTable: FC<PricingTableProps> = ({
+    className,
+    isLoading,
+    plans,
+    seats,
+}) => {
     const { selectedWorkspace } = useAuthStore();
 
     return (
@@ -290,8 +310,16 @@ const PricingTable: FC<PricingTableProps> = ({ isLoading, plans, seats }) => {
                     ))}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-7 max-w-8xl mx-auto mb-20 justify-center">
-                    {plans?.map((plan: Plan) => {
+                <div
+                    className={cn(
+                        "grid grid-cols-1  gap-7 max-w-8xl mx-auto mb-20 justify-center",
+                        {
+                            "lg:grid-cols-3": plans?.length == 2,
+                            "lg:grid-cols-4": plans?.length != 2,
+                        }
+                    )}
+                >
+                    {plans?.map((plan: Plan, index) => {
                         const isSelected =
                             selectedWorkspace?.currentPlan?.plan?._id ===
                             plan._id;

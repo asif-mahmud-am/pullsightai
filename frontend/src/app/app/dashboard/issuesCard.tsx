@@ -121,6 +121,11 @@ const IssuesCard = ({ className, fromDate, toDate, repo }: Props) => {
         severity: severity ? severity : undefined,
     });
 
+    // reset to page 1 when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [fromDate, toDate, repo, prUser, prState, severity]);
+
     const { Pagination } = usePagination({
         totalPages: data?.data?.totalPages || 1,
         currentPage,

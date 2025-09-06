@@ -5,11 +5,14 @@ import Button from "@/components/reusable/Button";
 import { ConfirmDialog } from "@/components/reusable/Dialog";
 import { CheckIcon } from "@/components/reusable/icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ROUTE_CONSTANTS } from "@/lib/constants";
 import { getRemainingDays } from "@/lib/dayjs";
 import showToast from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { Plan } from "@/types/plan";
+import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { FC, useRef, useState, useEffect } from "react";
 
 interface PricingTableProps {
@@ -140,6 +143,7 @@ const SinglePlanCard: FC<{
     seats: number;
     isSelected: boolean;
 }> = ({ className, plan, seats, isSelected }) => {
+    const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
     const [subscribingPlanId, setSubscribingPlanId] = useState<string | null>(
         null
@@ -165,13 +169,13 @@ const SinglePlanCard: FC<{
             planId: plan._id,
             noOfSeat: seats,
         })
-            .then((res) => {
+            .then(async (res) => {
                 if (res?.data?.url) {
                     window.location.href = res.data.url;
                 } else {
+                    await refetch();
                     showToast.success("New Plan Activated");
-                    refetch();
-                    setIsOpen(false);
+                    router.push(ROUTE_CONSTANTS.APP_SUBSCRIPTION);
                 }
             })
             .catch((error) => {
@@ -206,6 +210,7 @@ const SinglePlanCard: FC<{
             <ConfirmDialog
                 open={isOpen}
                 onOpenChange={setIsOpen}
+                isLoading={isPending || isFetching}
                 title="Confirm Free Plan"
                 description="Are you sure you want to subscribe to this plan? All other members except workspace owner will be disabled."
                 onConfirm={() => handleFreePlanSubscription(plan)}

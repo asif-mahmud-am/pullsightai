@@ -87,9 +87,13 @@ export class PlanService {
 
     async purchaseFreePlan(userData: any, purchasedPlan: any) {
         if (userData?.currentWorkspace?.currentPlan?.subscriptionId) {
-            await this.stripeService.cancelSubscription(
-                userData?.currentWorkspace?.currentPlan?.subscriptionId
-            )
+            try {
+                await this.stripeService.cancelSubscription(
+                    userData?.currentWorkspace?.currentPlan?.subscriptionId
+                )
+            } catch (err) {
+                console.error('Error cancelling subscription:', err)
+            }
         }
 
         await this.dataService.workspaces.updateOne(

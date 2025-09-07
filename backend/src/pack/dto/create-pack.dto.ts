@@ -22,4 +22,8 @@ export class CreatePackDto {
     @IsBoolean()
     @IsOptional()
     isPublic?: boolean
+
+    @IsOptional()
+    @IsString()
+    stripeProductId?: string
 }

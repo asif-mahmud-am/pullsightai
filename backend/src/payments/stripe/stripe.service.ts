@@ -80,13 +80,7 @@ export class StripeService {
             customer: createPaymentDto.customerId,
             line_items: [
                 {
-                    price_data: {
-                        currency: 'usd',
-                        product_data: {
-                            name: createPaymentDto.productTitle as string
-                        },
-                        unit_amount: createPaymentDto.price * 100
-                    },
+                    price: createPaymentDto.productId,
                     quantity: 1
                 }
             ],
@@ -111,11 +105,13 @@ export class StripeService {
         switch (body.type) {
             case 'checkout.session.completed': {
                 const session = body.data.object
+                const invoiceId = session.invoice as string
                 const subscriptionId = session.subscription as string
                 await this.paymentsService.paymentCallback({
                     subscriptionId,
                     paymentStatus: session.payment_status,
-                    transactionId: session.id,
+                    transactionId: invoiceId,
+                    trackingId: session.id,
                     response: session
                 })
                 break

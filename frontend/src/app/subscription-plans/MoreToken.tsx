@@ -60,7 +60,10 @@ const MoreToken = () => {
     return (
         <>
             <UpgradePlanDialog ref={dialogRef} />
-            <div className="max-w-8xl mx-auto mb-20 flex flex-col lg:flex-row justify-between items-center gap-6">
+            <div
+                className="max-w-8xl mx-auto mb-20 flex flex-col lg:flex-row justify-between items-center gap-6"
+                id="more-tokens"
+            >
                 <button
                     className="bg-card px-6 py-7 rounded-3xl flex text-left gap-5 items-center max-w-[450px] hover:bg-card/80 transition-colors cursor-pointer"
                     role="button"

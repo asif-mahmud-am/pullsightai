@@ -58,14 +58,14 @@ const TimeMoneySavedCard = ({
                 isLoading={isFetching}
                 className="flex flex-col flex-1"
             >
-                <div className="flex divide-x gap-5 lg:gap-9 pb-5 lg:py-5">
-                    <div className="pr-5 lg:pr-9">
+                <div className="flex divide-x gap-5 lg:gap-6 pb-5 lg:py-5">
+                    <div className="pr-5 lg:pr-6">
                         <div className="opacity-50 text-xs mb-1">Hours</div>
                         <div className="text-3xl">
                             {data?.data?.totalTimeSaved || 0}
                         </div>
                     </div>
-                    <div className="pr-5 lg:pr-9">
+                    <div className="pr-5 lg:pr-6">
                         <div className="opacity-50 text-xs mb-1">
                             Money Saved
                         </div>
@@ -78,7 +78,7 @@ const TimeMoneySavedCard = ({
                             )}
                         </div>
                     </div>
-                    <div className="pr-5 lg:pr-9">
+                    <div className="pr-5 lg:pr-6">
                         <div className="opacity-50 text-xs mb-1">ROI</div>
                         <div className="text-3xl">{data?.data?.ROI || 0}x</div>
                     </div>

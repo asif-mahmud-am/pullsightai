@@ -9,10 +9,15 @@ export const useUpdateWorkspaceSettingsMutation = () => {
     return useMutation({
         mutationFn: workspaceEndpoints.updateWorkspaceSettings,
         onSuccess: (data) => {
-            setSelectedWorkspace({
-                ...selectedWorkspace,
-                ...data?.data,
-            });
+            if (selectedWorkspace && selectedWorkspace._id) {
+                setSelectedWorkspace({
+                    ...selectedWorkspace,
+                    workspaceSetting: {
+                        ...selectedWorkspace.workspaceSetting,
+                        ...data?.data?.workspaceSetting,
+                    },
+                });
+            }
             queryClient.invalidateQueries({ queryKey: ["workspace"] });
         },
     });

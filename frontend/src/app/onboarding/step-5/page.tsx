@@ -158,7 +158,7 @@ const Step5Page = () => {
                             prId
                     )
                 }
-                confirmButtonSubtitle="Invitations will be sent automatically."
+                // confirmButtonSubtitle="Invitations will be sent automatically."
             />
         </>
     );

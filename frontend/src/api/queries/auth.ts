@@ -46,6 +46,7 @@ export const useUpdateUserMutation = () => {
         setUser,
         setSelectedWorkspace,
         setMyRoleInSelectedWorkspace,
+        setWorkspaces,
     } = useAuthStore();
 
     return useMutation({
@@ -57,9 +58,13 @@ export const useUpdateUserMutation = () => {
             const { updateState = true } = variables;
             // Only update state if updateState is true (default behavior)
             if (updateState !== false) {
-                setUser({ ...user, ...data.data });
-                setSelectedWorkspace(data.data.currentWorkspace || null);
-                queryClient.invalidateQueries({ queryKey: ["user", "repos"] });
+                setUser({ ...user, ...data?.data });
+                setSelectedWorkspace(data?.data?.currentWorkspace || null);
+
+                if (data?.data?.workspaces) {
+                    setWorkspaces(data?.data?.workspaces);
+                }
+
                 // if current workspace is changed, update myRoleInSelectedWorkspace
                 if (variables.currentWorkspace) {
                     const selectedWorkspace = workspaces?.find(
@@ -74,6 +79,7 @@ export const useUpdateUserMutation = () => {
                     setMyRoleInSelectedWorkspace(null);
                 }
             }
+            queryClient.invalidateQueries({ queryKey: ["user", "repos"] });
         },
     });
 };

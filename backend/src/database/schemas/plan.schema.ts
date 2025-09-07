@@ -63,6 +63,9 @@ export class Plan {
 
     @Prop({ required: false })
     stripeProductId: string
+
+    @Prop({ required: false })
+    externalUrl: string
 }
 
 const schema = SchemaFactory.createForClass(Plan)

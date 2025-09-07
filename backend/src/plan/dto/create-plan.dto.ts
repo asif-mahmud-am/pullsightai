@@ -68,4 +68,8 @@ export class CreatePlanDto {
     @IsOptional()
     @IsString()
     stripeProductId?: string
+
+    @IsOptional()
+    @IsString()
+    externalUrl?: string
 }

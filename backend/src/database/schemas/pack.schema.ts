@@ -27,6 +27,9 @@ export class Pack {
 
     @Prop({ default: 0 })
     priority: number
+
+    @Prop({ required: false })
+    stripeProductId: string
 }
 
 const schema = SchemaFactory.createForClass(Pack)

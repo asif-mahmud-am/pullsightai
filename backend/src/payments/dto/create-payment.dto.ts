@@ -57,6 +57,9 @@ export class PaymentCallbackDto {
     transactionId: string
 
     @IsNotEmpty()
+    trackingId: string
+
+    @IsNotEmpty()
     @IsEnum(PaymentStatus)
     paymentStatus: string
 

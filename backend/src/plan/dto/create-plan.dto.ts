@@ -34,6 +34,10 @@ export class CreatePlanDto {
 
     @IsNumber()
     @Min(0)
+    pricePerDevDisplay: number
+
+    @IsNumber()
+    @Min(0)
     tokenLimitPerDev: number
 
     @IsString()

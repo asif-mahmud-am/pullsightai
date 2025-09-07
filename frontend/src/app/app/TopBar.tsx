@@ -177,7 +177,7 @@ const AppTopBar = () => {
                 <Dropdown.Trigger>
                     <Button
                         variant="ghost"
-                        className="justify-between ml-auto bg-[var(--box-800)] flex items-center !h-auto !px-3 rounded-2xl gap-3 xl:gap-5 w-[150px] xl:w-[214px]"
+                        className="justify-between bg-[var(--box-800)] flex items-center !h-auto !px-3 rounded-2xl gap-3 xl:gap-5 w-[150px] xl:w-[214px]"
                     >
                         <div className="text-left flex-shrink-0 min-w-0 flex-1">
                             <div className="truncate">

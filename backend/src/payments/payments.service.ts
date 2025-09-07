@@ -150,7 +150,7 @@ export class PaymentsService {
 
     async paymentCallback(paymentCallbackDto: PaymentCallbackDto) {
         const transaction = await this.dataServices.transactions.findOne({
-            transactionId: paymentCallbackDto.transactionId
+            transactionId: paymentCallbackDto.trackingId
         })
         if (!transaction) {
             throw new BadGatewayException('Transaction not found')
@@ -158,7 +158,7 @@ export class PaymentsService {
 
         const updatedTransaction =
             await this.dataServices.transactions.findOneAndUpdate(
-                { transactionId: paymentCallbackDto.transactionId },
+                { _id: transaction._id },
                 paymentCallbackDto,
                 { new: true }
             )

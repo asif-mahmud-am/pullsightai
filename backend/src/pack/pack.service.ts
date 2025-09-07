@@ -70,7 +70,8 @@ export class PackService {
             customerId: userData.stripeCustomerId,
             price: packData.price,
             noOfSeat: 1,
-            productTitle: packData.title
+            productTitle: packData.title,
+            productId: packData.stripeProductId as any
         })
     }
 

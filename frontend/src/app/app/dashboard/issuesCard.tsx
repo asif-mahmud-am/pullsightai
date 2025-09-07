@@ -116,7 +116,7 @@ const IssuesCard = ({ className, fromDate, toDate, repo }: Props) => {
         from: fromDate,
         to: toDate,
         repo,
-        prUser,
+        prUser: prUser ? prUser : undefined,
         prState,
         severity: severity ? severity : undefined,
     });

@@ -23,6 +23,7 @@ export interface Plan {
     description: string;
     pricePerDev: number;
     tokenLimitPerDev: number;
+    externalUrl?: string;
     billingCycle: string;
     features: Feature[];
     isFree: boolean;

@@ -71,7 +71,7 @@ const AppTopBar = () => {
     };
 
     return (
-        <div className="xl:h-[88px] h-[60px] flex items-center border-b gap-x-4 xl:px-5 pr-3 pl-1 fixed top-0 left-0 right-0 z-40 bg-background">
+        <div className="xl:h-[88px] h-[60px] flex justify-between items-center border-b gap-x-2 lg:gap-x-4 xl:px-5 pr-3 pl-1 fixed top-0 left-0 right-0 z-40 bg-background">
             {pathName !== ROUTE_CONSTANTS.APP_SUBSCRIPTION_PLANS && (
                 <Button
                     variant="ghost"
@@ -110,13 +110,13 @@ const AppTopBar = () => {
                 height={37}
                 className="xl:h-auto w-auto h-[30px]"
             />
-            <span className="text-base font-medium mr-auto hidden md:inline">
+            <span className="text-base font-medium hidden md:inline">
                 Welcome back, {user?.displayName || user?.username} 👋
             </span>
 
             <AdminGuard>
-                {isTrialPlan && (
-                    <div className="text-sm text-gray-400 bg-yellow-400/20 rounded-xl py-2 px-3 mx-auto  hidden lg:inline-flex items-center gap-5">
+                {isTrialPlan ? (
+                    <div className="text-sm text-gray-400 bg-yellow-400/20 rounded-xl py-2 px-3 mx-auto  hidden lg:inline-flex items-center gap-5 mx-auto">
                         <ProgressIcon className={"animate-spin"} />
                         <div>
                             <div className="text-white font-semibold">
@@ -126,12 +126,12 @@ const AppTopBar = () => {
                             <div>
                                 {numToHip(
                                     selectedWorkspace?.planRemainingToken || 0,
-                                    1
+                                    2
                                 )}
                                 /
                                 {numToHip(
                                     selectedWorkspace?.planTotalToken || 0,
-                                    1
+                                    2
                                 )}{" "}
                                 tokens are left
                             </div>
@@ -143,6 +143,32 @@ const AppTopBar = () => {
                             Upgrade Now
                             <Rocket className="h-4 w-auto" />
                         </Link>
+                    </div>
+                ) : (
+                    <div className="border mr-auto p-1 md:p-2 rounded-lg">
+                        <p className="hidden xl:block text-xs text-gray-500 mb-0">
+                            Available Tokens
+                        </p>
+                        <p className="text-[14px] lg:text-xl font-bold flex flex-col md:flex-row md:items-end">
+                            <span>
+                                {numToHip(
+                                    (selectedWorkspace?.planRemainingToken ||
+                                        0) +
+                                        (selectedWorkspace?.packRemainingToken ||
+                                            0),
+                                    2
+                                )}{" "}
+                                /{" "}
+                            </span>
+                            <span className="text-muted-foreground text-xs lg:text-sm">
+                                {numToHip(
+                                    (selectedWorkspace?.planTotalToken || 0) +
+                                        (selectedWorkspace?.packTotalToken ||
+                                            0),
+                                    2
+                                )}
+                            </span>
+                        </p>
                     </div>
                 )}
             </AdminGuard>

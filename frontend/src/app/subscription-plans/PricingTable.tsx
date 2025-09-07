@@ -237,22 +237,30 @@ const SinglePlanCard: FC<{
                     <p className="text-muted-foreground text-sm mb-8">
                         {plan.description}
                     </p>
-                    <div className="mt-auto flex items-center">
-                        <div className="flex-1">
-                            <span className="text-3xl font-semibold">$</span>
-                            <span className="text-5xl font-bold">
-                                {plan.pricePerDev}
-                            </span>
-                            <span className="text-lg font-semibold text-muted-foreground">
-                                /dev
+                    {plan?.externalUrl ? (
+                        <div className=" mt-auto">
+                            <span className="text-xl font-semibold">
+                                Custom Pricing
                             </span>
                         </div>
-                        {isSelected && (
-                            <Badge className="bg-neutral-500">
-                                Current Plan
-                            </Badge>
-                        )}
-                    </div>
+                    ) : (
+                        <div className="mt-auto flex items-center">
+                            <div className="flex-1">
+                                <span className="text-3xl font-semibold">
+                                    $
+                                </span>
+                                <span className="text-5xl font-bold">
+                                    {plan.pricePerDev}
+                                </span>
+                                <span className="text-lg font-semibold text-muted-foreground">
+                                    /dev
+                                </span>
+                            </div>
+                            {isSelected && (
+                                <Badge className="bg-white">Current Plan</Badge>
+                            )}
+                        </div>
+                    )}
                 </CardHeader>
 
                 <CardContent className="space-y-6">
@@ -269,26 +277,42 @@ const SinglePlanCard: FC<{
                         tokens per user
                     </p>
                 </div> */}
-
-                    <Button
-                        className={`w-full font-semibold h-[56px]`}
-                        size="lg"
-                        onClick={() => handleSubscribe(plan)}
-                        disabled={
-                            getRemainingDays(
-                                selectedWorkspace?.currentPlan?.periodEnd || ""
-                            ) < 0 &&
-                            isSelected &&
-                            selectedWorkspace?.currentPlan?.numOfSeat == seats
-                        }
-                        isLoading={
-                            isPending ||
-                            subscribingPlanId === plan._id ||
-                            (isFetching && subscribingPlanId === plan._id)
-                        }
-                    >
-                        Subscribe
-                    </Button>
+                    {plan?.externalUrl ? (
+                        <a
+                            href={plan.externalUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <Button
+                                className={`w-full font-semibold h-[56px]`}
+                                size="lg"
+                            >
+                                Subscribe
+                            </Button>
+                        </a>
+                    ) : (
+                        <Button
+                            className={`w-full font-semibold h-[56px]`}
+                            size="lg"
+                            onClick={() => handleSubscribe(plan)}
+                            disabled={
+                                getRemainingDays(
+                                    selectedWorkspace?.currentPlan?.periodEnd ||
+                                        ""
+                                ) < 0 &&
+                                isSelected &&
+                                selectedWorkspace?.currentPlan?.numOfSeat ==
+                                    seats
+                            }
+                            isLoading={
+                                isPending ||
+                                subscribingPlanId === plan._id ||
+                                (isFetching && subscribingPlanId === plan._id)
+                            }
+                        >
+                            Subscribe
+                        </Button>
+                    )}
 
                     <div>
                         <ul className="space-y-2 divide-y">
@@ -361,7 +385,9 @@ const PricingTable: FC<PricingTableProps> = ({
                             />
                         );
                     })}
-                    <Card className={`relative pt-18 rounded-4xl border-0`}>
+                    {/* <Card
+                        className={`relative pt-18 rounded-4xl border-0`}
+                    >
                         <CardHeader className="pb-4 h-[200px]">
                             <CardTitle className="text-xl">
                                 Enterprise Plan
@@ -378,24 +404,10 @@ const PricingTable: FC<PricingTableProps> = ({
                         </CardHeader>
 
                         <CardContent className="space-y-6">
-                            {/* <div className="text-center p-4 bg-muted/50 rounded-lg">
-                            <div className="flex items-center justify-center gap-2 text-lg font-semibold">
-                                <Zap className="w-5 h-5" />
-                                {(
-                                    plan.tokenLimitPerDev * seats
-                                ).toLocaleString()}{" "}
-                                tokens/month
-                            </div>
-                            <p className="text-sm text-muted-foreground mt-1">
-                                {plan.tokenLimitPerDev.toLocaleString()}{" "}
-                                tokens per user
-                            </p>
-                        </div> */}
 
                             <Button
                                 className={`w-full font-semibold h-[56px]`}
                                 size="lg"
-                                // onClick={() => handleSubscribe(plan)}
                             >
                                 Contact sales
                             </Button>
@@ -421,7 +433,7 @@ const PricingTable: FC<PricingTableProps> = ({
                                 </ul>
                             </div>
                         </CardContent>
-                    </Card>
+                    </Card> */}
                 </div>
             )}
         </>

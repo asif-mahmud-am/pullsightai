@@ -65,7 +65,7 @@ const AppTopBar = () => {
             currentWorkspace: workspaceId,
             updateState: false, // for not updating state of selectedWorkspace
         }).then(() => {
-            window.location.reload();
+            window.location.href = ROUTE_CONSTANTS.APP_DASHBOARD;
             // showToast.success("Organization switched successfully!");
         });
     };

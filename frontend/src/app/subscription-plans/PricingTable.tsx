@@ -365,11 +365,11 @@ const PricingTable: FC<PricingTableProps> = ({
             ) : (
                 <div
                     className={cn(
-                        "grid grid-cols-1  gap-7 max-w-8xl mx-auto mb-20 justify-center",
-                        {
-                            "lg:grid-cols-3": plans?.length == 2,
-                            "lg:grid-cols-4": plans?.length != 2,
-                        }
+                        "flex flex-wrap xl:flex-nowrap gap-7 max-w-8xl mx-auto mb-20 justify-center"
+                        // {
+                        //     "lg:grid-cols-3": plans?.length == 2,
+                        //     "lg:grid-cols-4": plans?.length != 2,
+                        // }
                     )}
                 >
                     {plans?.map((plan: Plan, index) => {
@@ -378,6 +378,7 @@ const PricingTable: FC<PricingTableProps> = ({
                             plan._id;
                         return (
                             <SinglePlanCard
+                                className="min-w-[250px] max-w-[360px] flex-1"
                                 key={plan._id}
                                 plan={plan}
                                 seats={seats}

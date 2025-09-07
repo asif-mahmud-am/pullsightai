@@ -221,9 +221,8 @@ export class DashboardService {
 
         const findWorkspace = await this.dataService.workspaces.findOne(
             { _id: findUser.currentWorkspace },
-            'slug workSpaceSetting prFiles'
+            'slug workspaceSetting prFiles'
         )
-
         if (!findWorkspace) {
             return {
                 graphChart: [],
@@ -237,7 +236,6 @@ export class DashboardService {
 
         // Get hourly rate from workspace prFiles (default to 50 if not set)
         const hourlyRate = findWorkspace.workspaceSetting?.hourlyRate || 50
-
         // Set default date range if not provided (last 30 days)
         const toDate = timeAndMoneySaveCardFilterDto.to
             ? new Date(timeAndMoneySaveCardFilterDto.to)

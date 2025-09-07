@@ -270,7 +270,7 @@ export class WorkspaceService {
         const userData: any =
             await this.analysisService.getUserDataWithWorkspace(user)
 
-        Promise.all(
+        await Promise.all(
             createMembersDto.members.map(async (member) => {
                 const user = await this.dataService.workspaceMembers.findOne({
                     providerId: member.providerId,
@@ -315,7 +315,7 @@ export class WorkspaceService {
                 workspace: userData?.currentWorkspace!._id,
                 isActive: true
             })
-        userData.currentWorkspace.save()
+        await userData.currentWorkspace.save()
         return {}
     }
 

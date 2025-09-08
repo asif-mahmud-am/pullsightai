@@ -42,29 +42,9 @@ const CurrentPlan = () => {
                         View more about your active plan.
                     </p>
                 </div>
-                <div className="border mr-auto p-2 rounded-lg">
-                    <p className="text-xs text-gray-500 mb-0">
-                        Available Tokens
-                    </p>
-                    <p className="text-xl font-bold">
-                        {numToHip(
-                            (selectedWorkspace?.planRemainingToken || 0) +
-                                (selectedWorkspace?.packRemainingToken || 0),
-                            1
-                        )}{" "}
-                        /{" "}
-                        <span className="text-muted-foreground text-sm">
-                            {numToHip(
-                                (selectedWorkspace?.planTotalToken || 0) +
-                                    (selectedWorkspace?.packTotalToken || 0),
-                                1
-                            )}
-                        </span>
-                    </p>
-                </div>
                 <Link
                     href={ROUTE_CONSTANTS.APP_SUBSCRIPTION_PLANS}
-                    className=""
+                    className="ml-auto"
                 >
                     <Button className="w-full">
                         {isFreeOrTrialPlan ? "Upgrade Plan" : "Change Plan"}
@@ -114,9 +94,7 @@ const CurrentPlan = () => {
                             <p className="text-sm text-gray-400 mb-1">Pay</p>
                             <p className="text-2xl font-bold capitalize">
                                 {isFreeOrTrialPlan
-                                    ? isTrialPlan
-                                        ? "Trial Period"
-                                        : "Free Forever"
+                                    ? "-"
                                     : activePlan?.billingCycle}
                             </p>
                         </div>
@@ -141,16 +119,6 @@ const CurrentPlan = () => {
                             <>
                                 <div className="border rounded-2xl p-4">
                                     <p className="text-sm text-gray-400 mb-1 flex items-center gap-1">
-                                        Total Seats
-                                    </p>
-                                    <div className="flex justify-between">
-                                        <p className="text-2xl font-bold ">
-                                            {activePlan?.numOfSeat || "-"}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="border rounded-2xl p-4">
-                                    <p className="text-sm text-gray-400 mb-1 flex items-center gap-1">
                                         Total {activePlan?.billingCycle} cost
                                     </p>
                                     <div className="flex justify-between">
@@ -166,7 +134,17 @@ const CurrentPlan = () => {
                                 </div>
                                 <div className="border rounded-2xl p-4">
                                     <p className="text-sm text-gray-400 mb-1 flex items-center gap-1">
-                                        Tokens per Dev
+                                        Total Seats
+                                    </p>
+                                    <div className="flex justify-between">
+                                        <p className="text-2xl font-bold ">
+                                            {activePlan?.numOfSeat || "-"}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="border rounded-2xl p-4">
+                                    <p className="text-sm text-gray-400 mb-1 flex items-center gap-1">
+                                        Tokens per Seat
                                     </p>
                                     <div className="flex justify-between">
                                         <p className="text-2xl font-bold ">
@@ -174,7 +152,7 @@ const CurrentPlan = () => {
                                                 ? numToHip(
                                                       activePlan?.plan
                                                           ?.tokenLimitPerDev,
-                                                      1
+                                                      2
                                                   )
                                                 : "-"}
                                         </p>

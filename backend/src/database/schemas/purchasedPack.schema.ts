@@ -5,14 +5,6 @@ import * as uniqueValidator from 'mongoose-unique-validator'
 
 export type PurchasedPackDocument = PurchasedPack & Document
 
-class Feature {
-    @Prop({ required: true })
-    title: string
-
-    @Prop({ required: true })
-    description: string
-}
-
 @Schema({ timestamps: true, versionKey: false })
 export class PurchasedPack {
     @Prop({
@@ -40,17 +32,17 @@ export class PurchasedPack {
     @Prop({ required: true, min: 0 })
     amount: number
 
-    @Prop({ required: true, min: 0 })
+    @Prop({ required: false, min: 0, default: 0 })
     gatewayCharge: number
 
     @Prop({ required: true, min: 0 })
     totalToken: number
 
-    @Prop({ required: true, min: 0 })
-    remainingToken: number
-
-    @Prop({ default: true })
+    @Prop({ default: false })
     isActive: boolean
+
+    @Prop({ required: true })
+    title: string
 }
 
 const schema = SchemaFactory.createForClass(PurchasedPack)

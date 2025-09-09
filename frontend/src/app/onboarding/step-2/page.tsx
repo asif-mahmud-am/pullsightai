@@ -32,7 +32,7 @@ const Step2Page = () => {
     });
 
     const { searchInput, filteredData } = useSearchable({
-        data: repositories,
+        data: Array.isArray(repositories) ? repositories : [],
         searchFn: (item, search) =>
             search.trim()
                 ? item.name.toLowerCase().includes(search.toLowerCase())
@@ -87,7 +87,7 @@ const Step2Page = () => {
                             </Button>
                         </ContentCard.Header>
                         <ContentCard.Body
-                            className="xl:max-h-[calc(100vh-450px)]"
+                            className="lg:max-h-[calc(100vh-650px)] xl:max-h-[calc(100vh-450px)]"
                             hasError={!!error}
                             isLoading={isFetching}
                             errorLabel={

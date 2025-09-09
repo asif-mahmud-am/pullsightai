@@ -7,6 +7,7 @@ import { PullRequest } from "@/types/pullRequest";
 import Avatar from "@/components/reusable/Avatar";
 import Badge from "@/components/reusable/Badge";
 import { formatDate } from "@/lib/dayjs";
+import PrStateBadge from "@/components/reusable/PrStateBadge";
 
 export const columns: ColumnDef<PullRequest>[] = [
     {
@@ -17,8 +18,8 @@ export const columns: ColumnDef<PullRequest>[] = [
             cellClassName: "min-w-64 flex-1",
         },
         cell: ({ row }) => (
-            <div>
-                <span className="text-white mb-1 text-base">
+            <div className="2xl:max-w-xl xl:max-w-md lg:max-w-sm max-w-sm">
+                <span className="text-white mb-1 text-base text-wrap">
                     {row.getValue("prTitle")}
                 </span>
                 <div className="opacity-50">{row.original?.repo}</div>
@@ -29,8 +30,8 @@ export const columns: ColumnDef<PullRequest>[] = [
         accessorKey: "prUser",
         header: "Author",
         meta: {
-            headerClassName: "w-32",
-            cellClassName: "w-32",
+            headerClassName: "w-60",
+            cellClassName: "w-60",
         },
         cell: ({ row }) => {
             return (
@@ -49,25 +50,26 @@ export const columns: ColumnDef<PullRequest>[] = [
             headerClassName: "w-28",
             cellClassName: "w-28",
         },
+        cell: ({ row }) => (
+            <PrStateBadge state={row.getValue("prState") as string} />
+        ),
+    },
+    {
+        accessorKey: "issueCount",
+        header: "Issues",
+        meta: {
+            headerClassName: "w-28",
+            cellClassName: "w-28",
+        },
         cell: ({ row }) => {
-            const status = row.getValue("prState") as string;
+            const issueCount = row.getValue("issueCount") as number | undefined;
             return (
-                <Badge
-                    variant={
-                        status === "merged" || status === "closed"
-                            ? "success"
-                            : status === "rejected"
-                            ? "destructive"
-                            : "default"
-                    }
-                    type="faded"
-                >
-                    {status}
-                </Badge>
+                <span className="bg-white/5 text-gray-400 rounded-full px-2 py-1 inline-block">
+                    {issueCount || 0}
+                </span>
             );
         },
     },
-
     {
         accessorKey: "prUpdatedAt",
         header: "Updated",

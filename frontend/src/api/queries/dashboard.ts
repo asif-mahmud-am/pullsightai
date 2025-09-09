@@ -63,3 +63,44 @@ export const useDashboardTimeMoneySavedQuery = ({
         enabled: isEnabled,
     });
 };
+
+export const useDashboardIssuesQuery = ({
+    isEnabled,
+    page,
+    limit,
+    from,
+    to,
+    repo,
+    prUser,
+    prState,
+    severity,
+}: {
+    isEnabled?: boolean;
+    page?: number;
+    limit?: number;
+    from?: string;
+    to?: string;
+    repo?: string | null;
+    prUser?: string | null;
+    prState?: string | null;
+    severity?: string | null;
+}) => {
+    return useQuery({
+        queryKey: [
+            "dashboardIssues",
+            { from, to, repo, prUser, prState, severity, page, limit },
+        ],
+        queryFn: () =>
+            dashboardEndpoints.getIssues({
+                from,
+                to,
+                repo,
+                prUser,
+                prState,
+                severity,
+                page,
+                limit,
+            }),
+        enabled: isEnabled,
+    });
+};

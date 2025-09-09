@@ -27,3 +27,10 @@ export const subtractDays = (
     newDate.setDate(newDate.getDate() - days);
     return newDate;
 };
+
+export const getRemainingDays = (endDate: string | number | Date): number => {
+    const now = dayjs();
+    const end = dayjs(endDate);
+    const diff = end.diff(now, "day") + 1; // +1 to include the end day
+    return diff > 0 ? diff : 0;
+};

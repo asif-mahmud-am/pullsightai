@@ -7,7 +7,7 @@ export type PackDocument = Pack & Document
 
 @Schema({ timestamps: true, versionKey: false })
 export class Pack {
-    @Prop({ required: true, unique: true })
+    @Prop({ required: true })
     title: string
 
     @Prop({ required: true })
@@ -24,6 +24,12 @@ export class Pack {
 
     @Prop({ default: true })
     isPublic: boolean
+
+    @Prop({ default: 0 })
+    priority: number
+
+    @Prop({ required: false })
+    stripeProductId: string
 }
 
 const schema = SchemaFactory.createForClass(Pack)

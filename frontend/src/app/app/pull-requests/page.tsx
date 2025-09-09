@@ -119,8 +119,12 @@ const PullRequestsPage = () => {
                                     { value: "", label: "PR Status: All" },
                                     { value: "open", label: "PR Status: Open" },
                                     {
-                                        value: "closed",
-                                        label: "PR Status: Closed",
+                                        value: "merged",
+                                        label: "PR Status: Merged",
+                                    },
+                                    {
+                                        value: "declined",
+                                        label: "PR Status: Declined",
                                     },
                                 ]}
                                 className=""

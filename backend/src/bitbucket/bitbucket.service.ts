@@ -223,6 +223,8 @@ export class BitbucketService {
     }
 
     async processBitbucketEvent(event: any, payload: any) {
+        console.log('event name', event)
+        console.log('payload', payload)
         let isApplicable
         let pullRequestFormattedData: StructuredPRData | boolean
         let prEvent
@@ -268,7 +270,7 @@ export class BitbucketService {
                     {
                         repo:
                             payload.repository.slug || payload.repository.name,
-                        prNumber: payload.pullRequest.id.toString(),
+                        prNumber: payload.pullrequest?.id.toString(),
                         owner:
                             payload.repository.workspace?.slug ||
                             payload.repository.full_name?.split('/')[0],
@@ -283,7 +285,7 @@ export class BitbucketService {
                     {
                         repo:
                             payload.repository.slug || payload.repository.name,
-                        prNumber: payload.pullRequest.id.toString(),
+                        prNumber: payload?.pullrequest?.id.toString(),
                         owner:
                             payload.repository.workspace?.slug ||
                             payload.repository.full_name?.split('/')[0],
@@ -374,6 +376,11 @@ export class BitbucketService {
             return {
                 ...member,
                 _id: savedMember?._id ?? null,
+                role: savedMember?.role
+                    ? savedMember.role
+                    : userData.providerId == member.providerId
+                      ? 'owner'
+                      : 'member',
                 isActive: Boolean(savedMember?.isActive),
                 joinedAt: savedMember?.joinedAt
             }

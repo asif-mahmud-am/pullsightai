@@ -1,6 +1,7 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { DatabaseService } from 'src/database/database.service'
+import { PaymentStatus } from 'src/database/enums/status.enum'
 import { Gateway } from 'src/database/enums/transaction.enum'
 import { CreatePaymentDto } from 'src/payments/dto/create-payment.dto'
 import { PaymentsService } from 'src/payments/payments.service'
@@ -26,7 +27,6 @@ export class StripeService {
     }
 
     async getCustomerId(userData: any) {
-        console.log('Creating Stripe Customer for user:', userData._id)
         const customer = await this.stripe.customers.create({
             email: userData.email,
             name: userData.displayName,
@@ -34,15 +34,16 @@ export class StripeService {
                 userId: (userData as any)._id.toString()
             }
         })
-        console.log('Created Stripe Customer:', customer)
         return customer.id
     }
 
     async createCheckoutSession(createPaymentDto: CreatePaymentDto) {
         const SUCCESS_URL =
-            this.configService.get<string>('BASE_URL') + '/v1/stripe/success'
+            this.configService.get<string>('CLIENT_URL') +
+            `/app/subscription?service=${createPaymentDto.service}&paymentStatus=${PaymentStatus.PAID}`
         const CANCEL_URL =
-            this.configService.get<string>('BASE_URL') + '/v1/stripe/cancel'
+            this.configService.get<string>('CLIENT_URL') +
+            `/app/subscription?service=${createPaymentDto.service}&paymentStatus=${PaymentStatus.CANCELLED}`
         const session = await this.stripe.checkout.sessions.create({
             mode: 'subscription',
             customer: createPaymentDto.customerId, // must exist in Stripe
@@ -53,7 +54,47 @@ export class StripeService {
                 }
             ],
             success_url: SUCCESS_URL,
-            cancel_url: CANCEL_URL
+            cancel_url: CANCEL_URL,
+            subscription_data: {
+                metadata: {
+                    serviceBookingId:
+                        createPaymentDto.serviceBookingId.toString(),
+                    serviceBookingRef: createPaymentDto.serviceBookingRef
+                }
+            }
+        })
+        return {
+            url: session.url,
+            transactionId: session.id,
+            paymentStatus: session.payment_status,
+            storeAmount: Number(session.amount_total) / 100,
+            amount: Number(session.amount_total) / 100,
+            response: session
+        }
+    }
+
+    async createOneTimeCheckout(createPaymentDto: CreatePaymentDto) {
+        const SUCCESS_URL =
+            this.configService.get<string>('CLIENT_URL') +
+            `/app/subscription?service=${createPaymentDto.service}&paymentStatus=${PaymentStatus.PAID}`
+        const CANCEL_URL =
+            this.configService.get<string>('CLIENT_URL') +
+            `/app/subscription?service=${createPaymentDto.service}&paymentStatus=${PaymentStatus.CANCELLED}`
+        const session = await this.stripe.checkout.sessions.create({
+            mode: 'payment',
+            customer: createPaymentDto.customerId,
+            line_items: [
+                {
+                    price: createPaymentDto.productId,
+                    quantity: 1
+                }
+            ],
+            success_url: SUCCESS_URL,
+            cancel_url: CANCEL_URL,
+            metadata: {
+                serviceBookingId: createPaymentDto.serviceBookingId.toString(),
+                serviceBookingRef: createPaymentDto.serviceBookingRef
+            }
         })
         return {
             url: session.url,
@@ -69,29 +110,43 @@ export class StripeService {
         switch (body.type) {
             case 'checkout.session.completed': {
                 const session = body.data.object
+                const invoiceId = session.invoice as string
                 const subscriptionId = session.subscription as string
                 await this.paymentsService.paymentCallback({
                     subscriptionId,
                     paymentStatus: session.payment_status,
-                    transactionId: session.id,
+                    transactionId: invoiceId,
+                    trackingId: session.id,
                     response: session
                 })
                 break
             }
             case 'invoice.payment_succeeded': {
                 const invoice = body.data.object as Stripe.Invoice
-                if (invoice.billing_reason !== 'subscription_cycle') break
-                await this.paymentsService.generateRecurringPayment({
-                    transactionId: invoice.id as string,
-                    paymentStatus: invoice.status as string,
-                    amount: invoice.amount_paid / 100,
-                    currency: invoice.currency,
-                    gateway: Gateway.STRIPE,
-                    storeAmount: invoice.amount_paid / 100,
-                    subscriptionId: invoice.parent?.subscription_details
-                        ?.subscription as string,
-                    response: invoice
-                })
+                if (invoice.billing_reason == 'subscription_cycle') {
+                    const period = invoice.lines.data[0].period
+                    const startDate = new Date(period.start * 1000)
+                    const endDate = new Date(period.end * 1000)
+                    await this.paymentsService.generateRecurringPayment({
+                        transactionId: invoice.id as string,
+                        paymentStatus: invoice.status as string,
+                        amount: invoice.amount_paid / 100,
+                        currency: invoice.currency,
+                        gateway: Gateway.STRIPE,
+                        storeAmount: invoice.amount_paid / 100,
+                        periodEnd: endDate,
+                        periodStart: startDate,
+                        serviceBookingId:
+                            invoice?.parent?.subscription_details?.metadata
+                                ?.serviceBookingId,
+                        serviceBookingRef:
+                            invoice?.parent?.subscription_details?.metadata
+                                ?.serviceBookingRef,
+                        subscriptionId: invoice.parent?.subscription_details
+                            ?.subscription as string,
+                        response: invoice
+                    })
+                }
                 break
             }
         }
@@ -119,7 +174,12 @@ export class StripeService {
                         quantity: createPaymentDto.noOfSeat
                     }
                 ],
-                proration_behavior: 'create_prorations'
+                proration_behavior: 'create_prorations',
+                metadata: {
+                    serviceBookingId:
+                        createPaymentDto.serviceBookingId.toString(),
+                    serviceBookingRef: createPaymentDto.serviceBookingRef
+                }
             }
         )
 
@@ -142,6 +202,11 @@ export class StripeService {
             paymentStatus: paidInvoice.status,
             storeAmount: paidInvoice.amount_paid / 100
         }
+    }
+
+    async cancelSubscription(subscriptionId: string) {
+        const deleted = await this.stripe.subscriptions.cancel(subscriptionId)
+        return deleted
     }
 
     // async paymentCallback(sessionId: string) {

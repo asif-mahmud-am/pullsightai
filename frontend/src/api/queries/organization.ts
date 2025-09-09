@@ -5,6 +5,7 @@ import { Organization } from "@/types/organization";
 import { Provider } from "@/types/user";
 import { bitbucketEndpoints } from "../endpoints/bitbucket";
 import { gitlabEndpoints } from "../endpoints/gitlab";
+import { useAuthStore } from "@/store/authStore";
 
 export const useOrganizationQuery = ({
     provider = "github",
@@ -45,6 +46,8 @@ export const useOrganizationAddMutation = ({
 }: {
     provider?: "bitbucket" | "gitlab";
 }) => {
+    const { user, setUser, setSelectedWorkspace, workspaces, setWorkspaces } =
+        useAuthStore();
     const queryFn: Record<
         "bitbucket" | "gitlab",
         (params: {
@@ -66,6 +69,15 @@ export const useOrganizationAddMutation = ({
                 throw new Error("No data received from response");
             }
             return response.data;
+        },
+        onSuccess: (data: Organization) => {
+            if (!user) return;
+            setUser({
+                ...user,
+                currentWorkspace: data,
+            });
+            setSelectedWorkspace(data);
+            setWorkspaces([...(workspaces ?? []), data]);
         },
     });
 };

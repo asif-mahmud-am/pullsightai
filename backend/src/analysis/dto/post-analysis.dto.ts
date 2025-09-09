@@ -1,16 +1,10 @@
-import {
-    IsMongoId,
-    IsNotEmpty,
-    IsObject,
-    IsOptional,
-    IsString
-} from 'class-validator'
+import { IsMongoId, IsObject, IsOptional, IsString } from 'class-validator'
 
 export class PullRequestAnalysisDto {
     @IsMongoId()
     pullRequestAnalysisId: string
 
-    @IsNotEmpty()
+    @IsOptional()
     @IsString()
     summary: string
 

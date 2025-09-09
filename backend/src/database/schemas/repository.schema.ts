@@ -52,7 +52,7 @@ export class Repository {
     @Prop({ required: false, default: [] })
     ignore: string[]
 
-    @Prop({ default: Severity.INFO })
+    @Prop({ default: Severity.MAJOR })
     minSeverity: string
 
     @Prop({

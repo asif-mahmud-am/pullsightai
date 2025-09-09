@@ -7,6 +7,16 @@ import { BillingCycle } from 'src/database/schemas/plan.schema'
 
 export type PurchasedPlanDocument = PurchasedPlan & Document
 
+export enum Status {
+    ACTIVE = 'active',
+    INACTIVE = 'inactive',
+    CANCELED = 'canceled',
+    PENDING = 'pending',
+    RENEWED = 'renewed',
+    UPGRADED = 'upgraded',
+    DOWNGRADED = 'downgraded'
+}
+
 @Schema({ timestamps: true, versionKey: false })
 export class PurchasedPlan {
     @Prop({
@@ -41,16 +51,13 @@ export class PurchasedPlan {
     totalToken: number
 
     @Prop({ required: true, min: 0 })
-    remainingToken: number
-
-    @Prop({ required: true, min: 0 })
     numOfSeat: number
 
     @Prop({ required: true, default: BillingCycle.MONTHLY })
     billingCycle: BillingCycle
 
-    @Prop({ default: false })
-    isActive: boolean
+    @Prop({ default: Status.PENDING, enum: Status })
+    status: Status
 
     @Prop({ required: false })
     subscriptionId: string
@@ -67,6 +74,21 @@ export class PurchasedPlan {
 
     @Prop({ required: false })
     periodEnd: Date
+
+    @Prop({ required: false })
+    title: string
+
+    @Prop({ required: false })
+    pricePerDev: number
+
+    @Prop({ required: false })
+    tokenLimitPerDev: number
+
+    @Prop({ default: false })
+    isFree: boolean
+
+    @Prop({ default: false })
+    isDefault: boolean
 }
 
 const schema = SchemaFactory.createForClass(PurchasedPlan)

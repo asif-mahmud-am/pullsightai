@@ -58,14 +58,14 @@ const TimeMoneySavedCard = ({
                 isLoading={isFetching}
                 className="flex flex-col flex-1"
             >
-                <div className="flex divide-x gap-5 lg:gap-9 pb-5 lg:py-5">
-                    <div className="pr-5 lg:pr-9">
+                <div className="flex divide-x gap-5 lg:gap-6 pb-5 lg:py-5">
+                    <div className="pr-5 lg:pr-6">
                         <div className="opacity-50 text-xs mb-1">Hours</div>
                         <div className="text-3xl">
                             {data?.data?.totalTimeSaved || 0}
                         </div>
                     </div>
-                    <div className="pr-5 lg:pr-9">
+                    <div className="pr-5 lg:pr-6">
                         <div className="opacity-50 text-xs mb-1">
                             Money Saved
                         </div>
@@ -78,13 +78,13 @@ const TimeMoneySavedCard = ({
                             )}
                         </div>
                     </div>
-                    {/* <div className="pr-5 lg:pr-9">
+                    <div className="pr-5 lg:pr-6">
                         <div className="opacity-50 text-xs mb-1">ROI</div>
-                        <div className="text-3xl">3.2x</div>
-                    </div> */}
+                        <div className="text-3xl">{data?.data?.ROI || 0}x</div>
+                    </div>
                 </div>
                 <ChartContainer
-                    className="border py-3 pr-3 rounded-xl flex-1"
+                    className="border py-3 pr-3 rounded-xl flex-1 max-h-[400px]"
                     config={{
                         total: {
                             label: "Total",
@@ -120,11 +120,50 @@ const TimeMoneySavedCard = ({
                             width={35}
                             tickLine={false}
                             axisLine={false}
-                            tickMargin={5}
+                            tickMargin={0}
+                            tickFormatter={(value) =>
+                                value % 1 === 0
+                                    ? value.toString()
+                                    : value.toFixed(2)
+                            }
                         />
                         <ChartTooltip
                             cursor={false}
-                            content={<ChartTooltipContent hideLabel />}
+                            content={({ active, payload, label }) => {
+                                if (active && payload && payload.length) {
+                                    const data = payload[0];
+                                    return (
+                                        <div className="bg-background border rounded-lg shadow-md p-3 space-y-1">
+                                            <p className="text-sm font-medium">
+                                                {formatDate(
+                                                    label,
+                                                    breakdown == "year"
+                                                        ? "YYYY"
+                                                        : breakdown == "month"
+                                                        ? "MMM YYYY"
+                                                        : "DD MMM YYYY"
+                                                )}
+                                            </p>
+                                            <div className="flex items-center gap-2">
+                                                <div
+                                                    className="w-3 h-3 rounded"
+                                                    style={{
+                                                        backgroundColor:
+                                                            data.color,
+                                                    }}
+                                                />
+                                                <span className="text-sm text-muted-foreground">
+                                                    Time Saved:
+                                                </span>
+                                                <span className="text-sm font-medium">
+                                                    {data.value}h
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            }}
                         />
                         <Bar
                             dataKey="timeSaved"

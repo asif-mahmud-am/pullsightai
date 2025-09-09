@@ -3,7 +3,7 @@ from app.models.pr_event import PRPayloadV2, PRFileInfo
 from app.api.summary import generate_summary_response
 from app.api.review import generate_review_response, generate_chunked_review_response
 from app.services.claude_service import ClaudeService
-from app.utils.chunking_strategy import create_summary_chunks, create_review_chunks, prepare_chunk_for_summary, prepare_chunk_for_review
+from app.utils.chunking_strategy import create_summary_chunks, create_review_chunks, prepare_chunk_for_summary, prepare_chunk_for_review, convert_hunks_to_unified_diff
 from app.utils.summary_aggregator import aggregate_chunk_summaries
 from app.utils.line_perser import extract_summary_info
 import httpx
@@ -95,11 +95,21 @@ def validate_pr_payload(payload: PRPayloadV2) -> tuple[bool, str, dict]:
         for file in pr.get("prFiles", []):
             pr_file_names.append(file.get("prFileName"))
 
+        logger.info(f"Ignored files: {ignored_files}")
+        logger.info(f"PR file names: {pr_file_names}")
+
         pr_files_allowed = filter_pr_files(ignored_files, pr_file_names)
         pr_files = []
         for file in pr.get("prFiles", []):
             if file.get("prFileName") in pr_files_allowed:
                 pr_files.append(file)
+
+        #converting hunks to unified diff
+        for file in pr_files:
+            # check if prFileDiffHunks exists and is not empty
+            if "prFileDiffHunks" not in file or not file.get("prFileDiffHunks"):
+                continue
+            file["prFileDiff"] = convert_hunks_to_unified_diff(file["prFileDiffHunks"], file["prFileName"])
 
         
         # Extract and validate data
@@ -116,7 +126,7 @@ def validate_pr_payload(payload: PRPayloadV2) -> tuple[bool, str, dict]:
             "prFiles": pr_files,
             "api_key": api_key,
             "model_name": model_name,
-            "minSeverity": pr.get("minSeverity", "Info")
+            "minSeverity": pr.get("minSeverity", "Major")
 
         }
         
@@ -130,8 +140,8 @@ def validate_pr_payload(payload: PRPayloadV2) -> tuple[bool, str, dict]:
                 return False, f"File {i} is not a valid object", {}
             if "prFileName" not in file_info:
                 return False, f"File {i} missing prFileName", {}
-            if "prFileDiff" not in file_info:
-                return False, f"File {i} missing prFileDiff", {}
+            if "prFileDiff" not in file_info and "prFileDiffHunks" not in file_info:
+                return False, f"File {i} missing both prFileDiff and prFileDiffHunks", {}
         
         logger.info(f"Payload validation successful. PR: {extracted_data['prNumber']}, Files: {len(extracted_data['prFiles'])}")
         return True, "", extracted_data
@@ -152,6 +162,7 @@ async def process_pr_review_background(extracted_data: dict):
     review_input_tokens = 0
     review_output_tokens = 0
     model_info = ""
+    summary_info = {}
     
     logger.info("=" * 80)
     logger.info("Starting background PR review process")
@@ -181,7 +192,7 @@ async def process_pr_review_background(extracted_data: dict):
         chunk_summaries = []
         total_time_estimation = 0
         total_issue_count = 0
-        summary_info = {}
+        
         for chunk in chunks:
             logger.info(f"Generating summary for chunk {chunk['chunk_index'] + 1}/{len(chunks)} with {len(chunk['files'])} files")
             
@@ -353,8 +364,6 @@ async def process_pr_review_background(extracted_data: dict):
                         "usageInfo": review_usage,
                         "completed": 1 if chunk_index == total_chunks - 1 else 0
                     }
-
-                    print(review_payload)
 
                     logger.info(f"Posting {len(chunk_comments)} comments for chunk {chunk_index + 1} to backend...")
 

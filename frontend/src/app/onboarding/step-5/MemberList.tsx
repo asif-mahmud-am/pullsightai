@@ -22,9 +22,15 @@ export const columns: ColumnDef<TeamMember>[] = [
                     table.getIsAllPageRowsSelected() ||
                     (table.getIsSomePageRowsSelected() && "indeterminate")
                 }
-                onCheckedChange={(value) =>
-                    table.toggleAllPageRowsSelected(!!value)
-                }
+                onCheckedChange={(value) => {
+                    //toggle all rows except owner
+                    // table.toggleAllPageRowsSelected(!!value)
+                    table.getRowModel().rows.forEach((row) => {
+                        if (row.original?.role !== "owner") {
+                            row.toggleSelected(!!value);
+                        }
+                    });
+                }}
                 aria-label="Select all"
             />
         ),
@@ -33,6 +39,7 @@ export const columns: ColumnDef<TeamMember>[] = [
                 checked={row.getIsSelected()}
                 onCheckedChange={(value) => row.toggleSelected(!!value)}
                 aria-label="Select row"
+                disabled={row.original?.role == "owner"}
             />
         ),
         enableSorting: false,
@@ -75,7 +82,9 @@ const MemberList = ({ onSelectionChange }: Props) => {
 
     // Function to determine if a member should be initially selected
     const shouldSelectMember = (member: TeamMember) => {
-        return member.providerId === user?.providerId;
+        return (
+            member.providerId === user?.providerId || member?.role == "owner"
+        );
     };
 
     const otherMembers = members?.filter(
@@ -85,11 +94,19 @@ const MemberList = ({ onSelectionChange }: Props) => {
 
     return (
         <ContentCard className="mb-4">
-            <ContentCard.Header className="flex-wrap sm:flex-nowrap gap-y-4">
-                <h3 className="font-medium text-lg">
-                    Team members list{" "}
-                    <span className="text-muted">({members?.length})</span>
-                </h3>
+            <ContentCard.Header className="flex-wrap sm:flex-nowrap gap-y-4 gap-x-6">
+                <div>
+                    <h3 className="font-medium text-lg">
+                        Team members list{" "}
+                        <span className="text-muted">({members?.length})</span>
+                    </h3>
+
+                    <div className="text-neutral-400 text-sm">
+                        Invited team members would receive AI code reviews and
+                        would have access to the app. <br /> You can add or
+                        remove team members at any time
+                    </div>
+                </div>
                 <input
                     value={
                         (columnFilters.find((f) => f.id === "username")
@@ -138,9 +155,6 @@ const MemberList = ({ onSelectionChange }: Props) => {
                     columnFilters={columnFilters}
                     onColumnFiltersChange={setColumnFilters}
                 />
-                <div className="text-muted text-sm mt-3">
-                    You can add or remove team members at any time
-                </div>
             </ContentCard.Body>
         </ContentCard>
     );

@@ -30,9 +30,9 @@ export function mapPREventToState(event: PREvent): PRState {
 }
 
 export enum Severity {
-    INFO = 'info',
-    MINOR = 'minor',
-    MAJOR = 'major',
-    CRITICAL = 'critical',
-    BLOCKER = 'blocker'
+    INFO = 'Info',
+    MINOR = 'Minor',
+    MAJOR = 'Major',
+    CRITICAL = 'Critical',
+    BLOCKER = 'Blocker'
 }

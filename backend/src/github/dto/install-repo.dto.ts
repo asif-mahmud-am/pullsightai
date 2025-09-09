@@ -21,7 +21,21 @@ export class GetPRDto {
 
     @IsString()
     @IsOptional()
-    status: string
+    status: string = 'open'
+
+    @IsString()
+    @IsOptional()
+    limit: string
+}
+
+export class GetPRGitLabDto {
+    @IsString()
+    @IsNotEmpty()
+    repo: string
+
+    @IsString()
+    @IsOptional()
+    status: string = 'opened'
 
     @IsString()
     @IsOptional()

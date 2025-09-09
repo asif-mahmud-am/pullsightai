@@ -3,7 +3,7 @@
 import ContentCard from "@/components/reusable/ContentCard";
 import { useState, useEffect } from "react";
 import PrAnalysisCard from "./prAnalysisCard";
-import { subtractDays } from "@/lib/dayjs";
+import { subtractDays, formatDate } from "@/lib/dayjs";
 import IssueAnalysisCard from "./issueAnalysisCard";
 import TimeMoneySavedCard from "./timeMoneySavedCard";
 import { useGetWorkspaceRepositoriesQuery } from "@/api/queries/workspace";
@@ -11,13 +11,28 @@ import Select from "@/components/reusable/Select";
 import { Repository } from "@/types/repository";
 import OnboardingCongratsModal from "./OnboardingCongratsModal";
 import { useSearchParams, useRouter } from "next/navigation";
+import IssuesCard from "./issuesCard";
 
 const DashboardPage = () => {
-    const [fromDate, setFromDate] = useState<string | null>(null);
-    const [toDate, setToDate] = useState<string | null>(null);
+    const [selectedPeriod, setSelectedPeriod] = useState<string>("7");
+
+    // Initialize dates immediately based on default period
+    const initializeDates = (period: string) => {
+        const days = parseInt(period);
+        const today = new Date();
+        return {
+            fromDate: formatDate(subtractDays(today, days - 1), "YYYY-MM-DD"),
+            toDate: formatDate(today, "YYYY-MM-DD"),
+        };
+    };
+
+    const initialDates = initializeDates(selectedPeriod);
+    const [fromDate, setFromDate] = useState<string | null>(
+        initialDates.fromDate
+    );
+    const [toDate, setToDate] = useState<string | null>(initialDates.toDate);
     const [repo, setRepo] = useState<string | null>(null);
     const [breakdown, setBreakdown] = useState<string>("day");
-    const [selectedPeriod, setSelectedPeriod] = useState<string>("7");
     const [showCongrats, setShowCongrats] = useState(false);
 
     const searchParams = useSearchParams();
@@ -43,27 +58,26 @@ const DashboardPage = () => {
     const handlePeriodChange = (value: string) => {
         setSelectedPeriod(value);
         const days = parseInt(value);
-        const newToDate = new Date().toISOString();
-        const newFromDate = subtractDays(new Date(), days - 1).toISOString();
+        const today = new Date();
+        // Use formatDate helper for local date formatting
+        // Format: YYYY-MM-DD for API compatibility
+        const newToDate = formatDate(today, "YYYY-MM-DD");
+        const newFromDate = formatDate(
+            subtractDays(today, days - 1),
+            "YYYY-MM-DD"
+        );
         setFromDate(newFromDate);
         setToDate(newToDate);
     };
-
-    // Set initial dates on component mount
-    useEffect(() => {
-        if (!fromDate || !toDate) {
-            handlePeriodChange(selectedPeriod);
-        }
-    }, [fromDate, toDate, selectedPeriod]);
 
     const handleRepoChange = (value: string) => {
         setRepo(value || null);
     };
 
     return (
-        <div>
+        <>
             {/* Header */}
-            <div className="flex flex-wrap items-center gap-3 mb-3 sticky top-0 bg-background pt-3 pb-2 z-10">
+            <div className="flex flex-wrap items-center gap-3 mb-3 lg:sticky lg:top-0 bg-background pt-3 pb-2 z-10 ">
                 <h2 className="text-2xl font-semibold">Dashboard</h2>
                 <div className="ml-auto flex flex-col md:flex-row gap-3 w-full md:w-auto">
                     <Select
@@ -109,25 +123,31 @@ const DashboardPage = () => {
             </div>
             <div className="grid grid-cols-12 gap-5">
                 <PrAnalysisCard
-                    className="col-span-12 xl:col-span-4"
+                    className="col-span-12 lg:col-span-6 xl:col-span-4"
                     fromDate={fromDate || undefined}
                     toDate={toDate || undefined}
                     repo={repo || undefined}
                     breakdown={breakdown || undefined}
                 />
                 <IssueAnalysisCard
-                    className="col-span-12 xl:col-span-4"
+                    className="col-span-12 lg:col-span-6 xl:col-span-4"
                     fromDate={fromDate || undefined}
                     toDate={toDate || undefined}
                     repo={repo || undefined}
                     breakdown={breakdown || undefined}
                 />
                 <TimeMoneySavedCard
-                    className="col-span-12 xl:col-span-4"
+                    className="col-span-12 lg:col-span-12 xl:col-span-4"
                     fromDate={fromDate || undefined}
                     toDate={toDate || undefined}
                     repo={repo || undefined}
                     breakdown={breakdown || undefined}
+                />
+                <IssuesCard
+                    className="col-span-12"
+                    fromDate={fromDate || undefined}
+                    toDate={toDate || undefined}
+                    repo={repo || undefined}
                 />
             </div>
 
@@ -136,7 +156,7 @@ const DashboardPage = () => {
                 open={showCongrats}
                 onOpenChange={setShowCongrats}
             />
-        </div>
+        </>
     );
 };
 

@@ -68,7 +68,7 @@ const Step5Page = () => {
                         window.location.origin
                     );
                     dashboardUrl.searchParams.set("showCongrats", "true");
-                    window.location.href = dashboardUrl.toString();
+                    redirect(dashboardUrl.toString());
                 });
             })
             .catch((error) => {
@@ -123,17 +123,17 @@ const Step5Page = () => {
 
                 {/* left column */}
                 <div className="col-span-12 xl:col-span-6">
-                    <RepositoryList
-                        onSelectionChange={(selectedRepos) =>
-                            setSelectedRepositories(selectedRepos)
+                    <MemberList
+                        onSelectionChange={(selectedMembers) =>
+                            setSelectedMembers(selectedMembers)
                         }
                     />
                 </div>
                 {/* Right column */}
                 <div className="col-span-12 xl:col-span-6">
-                    <MemberList
-                        onSelectionChange={(selectedMembers) =>
-                            setSelectedMembers(selectedMembers)
+                    <RepositoryList
+                        onSelectionChange={(selectedRepos) =>
+                            setSelectedRepositories(selectedRepos)
                         }
                     />
                 </div>
@@ -158,7 +158,7 @@ const Step5Page = () => {
                             prId
                     )
                 }
-                confirmButtonSubtitle="Invitations will be sent automatically."
+                // confirmButtonSubtitle="Invitations will be sent automatically."
             />
         </>
     );

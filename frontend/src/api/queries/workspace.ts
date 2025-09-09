@@ -9,10 +9,15 @@ export const useUpdateWorkspaceSettingsMutation = () => {
     return useMutation({
         mutationFn: workspaceEndpoints.updateWorkspaceSettings,
         onSuccess: (data) => {
-            setSelectedWorkspace({
-                ...selectedWorkspace,
-                ...data?.data,
-            });
+            if (selectedWorkspace && selectedWorkspace._id) {
+                setSelectedWorkspace({
+                    ...selectedWorkspace,
+                    workspaceSetting: {
+                        ...selectedWorkspace.workspaceSetting,
+                        ...data?.data?.workspaceSetting,
+                    },
+                });
+            }
             queryClient.invalidateQueries({ queryKey: ["workspace"] });
         },
     });
@@ -61,6 +66,7 @@ export const useUpdateRepositoryMutation = () => {
     return useMutation({
         mutationFn: workspaceEndpoints.updateRepository,
         onSuccess: () => {
+            // Invalidate all queries that start with "repositories"
             queryClient.invalidateQueries({ queryKey: ["repositories"] });
         },
     });
@@ -72,7 +78,12 @@ export const useAddRepositoriesMutation = () => {
     return useMutation({
         mutationFn: workspaceEndpoints.addRepositories,
         onSuccess: () => {
+            console.log(
+                "Invalidating repositories queries after adding repositories"
+            );
+            // Try multiple invalidation approaches to ensure it works
             queryClient.invalidateQueries({ queryKey: ["repositories"] });
+            queryClient.refetchQueries({ queryKey: ["repositories"] });
         },
     });
 };
@@ -131,13 +142,37 @@ export const useGetWorkspaceTeamMembersQuery = ({
 
 export const useUpdateTeamMemberMutation = () => {
     const queryClient = useQueryClient();
+    const { selectedWorkspace, setSelectedWorkspace } = useAuthStore();
 
     return useMutation({
         mutationFn: workspaceEndpoints.updateTeamMember,
-        onSuccess: () => {
+        onSuccess: (_, variables: any) => {
             queryClient.invalidateQueries({
                 queryKey: ["teamMembers"],
             });
+            // update workspace noOfActiveMembers, if active then ++ else --. it's a number just.
+            console.log("variables", variables);
+
+            if (
+                selectedWorkspace &&
+                variables &&
+                typeof variables === "object"
+            ) {
+                // sample variable above commented out
+                const activeCount = variables?.members?.reduce(
+                    (acc: any, member: any) => acc + (member.isActive ? 1 : 0),
+                    0
+                );
+                const inactiveCount = variables?.members?.length - activeCount;
+
+                const currentCount = selectedWorkspace.noOfActiveMembers || 0;
+                const updatedWorkspace = {
+                    ...selectedWorkspace,
+                    noOfActiveMembers:
+                        currentCount + (activeCount - inactiveCount),
+                };
+                setSelectedWorkspace(updatedWorkspace);
+            }
         },
     });
 };

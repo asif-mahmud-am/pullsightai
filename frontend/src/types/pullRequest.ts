@@ -3,8 +3,9 @@ export interface PullRequest {
     provider: string;
     prId: number;
     prNumber: number;
+    issueCount: number;
     prTitle: string;
-    prState: string;
+    prState: string; //open | merged | declined
     prUser: string;
     prUserAvatar: string;
     prCreatedAt: string;

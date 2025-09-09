@@ -10,6 +10,7 @@ import {
     UseGuards
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
+import { WorkspaceOwnerGuard } from 'src/auth/guards/workspace-owner.guard'
 import { PurchasePlanDto } from 'src/plan/dto/purchase-plan.dto'
 import { CreatePlanDto } from './dto/create-plan.dto'
 import { UpdatePlanDto } from './dto/update-plan.dto'
@@ -19,9 +20,25 @@ import { PlanService } from './plan.service'
     path: 'plan',
     version: '1'
 })
-@UseGuards(AuthGuard('jwt-cookie'))
+@UseGuards(AuthGuard('jwt-cookie'), WorkspaceOwnerGuard)
 export class PlanController {
     constructor(private readonly planService: PlanService) {}
+
+    @Get('current-active-plan')
+    async currentActivePlan(@Req() req) {
+        return {
+            message: 'Current active plan retrieved successfully',
+            result: await this.planService.currentActivePlan(req.user)
+        }
+    }
+
+    @Post('cancel-plan')
+    async cancelPlan(@Req() req) {
+        return {
+            message: 'Cancel plan request successful',
+            result: await this.planService.cancelPlan(req.user)
+        }
+    }
 
     @Post('purchase')
     async purchase(@Body() purchasePlanDto: PurchasePlanDto, @Req() req) {

@@ -15,7 +15,9 @@ class Feature {
 
 export enum BillingCycle {
     MONTHLY = 'monthly',
-    YEARLY = 'yearly'
+    YEARLY = 'yearly',
+    FORTNIGHTLY = 'fortnightly',
+    WEEKLY = 'weekly'
 }
 
 @Schema({ timestamps: true, versionKey: false })
@@ -23,11 +25,14 @@ export class Plan {
     @Prop({ required: false })
     highlight: string
 
-    @Prop({ required: true, unique: true })
+    @Prop({ required: true })
     title: string
 
     @Prop({ required: true })
     description: string
+
+    @Prop({ required: true, min: 0 })
+    pricePerDevDisplay: number
 
     @Prop({ required: true, min: 0 })
     pricePerDev: number
@@ -58,6 +63,9 @@ export class Plan {
 
     @Prop({ required: false })
     stripeProductId: string
+
+    @Prop({ required: false })
+    externalUrl: string
 }
 
 const schema = SchemaFactory.createForClass(Plan)

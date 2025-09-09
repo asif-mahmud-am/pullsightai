@@ -1,4 +1,5 @@
-import { IsDateString, IsIn, IsOptional } from 'class-validator'
+import { Transform } from 'class-transformer'
+import { IsDateString, IsIn, IsInt, IsOptional, Min } from 'class-validator'
 
 export class DashboardFilterDto {
     @IsOptional()
@@ -30,4 +31,20 @@ export class IssueCardFilterDto extends DashboardFilterDto {
     @IsOptional()
     @IsIn(['open', 'merged', 'declined'])
     prState: string
+
+    @IsOptional()
+    @IsIn(['Major', 'Minor', 'Info', 'Critical', 'Blocker'])
+    severity: string
+
+    @IsOptional()
+    @Transform(({ value }) => parseInt(value))
+    @IsInt()
+    @Min(1)
+    page?: number = 1
+
+    @IsOptional()
+    @Transform(({ value }) => parseInt(value))
+    @IsInt()
+    @Min(1)
+    limit?: number = 10
 }

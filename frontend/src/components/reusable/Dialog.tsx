@@ -56,9 +56,9 @@ interface DialogProps {
 
 const sizeVariants = {
     sm: "sm:max-w-sm",
-    md: "sm:max-w-md",
-    lg: "sm:max-w-lg",
-    xl: "sm:max-w-xl",
+    md: "sm:max-w-lg",
+    lg: "sm:max-w-3xl",
+    xl: "sm:max-w-5xl",
     full: "sm:max-w-full sm:max-h-[90vh] sm:m-4",
 };
 
@@ -86,7 +86,11 @@ const Dialog = ({
 
             <DialogOverlay className="backdrop-blur-xs bg-black/10" />
             <DialogContent
-                className={cn(sizeVariants[size], contentClassName)}
+                className={cn(
+                    "max-h-[calc(100vh-100px)] overflow-y-auto",
+                    sizeVariants[size],
+                    contentClassName
+                )}
                 showCloseButton={showCloseButton}
                 onPointerDownOutside={
                     closeOnOverlayClick ? undefined : (e) => e.preventDefault()

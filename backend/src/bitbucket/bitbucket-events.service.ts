@@ -28,7 +28,6 @@ export class BitbucketEventsService {
         if (!pullRequest || !repository) {
             throw new Error('Invalid Bitbucket pull request payload')
         }
-
         // Try to get access token from database based on repository owner
         const workspace =
             repository.workspace?.slug || repository.full_name?.split('/')[0]
@@ -148,7 +147,9 @@ export class BitbucketEventsService {
 
         if (workspaceRecord?._id) {
             let userData = await this.dataService.users.findOne(
-                { workspaces: workspaceRecord._id },
+                {
+                    _id: workspaceRecord.ownerId
+                },
                 'accessToken refreshToken tokenExpiresAt'
             )
 
@@ -164,32 +165,33 @@ export class BitbucketEventsService {
                 userData.tokenExpiresAt &&
                 new Date(userData.tokenExpiresAt).getTime() <
                     now.getTime() + expiryBuffer
-
             if (isTokenExpired && userData.refreshToken) {
-                console.log('Access token expired, attempting to refresh...')
                 const newTokens =
                     await this.bitbucketApiService.refreshAccessToken(
                         userData.refreshToken
                     )
-
-                if (newTokens) {
+                if (newTokens && newTokens.access_token) {
                     const tokenExpiresAt = new Date(
-                        Date.now() + (newTokens.expires_in || 3600) * 1000
+                        Date.now() + (newTokens.expires_in || 7200) * 1000
                     )
 
                     // Update user with new tokens
+                    // Bitbucket always returns a new refresh token, so use it
+                    const updateData: any = {
+                        accessToken: newTokens.access_token,
+                        tokenExpiresAt
+                    }
+
+                    // Update refresh token if provided, otherwise keep the old one
+                    if (newTokens.refresh_token) {
+                        updateData.refreshToken = newTokens.refresh_token
+                    }
+
                     await this.dataService.users.updateOne(
                         { _id: userData._id },
-                        {
-                            $set: {
-                                accessToken: newTokens.access_token,
-                                refreshToken:
-                                    newTokens.refresh_token ||
-                                    userData.refreshToken,
-                                tokenExpiresAt
-                            }
-                        }
+                        { $set: updateData }
                     )
+
                     return newTokens.access_token
                 } else {
                     throw new BadRequestException(

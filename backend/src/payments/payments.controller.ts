@@ -1,10 +1,19 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common'
+import {
+    Body,
+    Controller,
+    Get,
+    Post,
+    Query,
+    Req,
+    UseGuards
+} from '@nestjs/common'
+import { AuthGuard } from '@nestjs/passport'
 import { DATA_RETRIEVED } from 'src/common/utils/response-message.util'
 import { CreatePaymentDto } from './dto/create-payment.dto'
 import { PaymentsService } from './payments.service'
 
 @Controller({
-    path: 'api/payments',
+    path: 'payments',
     version: '1'
 })
 export class PaymentsController {
@@ -13,6 +22,15 @@ export class PaymentsController {
     @Post()
     create(@Body() createPaymentDto: CreatePaymentDto) {
         return this.paymentsService.create(createPaymentDto)
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('transactions')
+    async findAll(@Req() req, @Query() query: any) {
+        return {
+            message: DATA_RETRIEVED,
+            result: await this.paymentsService.findAll(req.user, query)
+        }
     }
 
     @Get()

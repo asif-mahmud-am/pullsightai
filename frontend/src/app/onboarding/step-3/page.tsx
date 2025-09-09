@@ -97,7 +97,7 @@ const Step3Page = () => {
                             </Button>
                         </ContentCard.Header>
                         <ContentCard.Body
-                            className="xl:max-h-[calc(100vh-450px)]"
+                            className="lg:max-h-[calc(100vh-650px)] xl:max-h-[calc(100vh-450px)]"
                             hasError={!!error}
                             isLoading={isFetching}
                             errorLabel={
@@ -117,8 +117,8 @@ const Step3Page = () => {
                                 onSelect={(prNumber) => setSelectedPR(prNumber)}
                                 getKey={(item) => String(item.prNumber)}
                                 renderItem={(item) => (
-                                    <div className="grid grid-cols-8 items-center flex-grow-1 text-sm">
-                                        <div className="col-span-8 sm:hidden">
+                                    <div className="grid grid-cols-8 items-center flex-grow-1 gap-3 text-sm">
+                                        <div className="col-span-8 lg:hidden">
                                             <div className="flex gap-2">
                                                 <span className="truncate">
                                                     {item?.prTitle}
@@ -151,15 +151,15 @@ const Step3Page = () => {
                                                 </span>
                                             </div>
                                         </div>
-                                        <h4 className="col-span-3 hidden sm:block">
+                                        <h4 className="col-span-3 hidden lg:block">
                                             {item?.prTitle}
                                         </h4>
                                         <Avatar
-                                            className="col-span-2 hidden sm:flex"
+                                            className="col-span-2 hidden lg:flex"
                                             src={item?.prUserAvatar || ""}
                                             name={item?.prUser}
                                         />
-                                        <div className="col-span-1 text-center text-[var(--subtitle-500)] text-sm whitespace-nowrap hidden sm:block">
+                                        <div className="col-span-1 text-center text-[var(--subtitle-500)] text-sm whitespace-nowrap hidden lg:block">
                                             <Badge
                                                 variant={
                                                     item?.prState ===
@@ -172,16 +172,16 @@ const Step3Page = () => {
                                                 {item.prState}
                                             </Badge>
                                         </div>
-                                        <div className="col-span-1 text-right text-[var(--subtitle-500)] text-sm whitespace-nowrap hidden sm:block">
+                                        <div className="col-span-1 text-right text-[var(--subtitle-500)] text-sm whitespace-nowrap hidden lg:block">
                                             {formatDate(item.prCreatedAt || "")}
                                         </div>
-                                        <div className="col-span-1 text-right text-[var(--subtitle-500)] text-sm whitespace-nowrap hidden sm:block">
+                                        <div className="col-span-1 text-right text-[var(--subtitle-500)] text-sm whitespace-nowrap hidden lg:block">
                                             {formatDate(item.prUpdatedAt || "")}
                                         </div>
                                     </div>
                                 )}
                                 renderHeader={() => (
-                                    <div className="ml-9 md:grid grid-cols-8 py-2 px-4 text-[var(--subtitle-400)] text-xs hidden">
+                                    <div className="ml-9 md:grid grid-cols-8 gap-3 py-2 px-4 text-[var(--subtitle-400)] text-xs hidden">
                                         <div className="col-span-3">Title</div>
                                         <div className="col-span-2">Author</div>
                                         <div className="col-span-1 text-center">

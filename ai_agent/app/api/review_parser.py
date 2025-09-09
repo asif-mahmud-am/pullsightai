@@ -88,9 +88,9 @@ def parse_review_response(review_text: str, file_name: str):
         if severity == "Critical":
             severity_text = "🛑 **Critical Error** "
         elif severity == "Blocker":
-            severity_text = "🚫 **Blocker** "
+            severity_text = "⛔ **Blocker** "
         elif severity == "Major":
-            severity_text = "⚠️ **Major Issue** "
+            severity_text = "❗ **Major Issue** "
         elif severity == "Minor":
             severity_text = "⚠️ **Minor Issue** "
         elif severity == "Info":
@@ -184,14 +184,21 @@ def parse_chunked_review_response(review_text: str, chunk_files: List[Dict], min
 
         # only comment on issues with severity greater than or equal to the minSeverity
         severity_levels = ["Info", "Minor", "Major", "Critical", "Blocker"]
-        severity_index = severity_levels.index(minSeverity)
-        if severity_levels.index(item.get("severity", "Info")) < severity_index:
+        severity_levels_lower = [level.lower() for level in severity_levels]
+        severity_index = severity_levels_lower.index(minSeverity.lower())
+        
+        # Get the severity from the item and convert to lowercase for comparison
+        item_severity_lower = item.get("severity", "Info").lower()
+        
+        # Check if the severity exists in our levels, if not default to "info"
+        if item_severity_lower not in severity_levels_lower:
+            item_severity_lower = "info"
+            
+        if severity_levels_lower.index(item_severity_lower) < severity_index:
             continue
 
-        # Get severity and validate it's one of the allowed values
-        severity = item.get("severity", "Info")
-        if severity not in ["Info", "Minor", "Major", "Critical", "Blocker"]:
-            severity = "Info"  # Default to Info if invalid severity
+        # Convert back to proper case for the final severity
+        severity = severity_levels[severity_levels_lower.index(item_severity_lower)]
         
         category = item.get("category", "Issue")
         line_start = int(item.get("line", item.get("lineStart", 1)) or 1)

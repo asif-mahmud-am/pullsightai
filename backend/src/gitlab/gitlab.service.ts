@@ -16,7 +16,7 @@ import {
 } from 'src/common/interfaces/repository.interface'
 import { DatabaseService } from 'src/database/database.service'
 import { Workspace } from 'src/database/schemas/workspace.schema'
-import { GetPRDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
+import { GetPRGitLabDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
 import { GitlabEventsService } from 'src/gitlab/gitlab-events.service'
 import { RepositoryDto } from 'src/workspace/dto/make-subscription.dto'
 import { GitlabApiService } from './gitlab-api.service'
@@ -243,7 +243,7 @@ export class GitlabService {
 
     async getPullRequests(
         user: any,
-        getPRDto: GetPRDto
+        getPRDto: GetPRGitLabDto
     ): Promise<PullRequestResponse[]> {
         const userData = await this.dataService.users
             .findOne({ _id: user.sub }, 'accessToken currentWorkspace')
@@ -263,11 +263,14 @@ export class GitlabService {
     }
 
     async processGitlabEvent(event: any, payload: any) {
+        console.log('event name', event)
+        console.log('payload', payload)
         const providerId =
             payload.user_id || payload.object_attributes.author_id
         let isApplicable
         let pullRequestFormattedData: StructuredPRData | boolean = false
         let prEvent
+
         switch (event) {
             case 'Merge Request Hook':
                 if (
@@ -398,6 +401,11 @@ export class GitlabService {
             return {
                 ...member,
                 _id: savedMember?._id ?? null,
+                role: savedMember?.role
+                    ? savedMember.role
+                    : userData.providerId == member.providerId
+                      ? 'owner'
+                      : 'member',
                 isActive: Boolean(savedMember?.isActive),
                 joinedAt: savedMember?.joinedAt
             }

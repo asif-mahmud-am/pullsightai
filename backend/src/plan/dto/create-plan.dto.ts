@@ -34,6 +34,10 @@ export class CreatePlanDto {
 
     @IsNumber()
     @Min(0)
+    pricePerDevDisplay: number
+
+    @IsNumber()
+    @Min(0)
     tokenLimitPerDev: number
 
     @IsString()
@@ -63,5 +67,9 @@ export class CreatePlanDto {
 
     @IsOptional()
     @IsString()
-    stripProductId?: string
+    stripeProductId?: string
+
+    @IsOptional()
+    @IsString()
+    externalUrl?: string
 }

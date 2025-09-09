@@ -1,5 +1,4 @@
 import apiClient from "@/lib/axios";
-import { get } from "http";
 
 export const workspaceEndpoints = {
     updateWorkspaceSettings: async (payload: unknown) => {

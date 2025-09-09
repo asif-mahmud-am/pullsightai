@@ -11,6 +11,7 @@ import { useUpdateRepositoryMutation } from "@/api/queries/workspace";
 import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
 import RepositorySettingsModal from "./RepositorySettingsModal";
+import AdminGuard from "@/components/auth/AdminGuard";
 
 interface RepositoryStatusSwitchProps {
     isActive: boolean;
@@ -70,19 +71,21 @@ const RepositorySettingsAction = ({
 
     return (
         <>
-            <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowSettings(true)}
-                className="h-8 w-8 p-0"
-            >
-                <Settings className="h-4 w-4" />
-            </Button>
-            <RepositorySettingsModal
-                repository={repository}
-                open={showSettings}
-                onOpenChange={setShowSettings}
-            />
+            <AdminGuard>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowSettings(true)}
+                    className="h-8 w-8 p-0"
+                >
+                    <Settings className="h-4 w-4" />
+                </Button>
+                <RepositorySettingsModal
+                    repository={repository}
+                    open={showSettings}
+                    onOpenChange={setShowSettings}
+                />
+            </AdminGuard>
         </>
     );
 };
@@ -92,17 +95,19 @@ export const columns: ColumnDef<Repository>[] = [
         accessorKey: "isActive",
         header: "",
         meta: {
-            headerClassName: "w-20",
-            cellClassName: "w-20",
+            headerClassName: "w-15",
+            cellClassName: "w-15",
         },
         cell: ({ row }) => {
             const active = row.getValue("isActive") as boolean;
             const repositoryId = row.original._id;
             return (
-                <RepositoryStatusSwitch
-                    isActive={active}
-                    repositoryId={repositoryId}
-                />
+                <AdminGuard>
+                    <RepositoryStatusSwitch
+                        isActive={active}
+                        repositoryId={repositoryId}
+                    />
+                </AdminGuard>
             );
         },
     },
@@ -115,19 +120,15 @@ export const columns: ColumnDef<Repository>[] = [
         },
         cell: ({ row }) => {
             const name = row.getValue("name") as string;
-            return (
-                <div className="text-white hover:underline cursor-pointer min-w-0 truncate">
-                    {name}
-                </div>
-            );
+            return <div className="text-white  min-w-0 truncate">{name}</div>;
         },
     },
     {
         accessorKey: "author",
         header: "Author",
         meta: {
-            headerClassName: "w-32",
-            cellClassName: "w-32",
+            headerClassName: "w-60",
+            cellClassName: "w-60",
         },
         cell: ({ row }) => {
             const author =
@@ -148,8 +149,8 @@ export const columns: ColumnDef<Repository>[] = [
         accessorKey: "updatedOn",
         header: "Updated",
         meta: {
-            headerClassName: "w-28",
-            cellClassName: "w-28",
+            headerClassName: "w-32",
+            cellClassName: "w-32",
         },
         cell: ({ row }) => {
             const updated = row.getValue("updatedOn") as string | undefined;

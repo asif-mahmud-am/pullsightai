@@ -127,11 +127,26 @@ export class Workspace {
         type: Types.ObjectId,
         ref: 'PurchasedPlan',
         set: (value) =>
-            value instanceof Types.ObjectId
-                ? value
-                : Types.ObjectId.createFromHexString(value)
+            !value
+                ? null
+                : value instanceof Types.ObjectId
+                  ? value
+                  : Types.ObjectId.createFromHexString(value)
     })
     currentPlan?: Types.ObjectId
+
+    @Prop({
+        required: false,
+        type: Types.ObjectId,
+        ref: 'PurchasedPack',
+        set: (value) =>
+            !value
+                ? null
+                : value instanceof Types.ObjectId
+                  ? value
+                  : Types.ObjectId.createFromHexString(value)
+    })
+    currentPack?: Types.ObjectId
 
     @Prop({
         required: false,
@@ -146,6 +161,24 @@ export class Workspace {
 
     @Prop({ type: workspaceSetting, nullable: true })
     workspaceSetting?: workspaceSetting
+
+    @Prop({ required: false, default: 0 })
+    noOfActiveMembers?: number
+
+    @Prop({ default: 0 })
+    planTotalToken?: number
+
+    @Prop({ default: 0 })
+    planRemainingToken?: number
+
+    @Prop({ default: 0 })
+    packTotalToken?: number
+
+    @Prop({ default: 0 })
+    packRemainingToken?: number
+
+    @Prop({ default: true })
+    isFreePlan?: boolean
 }
 
 const schema = SchemaFactory.createForClass(Workspace)

@@ -16,6 +16,7 @@ export class AuthService {
         accessToken: string,
         refreshToken: string
     ) {
+        let profileUrl
         let user = await this.dataService.users.findOne({
             provider,
             providerId: profile.id
@@ -31,8 +32,18 @@ export class AuthService {
         const tokenExpiresAt = new Date(Date.now() + expiry * 1000)
         const invitation = await this.dataService.workspaceMembers.findOne({
             provider: provider,
-            providerId: profile.id
+            providerId: profile.id,
+            joinedAt: null
         })
+        if (profile.provider == 'gitlab') {
+            profileUrl = profile.photos?.[0]?.value || profile.avatarUrl
+        } else if (profile.provider == 'bitbucket') {
+            profileUrl = profile._json['links'].avatar.href || profile.photos?.[0]?.value
+        } else if (profile.provider == 'github') {
+            profileUrl = profile.photos?.[0]?.value || profile.avatarUrl
+        }
+        console.log('profile-------->', profileUrl)
+        console.log('invitation-------->', profile)
         if (!user) {
             user = await this.dataService.users.create({
                 provider,
@@ -40,7 +51,7 @@ export class AuthService {
                 username: profile.username,
                 displayName: profile.displayName,
                 email: profile.emails?.[0]?.value,
-                avatarUrl: profile.photos?.[0]?.value || profile.avatarUrl,
+                avatarUrl: profileUrl,
                 accessToken,
                 refreshToken,
                 tokenExpiresAt,
@@ -53,19 +64,20 @@ export class AuthService {
         } else {
             user.displayName = profile.displayName
             user.email = profile.emails?.[0]?.value
-            user.avatarUrl = profile.photos?.[0]?.value || profile.avatarUrl
+            user.avatarUrl = profileUrl
             user.accessToken = accessToken
             user.refreshToken = refreshToken
             user.tokenExpiresAt = tokenExpiresAt
         }
-        if (invitation && !invitation.user) {
-            if (user.currentWorkspace) {
+        if (invitation && !invitation.joinedAt) {
+            if (!user.currentWorkspace) {
                 user.currentWorkspace = invitation.workspace
             }
             invitation.joinedAt = new Date()
             invitation.user = user._id as any
             invitation.save()
             user.workspaces?.push(invitation.workspace)
+            console.log('Invitation accepted, workspace added to user', user)
         }
         await user.save()
         return await this.getProfile(user._id)
@@ -87,7 +99,21 @@ export class AuthService {
             })
             .populate([
                 {
-                    path: 'currentWorkspace'
+                    path: 'currentWorkspace',
+                    populate: [
+                        {
+                            path: 'currentPlan',
+                            populate: {
+                                path: 'plan'
+                            }
+                        },
+                        {
+                            path: 'currentPack',
+                            populate: {
+                                path: 'pack'
+                            }
+                        }
+                    ]
                 },
                 {
                     path: 'workspaces'

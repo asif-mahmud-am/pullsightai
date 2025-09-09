@@ -1,13 +1,16 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Types } from 'mongoose'
 import { PullRequestAnalysisCommentsDto } from 'src/analysis/dto/post-analysis-comments.dto'
 import { PullRequestAnalysisDto } from 'src/analysis/dto/post-analysis.dto'
 import { BitbucketEventsService } from 'src/bitbucket/bitbucket-events.service'
 import { PREvent } from 'src/common/enums/pr.enum'
+import { getTimePeriod } from 'src/common/helpers/coversion.helper'
 import { HttpService } from 'src/common/http/http.service'
 import { StructuredPRData } from 'src/common/interfaces/pr.interface'
 import { DatabaseService } from 'src/database/database.service'
+import { PaymentStatus } from 'src/database/enums/status.enum'
+import { BillingCycle } from 'src/database/schemas/plan.schema'
 import { Status } from 'src/database/schemas/pull-request-analysis.schema'
 import { PRReviewDto } from 'src/github/dto/install-repo.dto'
 import { GithubEventService } from 'src/github/github-events.service'
@@ -77,10 +80,132 @@ export class AnalysisService {
             )
             return false
         }
+        if (!(await this.checkAvailableToken(repository.workspace!['_id']))) {
+            return false
+        }
         return {
             repository,
             workspaceMember
         }
+    }
+
+    async checkAvailableToken(workspaceId: any) {
+        const workspace: any = await this.dataService.workspaces
+            .findOne({
+                _id: workspaceId
+            })
+            .populate('currentPlan currentPack')
+
+        let flag = true
+        if (
+            workspace?.currentPlan?.periodEnd &&
+            new Date() > new Date(workspace.currentPlan.periodEnd)
+        ) {
+            if (
+                workspace.currentPlan.isFree &&
+                workspace.currentPlan.billingCycle == BillingCycle.MONTHLY
+            ) {
+                workspace.planRemainingToken = await this.assignPlanToWorkspace(
+                    workspaceId,
+                    workspace.currentPlan.numOfSeat,
+                    workspace.currentPlan.plan
+                )
+            } else {
+                flag = false
+            }
+        }
+
+        if (
+            flag &&
+            (workspace?.planRemainingToken > 0 ||
+                workspace?.packRemainingToken > 0)
+        ) {
+            return true
+        } else {
+            return false
+        }
+    }
+
+    async assignPlanToWorkspace(
+        workspaceId: any,
+        noOfSeat: number,
+        planId: string
+    ) {
+        const planData = await this.dataService.plans.findOne({
+            _id: planId
+        })
+        if (!planData) {
+            throw new NotFoundException('No free plan found')
+        }
+        let totalToken = planData.tokenLimitPerDev * noOfSeat
+        let remainingToken = totalToken
+        const period = getTimePeriod(planData.billingCycle)
+        const purchasedPlan = await this.dataService.purchasedPlans.create({
+            workspace: workspaceId,
+            plan: planData._id,
+            amount: 0,
+            totalToken: totalToken,
+            numOfSeat: noOfSeat,
+            billingCycle: planData.billingCycle,
+            periodStart: period.periodStart,
+            periodEnd: period.periodEnd,
+            paymentStatus: PaymentStatus.PAID,
+            status: 'active',
+            title: planData.title,
+            pricePerDev: planData.pricePerDev,
+            tokenLimitPerDev: planData.tokenLimitPerDev,
+            isFree: planData.isFree,
+            isDefault: planData.isDefault
+        })
+        await this.dataService.workspaces.updateOne(
+            { _id: workspaceId },
+            {
+                $set: {
+                    currentPlan: purchasedPlan._id,
+                    planTotalToken: totalToken,
+                    planRemainingToken: remainingToken
+                }
+            }
+        )
+        return remainingToken
+    }
+
+    async updateTokenUsage(workspaceId: any, tokenUsage: number) {
+        const workspace: any = await this.dataService.workspaces
+            .findOne({
+                _id: workspaceId
+            })
+            .populate('currentPlan currentPack')
+
+        let remainingTokenUsage = tokenUsage
+
+        // First, try to deduct from currentPlan if available
+        if (workspace?.planRemainingToken && remainingTokenUsage > 0) {
+            const planTokensToDeduct = Math.min(
+                workspace.planRemainingToken,
+                remainingTokenUsage
+            )
+            workspace.planRemainingToken = Math.max(
+                0,
+                workspace.planRemainingToken - planTokensToDeduct
+            )
+            remainingTokenUsage -= planTokensToDeduct
+        }
+
+        // Then, deduct remaining tokens from currentPack if available
+        if (workspace?.packRemainingToken && remainingTokenUsage > 0) {
+            const packTokensToDeduct = Math.min(
+                workspace.packRemainingToken,
+                remainingTokenUsage
+            )
+            workspace.packRemainingToken = Math.max(
+                0,
+                workspace.packRemainingToken - packTokensToDeduct
+            )
+            remainingTokenUsage -= packTokensToDeduct
+        }
+        await workspace.save()
+        return tokenUsage - remainingTokenUsage
     }
 
     async getAndSavePullRequestFormattedData(
@@ -95,6 +220,14 @@ export class AnalysisService {
                 owner: newPR.owner,
                 repo: newPR.repo
             })
+            if (!existingPR) {
+                const pullRequest = await this.dataService.pullRequests.create({
+                    ...pullRequestFormattedData.pullRequest
+                })
+                return pullRequest?.toObject()
+            }
+            console.log('existing pr', existingPR)
+            console.log('newPR', newPR)
             const prFiles = newPR.prFiles
                 .map((file) => {
                     if (!existingPR?.prFiles) return file // If no existing files, include all new files
@@ -127,13 +260,11 @@ export class AnalysisService {
                     return null
                 })
                 .filter((file) => file !== null) // Remove null entries
+
             const savedPullRequestFormattedData =
                 await this.dataService.pullRequests.findOneAndUpdate(
                     {
-                        provider: newPR.provider,
-                        prNumber: newPR.prNumber,
-                        owner: newPR.owner,
-                        repo: newPR.repo
+                        _id: existingPR._id
                     },
                     {
                         $set: {
@@ -144,16 +275,19 @@ export class AnalysisService {
                 )
 
             return {
-                ...savedPullRequestFormattedData,
+                ...(savedPullRequestFormattedData?.toObject() || {}),
                 prFiles: prFiles
             }
         }
-        return await this.dataService.pullRequests.create({
+        const pullRequest = await this.dataService.pullRequests.create({
             ...pullRequestFormattedData.pullRequest
         })
+        return pullRequest?.toObject()
     }
 
     async updatedPRState(query: any, data: any) {
+        console.log('Updating PR state with data:', data)
+        console.log('For PR with query:', query)
         return await this.dataService.pullRequests.updateOne(query, {
             $set: data
         })
@@ -165,6 +299,7 @@ export class AnalysisService {
         workspace: any,
         repository?: any
     ) {
+        console.log('Making analysis for PR event:', event)
         const savedPullRequestFormattedData =
             await this.getAndSavePullRequestFormattedData(
                 pullRequestFormattedData,
@@ -185,15 +320,30 @@ export class AnalysisService {
                 pullRequest: savedPullRequestFormattedData._id,
                 workspace
             })
+        console.log('Created pullRequestAnalysis:', pullRequestAnalysis)
         try {
+            const requestBody = {
+                pullRequest: {
+                    ...savedPullRequestFormattedData,
+                    pullRequestAnalysisId: pullRequestAnalysis['_id'],
+                    apiKey: repository?.workspace?.workspaceSetting?.apiKey,
+                    modelName:
+                        repository?.workspace?.workspaceSetting?.modelName,
+                    minSeverity: repository?.minSeverity,
+                    ignore: repository?.ignore
+                }
+            }
+            console.log(
+                'Sending data to AI agent:',
+                this.configService.get('AI_AGENT_PR_POST_URL'),
+                requestBody
+            )
+            requestBody?.pullRequest?.prFiles?.map((file) => {
+                console.log('PR File:', file.prFileName, file.prFileDiffHunks)
+            })
             await this.httpService.post(
                 this.configService.get('AI_AGENT_PR_POST_URL') as string,
-                {
-                    pullRequest: {
-                        ...pullRequestFormattedData.pullRequest,
-                        pullRequestAnalysisId: pullRequestAnalysis['_id']
-                    }
-                },
+                requestBody,
                 {
                     timeout: 1000 // 1 second timeout
                 }
@@ -203,11 +353,7 @@ export class AnalysisService {
         }
         return {
             pullRequestAnalysisId: pullRequestAnalysis['_id'],
-            pullRequest: savedPullRequestFormattedData,
-            apiKey: repository?.workspace?.workspaceSetting?.apiKey,
-            modelName: repository?.workspace?.workspaceSetting?.modelName,
-            minSeverity: repository?.minSeverity,
-            ignore: repository?.ignore
+            pullRequest: savedPullRequestFormattedData
         }
     }
 
@@ -229,6 +375,11 @@ export class AnalysisService {
                     },
                     { new: true }
                 )
+            await this.updateTokenUsage(
+                analysis.workspace,
+                postReviewDto.usageInfo.input_tokens +
+                    postReviewDto.usageInfo.output_tokens || 0
+            )
         } else {
             analysis = await this.dataService.pullRequestAnalysis.findOne({
                 _id: postReviewDto.pullRequestAnalysisId
@@ -298,22 +449,26 @@ export class AnalysisService {
     }
 
     async addPRSummery(postSummery: PullRequestAnalysisDto) {
+        const updateBody: any = {
+            summary: postSummery.summary,
+            modelInfo: postSummery.modelInfo,
+            usageInfo: postSummery.usageInfo,
+            estimatedCodeReviewEffort:
+                postSummery?.summary_info?.estimated_code_review_time,
+            potentialIssueCount:
+                postSummery?.summary_info?.potential_issue_count
+        }
+        if (!postSummery.summary) {
+            updateBody.status = Status.COMPLETED
+            updateBody.completedAt = new Date()
+        }
         const analysis =
             await this.dataService.pullRequestAnalysis.findOneAndUpdate(
                 {
                     _id: postSummery.pullRequestAnalysisId
                 },
                 {
-                    $set: {
-                        summary: postSummery.summary,
-                        modelInfo: postSummery.modelInfo,
-                        usageInfo: postSummery.usageInfo,
-                        estimatedCodeReviewEffort:
-                            postSummery?.summary_info
-                                ?.estimated_code_review_effort,
-                        potentialIssueCount:
-                            postSummery?.summary_info?.potential_issue_count
-                    }
+                    $set: updateBody
                 },
                 { new: true }
             )
@@ -321,24 +476,27 @@ export class AnalysisService {
         if (!analysis) {
             throw new Error('Pull request analysis not found')
         }
-
-        switch (analysis.provider) {
-            case 'github':
-                await this.githubEventService.addPRSummery(analysis)
-                break
-            case 'bitbucket':
-                await this.bitbucketEventsService.addPRSummery(analysis)
-                break
-            case 'gitlab':
-                await this.gitlabEventsService.addPRSummery(analysis)
-                break
-            default:
-                throw new Error('Unsupported provider')
+        if (postSummery.summary) {
+            switch (analysis.provider) {
+                case 'github':
+                    await this.githubEventService.addPRSummery(analysis)
+                    break
+                case 'bitbucket':
+                    await this.bitbucketEventsService.addPRSummery(analysis)
+                    break
+                case 'gitlab':
+                    await this.gitlabEventsService.addPRSummery(analysis)
+                    break
+                default:
+                    throw new Error('Unsupported provider')
+            }
         }
-        return {
-            summary: postSummery.summary,
-            status: 'added'
-        }
+        await this.updateTokenUsage(
+            analysis.workspace,
+            postSummery.usageInfo.input_tokens +
+                postSummery.usageInfo.output_tokens || 0
+        )
+        return {}
     }
 
     async getExistingPullRequestAndAnalysis(

@@ -49,9 +49,14 @@ export class DashboardService {
         const toDate = prAnalysisCardFilterDto.to
             ? new Date(prAnalysisCardFilterDto.to)
             : new Date()
+
+        // Adjust toDate to include the entire day
+        toDate.setUTCHours(23, 59, 59, 999)
         const fromDate = prAnalysisCardFilterDto.from
             ? new Date(prAnalysisCardFilterDto.from)
             : new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+        // Adjust toDate to include the entire day
+        fromDate.setUTCHours(23, 59, 59, 999)
 
         const match: any = {
             owner: findWorkspace.slug,
@@ -120,35 +125,11 @@ export class DashboardService {
         )
         if (!findUser || !findUser.currentWorkspace) {
             return {
-                pieChart: [],
-                completeRate: 0,
-                total: 0
-            }
-        }
-
-        const findWorkspace = await this.dataService.workspaces.findOne(
-            { _id: findUser.currentWorkspace },
-            'slug'
-        )
-
-        if (!findWorkspace) {
-            return {
-                pieChart: [],
-                completeRate: 0,
-                total: 0
-            }
-        }
-
-        const pullRequestAnalysisIds =
-            await this.dataService.pullRequestAnalysis.find(
-                { workspaceSlug: findWorkspace.slug },
-                '_id'
-            )
-
-        if (!pullRequestAnalysisIds || pullRequestAnalysisIds.length === 0) {
-            return {
-                pieChart: [],
-                completeRate: 0,
+                major: 0,
+                minor: 0,
+                info: 0,
+                critical: 0,
+                blocker: 0,
                 total: 0
             }
         }
@@ -157,74 +138,35 @@ export class DashboardService {
         const toDate = issueAnalysisCardFilterDto.to
             ? new Date(issueAnalysisCardFilterDto.to)
             : new Date()
+
+        // Adjust toDate to include the entire day
+        toDate.setUTCHours(23, 59, 59, 999)
         const fromDate = issueAnalysisCardFilterDto.from
             ? new Date(issueAnalysisCardFilterDto.from)
             : new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+        // Adjust toDate to include the entire day
+        fromDate.setUTCHours(23, 59, 59, 999)
 
-        // Fix 3: Use $in to match multiple IDs
-        const match = {
-            pullRequestAnalysisId: {
-                $in: pullRequestAnalysisIds.map((item) => item._id)
-            },
+        // Build the simplified match query using direct workspace reference
+        const match: any = {
+            workspace: findUser.currentWorkspace,
             createdAt: {
                 $gte: fromDate,
                 $lte: toDate
             }
         }
 
-        // if (issueAnalysisCardFilterDto.repo) {
-        //     match.repo = issueAnalysisCardFilterDto.repo
-        // }
-        // // Get overall totals
-        // const prAnalysisReviewSeveritys =
-        //     await this.dataService.pullRequestAnalysisComments.aggregate([
-        //         { $match: match },
-        //         { $group: { _id: '$severity', count: { $sum: 1 } } }
-        //     ])
-        let prAnalysisReviewSeveritys
+        // Add repository filter if provided
         if (issueAnalysisCardFilterDto.repo) {
-            prAnalysisReviewSeveritys =
-                await this.dataService.pullRequestAnalysisComments.aggregate([
-                    {
-                        $lookup: {
-                            from: 'pullrequestanalyses',
-                            let: { analysisId: '$pullRequestAnalysisId' },
-                            pipeline: [
-                                {
-                                    $match: {
-                                        $expr: {
-                                            $and: [
-                                                {
-                                                    $eq: [
-                                                        '$_id',
-                                                        '$$analysisId'
-                                                    ]
-                                                },
-                                                {
-                                                    $eq: [
-                                                        '$repositorySlug',
-                                                        issueAnalysisCardFilterDto.repo
-                                                    ]
-                                                }
-                                            ]
-                                        }
-                                    }
-                                }
-                            ],
-                            as: 'analysis'
-                        }
-                    },
-                    { $match: { analysis: { $ne: [] } } },
-                    { $match: match },
-                    { $group: { _id: '$severity', count: { $sum: 1 } } }
-                ])
-        } else {
-            prAnalysisReviewSeveritys =
-                await this.dataService.pullRequestAnalysisComments.aggregate([
-                    { $match: match },
-                    { $group: { _id: '$severity', count: { $sum: 1 } } }
-                ])
+            match.repositorySlug = issueAnalysisCardFilterDto.repo
         }
+
+        // Simplified aggregation - no need for complex lookups
+        const prAnalysisReviewSeveritys =
+            await this.dataService.pullRequestAnalysisComments.aggregate([
+                { $match: match },
+                { $group: { _id: '$severity', count: { $sum: 1 } } }
+            ])
 
         // Transform aggregation result to required format
         const totals = {
@@ -272,35 +214,60 @@ export class DashboardService {
                 totalTimeSaved: 0,
                 totalMoneySaved: 0,
                 hourlyRate: 50,
-                averageTimePerPR: 0
+                averageTimePerPR: 0,
+                ROI: 0
             }
         }
 
         const findWorkspace = await this.dataService.workspaces.findOne(
             { _id: findUser.currentWorkspace },
-            'slug workSpaceSetting prFiles'
+            'slug workspaceSetting prFiles'
         )
-
         if (!findWorkspace) {
             return {
                 graphChart: [],
                 totalTimeSaved: 0,
                 totalMoneySaved: 0,
                 hourlyRate: 50,
-                averageTimePerPR: 0
+                averageTimePerPR: 0,
+                ROI: 0
             }
         }
 
         // Get hourly rate from workspace prFiles (default to 50 if not set)
         const hourlyRate = findWorkspace.workspaceSetting?.hourlyRate || 50
-
         // Set default date range if not provided (last 30 days)
         const toDate = timeAndMoneySaveCardFilterDto.to
             ? new Date(timeAndMoneySaveCardFilterDto.to)
             : new Date()
+
+        // Adjust toDate to include the entire day
+        toDate.setUTCHours(23, 59, 59, 999)
         const fromDate = timeAndMoneySaveCardFilterDto.from
             ? new Date(timeAndMoneySaveCardFilterDto.from)
             : new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+        // Adjust toDate to include the entire day
+        fromDate.setUTCHours(23, 59, 59, 999)
+
+        const userTotalSpent = await this.dataService.transactions.aggregate([
+            {
+                $match: {
+                    workspace: findWorkspace._id,
+                    paymentStatus: 'paid',
+                    createdAt: {
+                        $gte: fromDate,
+                        $lte: toDate
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalAmount: { $sum: '$amount' }
+                }
+            }
+        ])
+        const totalCost = userTotalSpent?.[0]?.totalAmount || 0
 
         // Build match criteria for pull request analysis
         const analysisMatch: any = {
@@ -325,6 +292,9 @@ export class DashboardService {
                 }
             })
             .exec()
+        // const prAnalyses = await this.dataService.pullRequestAnalysis.findOne({
+        //     workspaceSlug: findWorkspace.slug
+        // })
 
         let totalTimeSaved = 0
         let totalLinesReviewed = 0
@@ -345,7 +315,7 @@ export class DashboardService {
                 const totalPrReviewTimeInHour =
                     totalPrReviewTimeInSeconds / 3600
 
-                totalTimeSaved += totalPrReviewTimeInHour
+                totalTimeSaved += analysis.estimatedCodeReviewEffort
                 totalLinesReviewed += prTotalLineAddition + prTotalLineDeletion
 
                 // Group by time period for chart data
@@ -364,9 +334,11 @@ export class DashboardService {
         }
 
         // Calculate money saved
+        // totalTimeSaved = prAnalyses ? prAnalyses.estimatedCodeReviewEffort : 0
+        // totalLinesReviewed = prAnalyses ? prAnalyses.totalLinesChanged : 0
+        totalTimeSaved = parseFloat((totalTimeSaved / 60).toFixed(2)) // Convert minutes to hours
         const totalMoneySaved = totalTimeSaved * hourlyRate
-        const averageTimePerPR =
-            prAnalyses.length > 0 ? totalTimeSaved / prAnalyses.length : 0
+        const averageTimePerPR = 0
 
         // Generate time series chart data
         const breakdown = timeAndMoneySaveCardFilterDto.breakdown || 'day'
@@ -377,13 +349,20 @@ export class DashboardService {
             breakdown
         )
 
+        // Calculate ROI properly with error handling
+        let roi = 0
+        if (totalCost > 0) {
+            roi = totalMoneySaved / totalCost
+        }
+
         return {
             graphChart,
-            totalTimeSaved: Math.round(totalTimeSaved * 100) / 100, // Hours, rounded to 2 decimal places
-            totalMoneySaved: Math.round(totalMoneySaved * 100) / 100, // Currency, rounded to 2 decimal places
-            averageTimePerPR: Math.round(averageTimePerPR * 100) / 100, // Hours, rounded to 2 decimal places
+            totalTimeSaved: totalTimeSaved.toFixed(2), // Hours, rounded to 2 decimal places
+            totalMoneySaved: totalMoneySaved.toFixed(2), // Currency, rounded to 2 decimal places
+            averageTimePerPR: 0, // Hours, rounded to 2 decimal places
             totalLinesReviewed,
-            totalPRsAnalyzed: prAnalyses.length
+            totalPRsAnalyzed: 0,
+            ROI: `${roi.toFixed(2)}`
         }
     }
 
@@ -394,79 +373,288 @@ export class DashboardService {
         )
 
         if (!findUser || !findUser.currentWorkspace) {
-            return {}
-        }
-
-        const findWorkspace = await this.dataService.workspaces.findOne(
-            { _id: findUser.currentWorkspace },
-            'slug'
-        )
-
-        if (!findWorkspace) {
-            return {}
-        }
-
-        // Build query for pullRequestAnalysis with repo filter
-        const analysisQuery: any = { workspaceSlug: findWorkspace.slug }
-        if (issueCardFilterDto.repo) {
-            analysisQuery.repositorySlug = issueCardFilterDto.repo
-        }
-
-        const pullRequestAnalysisIds =
-            await this.dataService.pullRequestAnalysis.find(
-                analysisQuery,
-                '_id'
-            )
-
-        if (!pullRequestAnalysisIds || pullRequestAnalysisIds.length === 0) {
-            return {}
+            return {
+                issueCardData: [],
+                totalCount: {
+                    Critical: 0,
+                    Major: 0,
+                    Minor: 0,
+                    Info: 0,
+                    Blocker: 0,
+                    total: 0
+                }
+            }
         }
 
         // Set default date range if not provided (last 30 days)
         const toDate = issueCardFilterDto.to
             ? new Date(issueCardFilterDto.to)
             : new Date()
+
+        // Adjust toDate to include the entire day
+        toDate.setUTCHours(23, 59, 59, 999)
         const fromDate = issueCardFilterDto.from
             ? new Date(issueCardFilterDto.from)
             : new Date(toDate.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+        // Adjust toDate to include the entire day
+        fromDate.setUTCHours(23, 59, 59, 999)
 
-        // Build the base query for filtering by pullRequestAnalysisIds from workspace and date range
-        const baseQuery: any = {
-            pullRequestAnalysisId: {
-                $in: pullRequestAnalysisIds.map((item) => item._id)
-            },
+        // Build the base match query
+        const baseMatch: any = {
+            workspace: findUser.currentWorkspace,
             createdAt: {
                 $gte: fromDate,
                 $lte: toDate
             }
         }
 
-        const findPullRequestComments =
-            await this.dataService.pullRequestAnalysisComments
-                .find(baseQuery)
-                .populate({
-                    path: 'pullRequestAnalysisId',
-                    populate: {
-                        path: 'pullRequest',
-                        match: {
-                            ...(issueCardFilterDto.prUser && {
-                                prUser: issueCardFilterDto.prUser
-                            }),
-                            ...(issueCardFilterDto.prState && {
-                                prState: issueCardFilterDto.prState
-                            })
+        // Add repository filter if provided
+        if (issueCardFilterDto.repo) {
+            baseMatch.repositorySlug = issueCardFilterDto.repo
+        }
+
+        // Match for total docs
+        const baseMatchForTotalCount = { ...baseMatch }
+
+        // Add severity filter if provided
+        if (issueCardFilterDto.severity) {
+            baseMatch.severity = issueCardFilterDto.severity
+        }
+
+        // Build pullRequest match conditions for prUser and prState filtering
+        const pullRequestMatch: any = {}
+        if (issueCardFilterDto.prUser) {
+            pullRequestMatch['pullRequest.prUser'] = issueCardFilterDto.prUser
+        }
+        if (issueCardFilterDto.prState) {
+            pullRequestMatch['pullRequest.prState'] = issueCardFilterDto.prState
+        }
+
+        // Get pagination parameters
+        const page = issueCardFilterDto.page || 1
+        const limit = issueCardFilterDto.limit || 10
+        const skip = (page - 1) * limit
+
+        // Use aggregation for optimized query
+        const aggregationPipeline: any[] = [
+            { $match: baseMatch },
+            {
+                $lookup: {
+                    from: 'pullrequests',
+                    localField: 'pullRequest',
+                    foreignField: '_id',
+                    as: 'pullRequest'
+                }
+            },
+            { $unwind: '$pullRequest' },
+            {
+                $lookup: {
+                    from: 'workspaces',
+                    localField: 'workspace',
+                    foreignField: '_id',
+                    as: 'workspace'
+                }
+            },
+            { $unwind: '$workspace' },
+            ...(Object.keys(pullRequestMatch).length > 0
+                ? [{ $match: pullRequestMatch }]
+                : []),
+            {
+                $addFields: {
+                    daysOpen: {
+                        $floor: {
+                            $divide: [
+                                {
+                                    $subtract: [
+                                        new Date(),
+                                        '$pullRequest.createdAt'
+                                    ]
+                                },
+                                1000 * 60 * 60 * 24
+                            ]
+                        }
+                    },
+                    status: {
+                        $switch: {
+                            branches: [
+                                {
+                                    case: {
+                                        $eq: ['$pullRequest.prState', 'merged']
+                                    },
+                                    then: 'Merged'
+                                },
+                                {
+                                    case: {
+                                        $eq: [
+                                            '$pullRequest.prState',
+                                            'declined'
+                                        ]
+                                    },
+                                    then: 'Rejected'
+                                },
+                                {
+                                    case: {
+                                        $eq: ['$pullRequest.prState', 'closed']
+                                    },
+                                    then: 'Approved'
+                                }
+                            ],
+                            default: 'Opened'
                         }
                     }
-                })
-                .exec()
+                }
+            },
+            {
+                $project: {
+                    id: '$_id',
+                    pr: {
+                        $ifNull: [
+                            '$pullRequest.title',
+                            {
+                                $ifNull: [
+                                    {
+                                        $concat: [
+                                            'PR #',
+                                            {
+                                                $toString:
+                                                    '$pullRequest.prNumber'
+                                            }
+                                        ]
+                                    },
+                                    'Untitled PR'
+                                ]
+                            }
+                        ]
+                    },
+                    prTitle: '$pullRequest.prTitle',
+                    prUrl: '$pullRequest.prUrl',
+                    avatarUrl: '$workspace.avatarUrl',
+                    owner: {
+                        $ifNull: ['$pullRequest.prUser', 'Unknown']
+                    },
+                    prUser: '$pullRequest.prUser',
+                    severity: 1,
+                    status: 1,
+                    daysOpen: 1,
+                    updated: {
+                        $ifNull: [
+                            '$pullRequest.updatedAt',
+                            '$pullRequest.createdAt'
+                        ]
+                    },
+                    repositorySlug: 1,
+                    prNumber: '$pullRequest.prNumber',
+                    prState: '$pullRequest.prState',
+                    category: 1,
+                    // content: 1,
+                    filePath: 1,
+                    lineStart: 1,
+                    lineEnd: 1
+                }
+            },
+            { $sort: { updated: -1 } },
+            { $skip: skip },
+            { $limit: limit }
+        ]
 
-        // Filter out comments where pullRequest doesn't match the criteria
-        const filteredComments = findPullRequestComments.filter((comment) => {
-            const analysis = comment.pullRequestAnalysisId as any
-            return analysis?.pullRequest !== null
+        // Create count aggregation pipeline to get total documents
+        const countPipeline: any[] = [
+            { $match: baseMatch },
+            {
+                $lookup: {
+                    from: 'pullrequests',
+                    localField: 'pullRequest',
+                    foreignField: '_id',
+                    as: 'pullRequest'
+                }
+            },
+            { $unwind: '$pullRequest' },
+            ...(Object.keys(pullRequestMatch).length > 0
+                ? [{ $match: pullRequestMatch }]
+                : []),
+            { $count: 'total' }
+        ]
+
+        // Create severity counts aggregation pipeline
+        const severityCountsPipeline: any[] = [
+            { $match: baseMatchForTotalCount },
+            {
+                $lookup: {
+                    from: 'pullrequests',
+                    localField: 'pullRequest',
+                    foreignField: '_id',
+                    as: 'pullRequest'
+                }
+            },
+            { $unwind: '$pullRequest' },
+            // ...(Object.keys(pullRequestMatch).length > 0
+            //     ? [{ $match: pullRequestMatch }]
+            //     : []),
+            {
+                $group: {
+                    _id: '$severity',
+                    count: { $sum: 1 }
+                }
+            }
+        ]
+
+        // Execute all aggregation queries in parallel
+        const [issueCardData, severityCounts, totalCountResult] =
+            await Promise.all([
+                this.dataService.pullRequestAnalysisComments.aggregate(
+                    aggregationPipeline
+                ),
+                this.dataService.pullRequestAnalysisComments.aggregate(
+                    severityCountsPipeline
+                ),
+                this.dataService.pullRequestAnalysisComments.aggregate(
+                    countPipeline
+                )
+            ])
+
+        // Get total documents count
+        const totalDocs =
+            totalCountResult.length > 0 ? totalCountResult[0].total : 0
+        const totalPages = Math.ceil(totalDocs / limit)
+
+        // Calculate pagination metadata
+        const hasPrevPage = page > 1
+        const hasNextPage = page < totalPages
+        const prevPage = hasPrevPage ? page - 1 : null
+        const nextPage = hasNextPage ? page + 1 : null
+        const pagingCounter = totalDocs > 0 ? (page - 1) * limit + 1 : 0
+
+        // Process severity counts
+        const totalCount = {
+            Critical: 0,
+            Major: 0,
+            Minor: 0,
+            Info: 0,
+            Blocker: 0,
+            total: 0
+        }
+
+        severityCounts.forEach((item: any) => {
+            const severity = item._id
+            if (severity && totalCount.hasOwnProperty(severity)) {
+                totalCount[severity] = item.count
+            }
+            totalCount.total += item.count
         })
 
-        return filteredComments
+        return {
+            issueCardData: issueCardData,
+            totalCount: totalCount,
+            totalDocs: totalDocs,
+            limit: limit,
+            totalPages: totalPages,
+            page: page,
+            pagingCounter: pagingCounter,
+            hasPrevPage: hasPrevPage,
+            hasNextPage: hasNextPage,
+            prevPage: prevPage,
+            nextPage: nextPage
+        }
     }
 
     private async getTimeSeriesData(

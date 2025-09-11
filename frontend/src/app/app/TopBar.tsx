@@ -4,12 +4,12 @@ import { useUpdateUserMutation } from "@/api/queries/auth";
 import AdminGuard from "@/components/auth/AdminGuard";
 import LogoutHandler from "@/components/auth/LogoutHandler";
 import Dropdown from "@/components/reusable/Dropdown";
-import { ProgressIcon } from "@/components/reusable/icons";
+import CircularProgress from "@/components/reusable/CircularProgress";
 import { Button } from "@/components/ui/button";
 import { ROUTE_CONSTANTS } from "@/lib/constants";
 import { getRemainingDays } from "@/lib/dayjs";
 import showToast from "@/lib/toast";
-import { numToHip } from "@/lib/utils";
+import { cn, numToHip } from "@/lib/utils";
 import { useAppStore } from "@/store/appStore";
 import { useAuthStore } from "@/store/authStore";
 import { ChevronDown, LogOutIcon, Plus, Rocket, X } from "lucide-react";
@@ -20,7 +20,8 @@ import { Fragment, use } from "react";
 
 const AppTopBar = () => {
     const pathName = usePathname();
-    const { user, workspaces, selectedWorkspace } = useAuthStore((s) => s);
+    const { user, workspaces, selectedWorkspace, myRoleInSelectedWorkspace } =
+        useAuthStore((s) => s);
     const { toggleSidebar, isSidebarOpen } = useAppStore();
 
     const {
@@ -35,6 +36,24 @@ const AppTopBar = () => {
     );
     const activePlan = selectedWorkspace?.currentPlan;
     const isTrialPlan = activePlan?.plan?.isDefault;
+
+    // Calculate trial progress percentage
+    const getTotalTrialDays = () => {
+        if (!activePlan?.periodStart || !activePlan?.periodEnd) return 14; // Default 14 days
+        const start = new Date(activePlan.periodStart);
+        const end = new Date(activePlan.periodEnd);
+        return Math.ceil(
+            (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+        );
+    };
+
+    const remainingDays = getRemainingDays(activePlan?.periodEnd || "");
+    const totalTrialDays = getTotalTrialDays();
+    const usedDays = totalTrialDays - remainingDays;
+    const progressPercentage = Math.min(
+        Math.max((usedDays / totalTrialDays) * 100, 0),
+        100
+    );
 
     // Custom 3x3 Grid Icon Component
     const GridIcon = () => (
@@ -71,7 +90,7 @@ const AppTopBar = () => {
     };
 
     return (
-        <div className="xl:h-[88px] h-[60px] flex justify-between items-center border-b gap-x-2 lg:gap-x-4 xl:px-5 pr-3 pl-1 fixed top-0 left-0 right-0 z-40 bg-background">
+        <div className="xl:h-[88px] h-[60px] flex items-center border-b gap-x-2 lg:gap-x-4 xl:px-5 pr-3 pl-1 fixed top-0 left-0 right-0 z-40 bg-background">
             {pathName !== ROUTE_CONSTANTS.APP_SUBSCRIPTION_PLANS && (
                 <Button
                     variant="ghost"
@@ -116,12 +135,16 @@ const AppTopBar = () => {
 
             <AdminGuard>
                 {isTrialPlan ? (
-                    <div className="text-sm text-gray-400 bg-yellow-400/20 rounded-xl py-2 px-3 mx-auto  hidden lg:inline-flex items-center gap-5 mx-auto">
-                        <ProgressIcon className={"animate-spin"} />
+                    <div className="text-sm text-gray-400 bg-yellow-400/20 rounded-xl py-1 xl:py-2 px-3 hidden lg:inline-flex items-center gap-5 ml-auto">
+                        <CircularProgress
+                            value={progressPercentage}
+                            size={48}
+                            strokeWidth={8}
+                            className="flex-shrink-0"
+                        />
                         <div>
                             <div className="text-white font-semibold">
-                                {getRemainingDays(activePlan?.periodEnd || "")}{" "}
-                                day(s) left in your free trial
+                                {remainingDays} day(s) left in your free trial
                             </div>
                             <div>
                                 {numToHip(
@@ -177,7 +200,9 @@ const AppTopBar = () => {
                 <Dropdown.Trigger>
                     <Button
                         variant="ghost"
-                        className="justify-between ml-auto bg-[var(--box-800)] flex items-center !h-auto !px-3 rounded-2xl gap-3 xl:gap-5 w-[150px] xl:w-[214px]"
+                        className={cn(
+                            "justify-between bg-[var(--box-800)] flex items-center !h-auto !px-3 rounded-2xl gap-3 xl:gap-5 w-[150px] xl:w-[214px] ml-auto"
+                        )}
                     >
                         <div className="text-left flex-shrink-0 min-w-0 flex-1">
                             <div className="truncate">

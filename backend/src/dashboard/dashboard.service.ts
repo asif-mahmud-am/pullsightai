@@ -292,6 +292,9 @@ export class DashboardService {
                 }
             })
             .exec()
+        // const prAnalyses = await this.dataService.pullRequestAnalysis.findOne({
+        //     workspaceSlug: findWorkspace.slug
+        // })
 
         let totalTimeSaved = 0
         let totalLinesReviewed = 0
@@ -312,7 +315,7 @@ export class DashboardService {
                 const totalPrReviewTimeInHour =
                     totalPrReviewTimeInSeconds / 3600
 
-                totalTimeSaved += totalPrReviewTimeInHour
+                totalTimeSaved += analysis.estimatedCodeReviewEffort
                 totalLinesReviewed += prTotalLineAddition + prTotalLineDeletion
 
                 // Group by time period for chart data
@@ -331,9 +334,11 @@ export class DashboardService {
         }
 
         // Calculate money saved
+        // totalTimeSaved = prAnalyses ? prAnalyses.estimatedCodeReviewEffort : 0
+        // totalLinesReviewed = prAnalyses ? prAnalyses.totalLinesChanged : 0
+        totalTimeSaved = parseFloat((totalTimeSaved / 60).toFixed(2)) // Convert minutes to hours
         const totalMoneySaved = totalTimeSaved * hourlyRate
-        const averageTimePerPR =
-            prAnalyses.length > 0 ? totalTimeSaved / prAnalyses.length : 0
+        const averageTimePerPR = 0
 
         // Generate time series chart data
         const breakdown = timeAndMoneySaveCardFilterDto.breakdown || 'day'
@@ -352,11 +357,11 @@ export class DashboardService {
 
         return {
             graphChart,
-            totalTimeSaved: Math.round(totalTimeSaved * 100) / 100, // Hours, rounded to 2 decimal places
-            totalMoneySaved: Math.round(totalMoneySaved * 100) / 100, // Currency, rounded to 2 decimal places
-            averageTimePerPR: Math.round(averageTimePerPR * 100) / 100, // Hours, rounded to 2 decimal places
+            totalTimeSaved: totalTimeSaved.toFixed(2), // Hours, rounded to 2 decimal places
+            totalMoneySaved: totalMoneySaved.toFixed(2), // Currency, rounded to 2 decimal places
+            averageTimePerPR: 0, // Hours, rounded to 2 decimal places
             totalLinesReviewed,
-            totalPRsAnalyzed: prAnalyses.length,
+            totalPRsAnalyzed: 0,
             ROI: `${roi.toFixed(2)}`
         }
     }

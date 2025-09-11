@@ -24,7 +24,7 @@ import {
     Zap,
 } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FC, useEffect, useState } from "react";
 import PurchaseHistory from "./PurchaseHistory";
 
@@ -39,6 +39,7 @@ const CurrentPlan = () => {
     });
 
     const searchParams = useSearchParams();
+    const router = useRouter();
 
     const activePlan = selectedWorkspace?.currentPlan;
     const isTrialPlan = activePlan?.plan?.isDefault;
@@ -59,6 +60,11 @@ const CurrentPlan = () => {
             setTimeout(async () => {
                 await refetch();
                 setShowProcessing(false);
+                // Clean up the URL parameter immediately to prevent showing again
+                const url = new URL(window.location.href);
+                url.searchParams.delete("paymentStatus");
+                url.searchParams.delete("service");
+                router.replace(url.pathname + url.search);
             }, 5000);
         }
     }, [searchParams]);
@@ -98,7 +104,7 @@ const CurrentPlan = () => {
             {/* Plan details card */}
             <Card className="border-0">
                 <CardContent className="px-5 py-1">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-7">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
                         <div className="border rounded-2xl p-4">
                             <p className="text-sm text-gray-400 mb-1">Plan</p>
                             <div className="flex justify-between">
@@ -200,7 +206,7 @@ const CurrentPlan = () => {
                 </CardContent>
             </Card>
             {!isTrialPlan && (
-            <div className="flex gap-8">
+            <div className="flex flex-col lg:flex-row gap-8">
                 {/* Include section */}
                 {(activePlan?.plan?.features?.length || 0) > 0 && (
                     <div className="space-y-4 max-w-[400px]">

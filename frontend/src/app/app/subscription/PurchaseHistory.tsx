@@ -2,6 +2,7 @@ import { usePurchaseHistoryQuery } from "@/api/queries/subscription";
 import DataTable from "@/components/reusable/DataTable";
 import usePagination from "@/hooks/usePagination";
 import { formatDate } from "@/lib/dayjs";
+import { numToHip } from "@/lib/utils";
 import { Transaction } from "@/types/transaction";
 import { ColumnDef } from "@tanstack/react-table";
 import { useState } from "react";
@@ -16,10 +17,22 @@ const columns:ColumnDef<Transaction>[]  = [
         },
         cell: ({ row }) => (
             <div>
-                <div className="opacity-50 truncate ">
+                <div className="text-sm text-muted-foreground mb-0.5">
                     Purchased {row.original?.service}
                 </div>
-                <div>{row.original?.serviceBookingId?.title}</div>
+                <div>
+                    {row.original?.serviceBookingId?.title} {" - "}
+                    {row.original?.service == "Pack" ? (
+                        <span className="">
+                            { "totalToken" in (row.original?.serviceBookingId ?? {}) ? numToHip((row.original?.serviceBookingId as any).totalToken ?? 0) : 0} Tokens
+                        </span>
+                    ) : row.original?.service == "Plan" ? (
+                        <span className="">
+                            { (row.original?.serviceBookingId as any).billingCycle} Plan - {" "}
+                            { (row.original?.serviceBookingId as any).numOfSeat } Seat(s)
+                        </span>
+                    ) : null}
+                </div>
             </div>
         ),
     },

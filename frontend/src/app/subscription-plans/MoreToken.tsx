@@ -1,3 +1,5 @@
+"use client";
+
 import {
     useGetPacksQuery,
     usePurchasePackMutation,
@@ -15,6 +17,8 @@ import { useAuthStore } from "@/store/authStore";
 import { useUpgradePlanDialog } from "@/hooks/useUpgradePlanDialog";
 import UpgradePlanDialog from "@/components/reusable/UpgradePlanDialog";
 import { cn, numToHip } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { ROUTE_CONSTANTS } from "@/lib/constants";
 
 const MoreToken = ({
     className = "",
@@ -23,6 +27,7 @@ const MoreToken = ({
     className?: string;
     children?: ReactNode;
 }) => {
+    const router = useRouter();
     const { selectedWorkspace } = useAuthStore();
 
     const { dialogRef, showUpgradeDialog } = useUpgradePlanDialog();
@@ -44,9 +49,13 @@ const MoreToken = ({
         }
 
         await purchasePack({ packId: selectedPackId, gateway: "stripe" }).then(
-            (data) => {
-                if (data.data.url) {
+            async (data) => {
+                if (data?.data?.url) {
                     window.location.href = data.data.url;
+                } else {
+                    showToast.success("New pack purchased successfully");
+                    setDialogOpen(false);
+                    router.push(ROUTE_CONSTANTS.APP_SUBSCRIPTION + "?paymentStatus=paid" )
                 }
             }
         );

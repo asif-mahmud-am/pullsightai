@@ -2,6 +2,7 @@
 
 import { useUserQuery } from "@/api/queries/auth";
 import { useCancelPlanMutation } from "@/api/queries/subscription";
+import MoreToken from "@/app/subscription-plans/MoreToken";
 import Badge from "@/components/reusable/Badge";
 import Button from "@/components/reusable/Button";
 import CircularProgress from "@/components/reusable/CircularProgress";
@@ -25,6 +26,7 @@ import {
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { FC, useEffect, useState } from "react";
+import PurchaseHistory from "./PurchaseHistory";
 
 const CurrentPlan = () => {
     const [showConfirm, setShowConfirm] = useState(false);
@@ -64,7 +66,7 @@ const CurrentPlan = () => {
     return (
         <div className="space-y-6">
             {/* Your current plan header */}
-            <div className="flex flex-col lg:flex-row xl:items-center justify-between gap-3">
+            <div className="flex flex-col md:flex-row xl:items-center justify-between gap-3">
                 <div className="mr-7">
                     <h2 className="text-xl font-semibold ">
                         Your current plan
@@ -73,9 +75,12 @@ const CurrentPlan = () => {
                         View more about your active plan.
                     </p>
                 </div>
+                <MoreToken className="w-full sm:w-auto ml-auto mb-2 lg:mb-0 cursor-pointer border px-4 py-2 rounded-md text-sm hover:bg-accent/50 transition-colors flex items-center gap-2">
+                    Need More Tokens?
+                </MoreToken>
                 <Link
                     href={ROUTE_CONSTANTS.APP_SUBSCRIPTION_PLANS}
-                    className="ml-auto"
+                    className=""
                 >
                     <Button className="w-full">
                         {isFreeOrTrialPlan ? "Upgrade Plan" : "Change Plan"}
@@ -194,43 +199,59 @@ const CurrentPlan = () => {
                     </div>
                 </CardContent>
             </Card>
+            {!isTrialPlan && (
+            <div className="flex gap-8">
+                {/* Include section */}
+                {(activePlan?.plan?.features?.length || 0) > 0 && (
+                    <div className="space-y-4 max-w-[400px]">
+                        <div>
+                            <h3 className="text-lg font-semibold ">Include</h3>
+                            <p className="text-sm text-gray-400 mt-1">
+                                See everything included in your plan.
+                            </p>
+                        </div>
 
-            {/* Include section */}
-            {(activePlan?.plan?.features?.length || 0) > 0 && (
-                <div className="space-y-4">
+                        <Card className="border">
+                            <CardContent className="p-6">
+                                <h4 className="text-sm font-medium text-gray-400 mb-4">
+                                    Features
+                                </h4>
+                                <ul className="space-y-2 divide-y">
+                                    {activePlan?.plan?.features?.map(
+                                        (feature, index) => (
+                                            <li
+                                                key={index}
+                                                className="flex items-start gap-2 text-sm py-3"
+                                            >
+                                                <CheckIcon className="mt-3" />
+                                                <div>
+                                                    <div>{feature?.title}</div>
+                                                    <div className="text-neutral-500">
+                                                        {feature?.description}
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        )
+                                    )}
+                                </ul>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+                <div className="flex-1 space-y-4">
                     <div>
-                        <h3 className="text-lg font-semibold ">Include</h3>
+                        <h3 className="text-lg font-semibold ">Purchase History</h3>
                         <p className="text-sm text-gray-400 mt-1">
-                            See everything included in your plan.
+                            See your past transactions.
                         </p>
                     </div>
-
-                    <Card className="border max-w-[400px]">
-                        <CardContent className="p-6">
-                            <h4 className="text-sm font-medium text-gray-400 mb-4">
-                                Features
-                            </h4>
-                            <ul className="space-y-2 divide-y">
-                                {activePlan?.plan?.features?.map(
-                                    (feature, index) => (
-                                        <li
-                                            key={index}
-                                            className="flex items-start gap-2 text-sm py-3"
-                                        >
-                                            <CheckIcon className="mt-3" />
-                                            <div>
-                                                <div>{feature?.title}</div>
-                                                <div className="text-neutral-500">
-                                                    {feature?.description}
-                                                </div>
-                                            </div>
-                                        </li>
-                                    )
-                                )}
-                            </ul>
+                    <Card className="border">
+                        <CardContent className="px-3">
+                            <PurchaseHistory />
                         </CardContent>
                     </Card>
                 </div>
+            </div>
             )}
             {/* Alerts for trial/subscription ending */}
             {isTrialPlan &&

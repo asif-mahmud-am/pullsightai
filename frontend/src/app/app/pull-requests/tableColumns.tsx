@@ -46,8 +46,8 @@ export const columns: ColumnDef<PullRequest>[] = [
         accessorKey: "pullRequestAnalysis",
         header: "Token Usage",
         meta: {
-            headerClassName: "w-32",
-            cellClassName: "w-32",
+            headerClassName: "w-40",
+            cellClassName: "w-40",
         },
         cell: ({ row }) => {
             const totalInputTokens = row.original?.pullRequestAnalysis?.reduce((acc, curr) => acc + (curr?.usageInfo?.input_tokens || 0) + (curr?.prReviewUsageInfo?.output_tokens || 0), 0) || 0;

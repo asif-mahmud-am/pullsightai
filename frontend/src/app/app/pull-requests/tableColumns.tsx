@@ -8,6 +8,10 @@ import Avatar from "@/components/reusable/Avatar";
 import Badge from "@/components/reusable/Badge";
 import { formatDate } from "@/lib/dayjs";
 import PrStateBadge from "@/components/reusable/PrStateBadge";
+import { ArrowLeft, ArrowRight, ExternalLink } from "lucide-react";
+import Link from "next/link";
+import { ROUTE_CONSTANTS } from "@/lib/constants";
+import { generatePath } from "@/lib/utils";
 
 export const columns: ColumnDef<PullRequest>[] = [
     {
@@ -19,9 +23,21 @@ export const columns: ColumnDef<PullRequest>[] = [
         },
         cell: ({ row }) => (
             <div className="2xl:max-w-xl xl:max-w-md lg:max-w-sm max-w-sm">
-                <span className="text-white mb-1 text-base text-wrap">
+                {/* <span className="text-white mb-1 text-base text-wrap">
                     {row.getValue("prTitle")}
-                </span>
+                </span> */}
+                <div className="flex gap-2">
+                    <span className="text-white mb-1 text-base text-wrap">
+                        {row.getValue("prTitle")}
+                    </span>
+                    <a
+                        className="opacity-50"
+                        href={row.original?.prUrl}
+                        target="_blank"
+                    >
+                        <ExternalLink className="w-auto h-4" />
+                    </a>
+                </div>
                 <div className="opacity-50">{row.original?.repo}</div>
             </div>
         ),
@@ -86,4 +102,19 @@ export const columns: ColumnDef<PullRequest>[] = [
             );
         },
     },
+    {
+        accessorKey: "prAutoMerge",
+        header: "Action",
+        meta: {
+            headerClassName: "w-28",
+            cellClassName: "w-28",
+        },
+        cell: ({ row }) => {
+            return (
+                <Link className="text-gray-400" href={generatePath(ROUTE_CONSTANTS.APP_PULL_REQUESTS_ISSUES, { id: row.original._id || "" })}>
+                    <ArrowRight className="w-4 h-4 " />
+                </Link>
+            );
+        },
+    }
 ];

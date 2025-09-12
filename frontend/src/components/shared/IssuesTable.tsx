@@ -240,8 +240,7 @@ const IssuesTable = ({
         prUser: prUser ? prUser : undefined,
         prState: prState ? prState : undefined,
         severity: severity ? severity : undefined,
-        // TODO: Add pullRequest filter when backend API supports it
-        // pullRequest: pullRequest ? pullRequest : undefined,
+        pullRequest: pullRequest ? pullRequest : undefined,
     });
 
     // reset to page 1 when filters change

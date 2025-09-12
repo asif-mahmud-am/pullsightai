@@ -43,11 +43,39 @@ export const columns: ColumnDef<PullRequest>[] = [
         ),
     },
     {
+        accessorKey: "pullRequestAnalysis",
+        header: "Token Usage",
+        meta: {
+            headerClassName: "w-32",
+            cellClassName: "w-32",
+        },
+        cell: ({ row }) => {
+            const totalInputTokens = row.original?.pullRequestAnalysis?.reduce((acc, curr) => acc + (curr?.usageInfo?.input_tokens || 0) + (curr?.prReviewUsageInfo?.output_tokens || 0), 0) || 0;
+            const totalOutputTokens = row.original?.pullRequestAnalysis?.reduce((acc, curr) => acc + (curr?.usageInfo?.output_tokens || 0) + (curr?.prReviewUsageInfo?.output_tokens || 0), 0) || 0;
+            return (
+                <div className="">
+                    <div className="flex gap-1">
+                        <span className="text-gray-400 text-xs">Input:</span>
+                        <span className="font-semibold">
+                            {(totalInputTokens || 0).toLocaleString()}
+                        </span>
+                    </div>
+                    <div className="flex gap-1">
+                        <span className="text-gray-400 text-xs">Output:</span>
+                        <span className="font-semibold">
+                            {(totalOutputTokens || 0).toLocaleString()}
+                        </span>
+                    </div>
+                </div>
+            );
+        },
+    },
+    {
         accessorKey: "prUser",
         header: "Author",
         meta: {
-            headerClassName: "w-60",
-            cellClassName: "w-60",
+            headerClassName: "w-40",
+            cellClassName: "w-40",
         },
         cell: ({ row }) => {
             return (

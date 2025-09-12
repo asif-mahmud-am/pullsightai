@@ -62,7 +62,8 @@ const MoreToken = ({
         );
     };
     const handleMoreDialogOpen = () => {
-        if (selectedWorkspace?.currentPlan?.isDefault) {
+        // if (selectedWorkspace?.currentPlan?.isDefault) {
+        if (selectedWorkspace?.currentPlan?.isFree) {
             showUpgradeDialog({
                 featureName: "Upgrade Plan",
                 featureDescription:

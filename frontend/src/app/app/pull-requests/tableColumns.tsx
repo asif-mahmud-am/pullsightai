@@ -54,14 +54,14 @@ export const columns: ColumnDef<PullRequest>[] = [
             const totalOutputTokens = row.original?.pullRequestAnalysis?.reduce((acc, curr) => acc + (curr?.usageInfo?.output_tokens || 0) + (curr?.prReviewUsageInfo?.output_tokens || 0), 0) || 0;
             return (
                 <div className="">
-                    <div className="flex gap-1">
-                        <span className="text-gray-400 text-xs">Input:</span>
+                    <div className="flex gap-1 items-center">
+                        <span className="text-gray-400 text-xs w-12">Input:</span>
                         <span className="font-semibold">
                             {(totalInputTokens || 0).toLocaleString()}
                         </span>
                     </div>
-                    <div className="flex gap-1">
-                        <span className="text-gray-400 text-xs">Output:</span>
+                    <div className="flex gap-1 items-center">
+                        <span className="text-gray-400 text-xs w-12">Output:</span>
                         <span className="font-semibold">
                             {(totalOutputTokens || 0).toLocaleString()}
                         </span>

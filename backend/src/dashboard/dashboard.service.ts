@@ -474,7 +474,7 @@ export class DashboardService {
                                 {
                                     $subtract: [
                                         new Date(),
-                                        '$pullRequest.createdAt'
+                                        '$pullRequest.prCreatedAt'
                                     ]
                                 },
                                 1000 * 60 * 60 * 24

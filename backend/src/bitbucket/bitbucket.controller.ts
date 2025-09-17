@@ -2,75 +2,123 @@ import {
     Body,
     Controller,
     Get,
-    Param,
     Post,
     Query,
     Req,
     UseGuards
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
+import { AddWorkspaceDto } from 'src/common/dto/add-workspace.dto'
+import { PaginateDto } from 'src/common/dto/paginate.dto'
+import { GetPRDto, PRReviewDto } from 'src/github/dto/install-repo.dto'
+import { BitbucketEventsService } from './bitbucket-events.service'
 import { BitbucketService } from './bitbucket.service'
-import { AddWebhookDto } from './dto/add-webhook.dto'
 
 @Controller({
     path: 'bitbucket',
     version: '1'
 })
 export class BitbucketController {
-    constructor(private readonly bitbucketService: BitbucketService) {}
-
-    @UseGuards(AuthGuard('jwt-cookie'))
-    @Get('repositories')
-    async getAllRepositories(@Req() req) {
-        return {
-            message: 'All repositories fetched successfully',
-            result: await this.bitbucketService.getAllRepositories(req.user)
-        }
-    }
-
-    @Get('user')
-    async getUserProfile(@Query('access_token') accessToken: string) {
-        return {
-            message: 'User profile fetched successfully',
-            result: await this.bitbucketService.getUserProfile(accessToken)
-        }
-    }
+    constructor(
+        private readonly bitbucketService: BitbucketService,
+        private readonly bitbucketEventsService: BitbucketEventsService
+    ) {}
 
     @UseGuards(AuthGuard('jwt-cookie'))
     @Get('organizations')
     async getAllWorkspaces(@Req() req) {
         return {
-            message: 'Workspaces fetched successfully',
+            message: 'Organizations fetched successfully',
             result: await this.bitbucketService.getAllWorkspaces(req.user)
         }
     }
 
     @UseGuards(AuthGuard('jwt-cookie'))
-    @Get('repositories/:workspace')
+    @Get('org-repos')
     async getWorkspaceRepositories(
-        @Param('workspace') workspace: string,
-        @Req() req
+        @Req() req: any,
+        @Query('filter') filter?: string
     ) {
         return {
             message: 'Workspace repositories fetched successfully',
             result: await this.bitbucketService.getWorkspaceRepositories(
-                workspace,
-                req.user
+                req.user,
+                filter
             )
         }
     }
 
-    @Post('add-webhook')
-    async addWebhook(@Body() addWebhookDto: AddWebhookDto) {
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('user-repos')
+    async getOrganizationSpeficiRepositories(
+        @Req() req: any,
+        @Query() paginate: PaginateDto
+    ) {
         return {
-            message: 'Webhook added successfully',
-            result: await this.bitbucketService.addWebhook(
-                addWebhookDto.access_token,
-                addWebhookDto.repository,
-                addWebhookDto.workspace,
-                addWebhookDto.webhook_url,
-                addWebhookDto.events
+            message: 'User repositories fetched successfully',
+            result: await this.bitbucketService.listOrganizationSpecificRepositories(
+                req.user,
+                paginate
             )
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Post('add-workspace')
+    async addWorkspace(
+        @Req() req: any,
+        @Body() addWorkspaceDto: AddWorkspaceDto
+    ) {
+        return {
+            message: 'Workspace added successfully',
+            result: await this.bitbucketService.addWorkspace(
+                req.user,
+                addWorkspaceDto
+            )
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('repos-pr-list')
+    async getPullRequests(@Req() req: any, @Query() getPRDto: GetPRDto) {
+        return {
+            message: 'Pull requests fetched successfully',
+            result: await this.bitbucketService.getPullRequests(
+                req.user,
+                getPRDto
+            )
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('review-pr')
+    async reviewPR(@Req() req: any, @Query() prReviewDto: PRReviewDto) {
+        const reviewData = await this.bitbucketService.makePRReview(
+            req.user,
+            prReviewDto
+        )
+        return {
+            message: 'Pull request reviewed successfully',
+            result: reviewData
+        }
+    }
+
+    @UseGuards(AuthGuard('jwt-cookie'))
+    @Get('org-members')
+    async getMembers(@Req() req: any, @Query() query: any) {
+        return {
+            message: 'Organization members fetched successfully',
+            result: await this.bitbucketService.getOrgMembers(req.user, query)
+        }
+    }
+
+    @Post('events')
+    async bitbucketEvents(@Body() body: any, @Req() req) {
+        const event = req.headers['x-event-key']
+        this.bitbucketService.processBitbucketEvent(event, body)
+        return {
+            message: 'Bitbucket events processed successfully',
+            result: {}
         }
     }
 }

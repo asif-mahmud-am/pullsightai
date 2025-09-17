@@ -1,30 +1,29 @@
 export interface Repository {
     id: number
-    nodeId: string
     name: string
     fullName: string
+    slug: string
     private: boolean
     author: {
-        name: string
+        username: string
         avatarUrl: string
     }
-    pushedAt: string
+    createdOn: string
+    updatedOn: string
     openIssues: number
 }
 
 export interface PullRequestResponse {
-    id: number
-    nodeId: string
+    provider: string
+    prId: number
     prNumber: number
-    title: string
-    status: string
-    user: {
-        username: string
-        avatarUrl: string
-    }
-    createdAt: string // ISO date string
-    updatedAt: string
-    closedAt: string | null
-    mergedAt: string | null
-    url: string
+    prTitle: string
+    prState: string
+    prUser: string
+    prUserAvatar: string
+    prCreatedAt: string // ISO date string
+    prUpdatedAt: string
+    prClosedAt: string | null
+    prMergedAt: string | null
+    prUrl: string
 }

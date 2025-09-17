@@ -2,6 +2,10 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+ARG NEXT_PUBLIC_API_URL
+
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 COPY . .
 RUN yarn install --frozen-lockfile
 RUN yarn build
@@ -17,3 +21,5 @@ COPY --from=builder /app/public ./public
 EXPOSE 3000
 
 CMD ["node", "server.js"]
+
+# CMD ["yarn", "start"]

@@ -32,21 +32,38 @@ export class User {
     refreshToken?: string
 
     @Prop({ required: false })
-    raw?: string
+    tokenExpiresAt?: Date
 
-    @Prop({ required: false, default: 1 })
-    onboardingStep: number
+    @Prop({ required: false })
+    raw?: string
 
     @Prop({
         required: false,
         type: Types.ObjectId,
         ref: 'Workspace',
         set: (value) =>
-            Types.ObjectId.isValid(value)
-                ? value
-                : Types.ObjectId.createFromHexString(value)
+            !value
+                ? null
+                : value instanceof Types.ObjectId
+                  ? value
+                  : Types.ObjectId.createFromHexString(value)
     })
     currentWorkspace?: Types.ObjectId
+
+    @Prop({
+        type: [Types.ObjectId],
+        ref: 'Workspace',
+        set: (values: []) =>
+            values.map((value) =>
+                Types.ObjectId.isValid(value)
+                    ? value
+                    : Types.ObjectId.createFromHexString(value)
+            )
+    })
+    workspaces?: Types.ObjectId[]
+
+    @Prop({ required: false, trim: true })
+    stripeCustomerId: string
 }
 
 const schema = SchemaFactory.createForClass(User)

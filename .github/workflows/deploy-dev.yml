@@ -3,7 +3,7 @@ name: Deploy with Self-Hosted Runner
 on:
   push:
     branches:
-      - dev
+      - development
 
 jobs:
   deploy:
@@ -11,9 +11,14 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Create .env file
+      - name: Stop and remove existing containers
+        run: |
+          docker compose down --remove-orphans || true
+          docker container prune -f || true
+
+      - name: Create .env file for backend
         run: |
           cd backend
           cat << EOF > .env
@@ -30,37 +35,121 @@ jobs:
           GITHUB_CLIENT_ID=${{ secrets.GIT_CLIENT_ID }}
           GITHUB_CLIENT_SECRET=${{ secrets.GIT_CLIENT_SECRET }}
           AI_AGENT_PR_POST_URL=${{ vars.AI_AGENT_PR_POST_URL }}
+          AI_AGENT_PR_REVIEW_URL=${{ vars.AI_AGENT_PR_REVIEW_URL }}
           GITHUB_WEBHOOK_SECRET=${{ secrets.GIT_WEBHOOK_SECRET }}
           GITHUB_PRIVATE_KEY_PATH=${{ secrets.GIT_PRIVATE_KEY_PATH }}
           GITHUB_APP_SLUG=${{ secrets.GIT_APP_SLUG }}
           GITHUB_APP_ID=${{ secrets.GIT_APP_ID }}
+          STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
           DOMAIN=${{ vars.DOMAIN }}
           EOF
 
-      - name: create pem file
+      - name: Create AI Agent .env file
+        run: |
+          cd ai_agent
+          cat << EOF > .env
+          CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }}
+          BACKEND_BASE_URL=${{ vars.BACKEND_BASE_URL }}
+          BACKEND_SUMMARY_ENDPOINT=${{ vars.BACKEND_SUMMARY_ENDPOINT }}
+          BACKEND_REVIEW_ENDPOINT=${{ vars.BACKEND_REVIEW_ENDPOINT }}
+          EOF
+
+      - name: Create Frontend .env file
+        run: |
+          cd frontend
+          cat << EOF > .env
+          NODE_ENV=${{ vars.NEXT_NODE_ENV }}
+          NEXT_TELEMETRY_DISABLED=${{ vars.NEXT_TELEMETRY_DISABLED }}
+          NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+          EOF
+
+      - name: Create GitHub App private key
         run: |
           echo "${{ secrets.GIT_PRIVATE_KEY }}" > backend/app.private-key.pem
           chmod 600 backend/app.private-key.pem
 
-      - name: Set frontend environment variables
+      - name: Build and deploy services
+        env:
+          # Backend environment variables
+          NODE_ENV: ${{ vars.NODE_ENV }}
+          PORT: ${{ vars.PORT }}
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          CLIENT_URL: ${{ vars.CLIENT_URL }}
+          BASE_URL: ${{ vars.BASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          GITLAB_CLIENT_ID: ${{ secrets.GITLAB_CLIENT_ID }}
+          GITLAB_CLIENT_SECRET: ${{ secrets.GITLAB_CLIENT_SECRET }}
+          BITBUCKET_CLIENT_ID: ${{ secrets.BITBUCKET_CLIENT_ID }}
+          BITBUCKET_CLIENT_SECRET: ${{ secrets.BITBUCKET_CLIENT_SECRET }}
+          GITHUB_CLIENT_ID: ${{ secrets.GIT_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET: ${{ secrets.GIT_CLIENT_SECRET }}
+          AI_AGENT_PR_POST_URL: ${{ vars.AI_AGENT_PR_POST_URL }}
+          AI_AGENT_PR_REVIEW_URL: ${{ vars.AI_AGENT_PR_REVIEW_URL }}
+          GITHUB_WEBHOOK_SECRET: ${{ secrets.GIT_WEBHOOK_SECRET }}
+          GITHUB_PRIVATE_KEY_PATH: ${{ secrets.GIT_PRIVATE_KEY_PATH }}
+          GITHUB_APP_SLUG: ${{ secrets.GIT_APP_SLUG }}
+          GITHUB_APP_ID: ${{ secrets.GIT_APP_ID }}
+          DOMAIN: ${{ vars.DOMAIN }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          # AI Agent environment variables
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          BACKEND_BASE_URL: ${{ vars.BACKEND_BASE_URL }}
+          BACKEND_SUMMARY_ENDPOINT: ${{ vars.BACKEND_SUMMARY_ENDPOINT }}
+          BACKEND_REVIEW_ENDPOINT: ${{ vars.BACKEND_REVIEW_ENDPOINT }}
+          # Frontend environment variables
+          NEXT_NODE_ENV: ${{ vars.NEXT_NODE_ENV }}
+          NEXT_TELEMETRY_DISABLED: ${{ vars.NEXT_TELEMETRY_DISABLED }}
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
         run: |
-          echo "NEXT_NODE_ENV=${{ vars.NEXT_NODE_ENV }}" >> $GITHUB_ENV
-          echo "NEXT_TELEMETRY_DISABLED=${{ vars.NEXT_TELEMETRY_DISABLED }}" >> $GITHUB_ENV
-          echo "NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}" >> $GITHUB_ENV
+          # Build with no cache to avoid issues
+          DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 docker compose build --no-cache
+          
+          # Start services
+          docker compose up -d
 
-      - name: Stop existing containers
+      - name: Wait for services to start
         run: |
-          docker compose down || true
-
-      - name: Build and start all services with Docker Compose
-        run: |
-          docker compose up -d --build
+          echo "Waiting for services to start..."
+          sleep 30
 
       - name: Check service health
         run: |
-          sleep 15
+          echo "=== Container Status ==="
           docker compose ps
+          
+          echo "=== Backend Health Check ==="
+          # Try to connect to backend
+          timeout 30 bash -c 'until curl -f http://localhost:3001/health 2>/dev/null || curl -f http://localhost:3001/ 2>/dev/null; do echo "Waiting for backend..."; sleep 2; done' || echo "Backend health check failed"
+          
+          echo "=== Frontend Health Check ==="
+          # Try to connect to frontend
+          timeout 30 bash -c 'until curl -f http://localhost:3000 2>/dev/null; do echo "Waiting for frontend..."; sleep 2; done' || echo "Frontend health check failed"
+          
+          echo "=== AI Agent Health Check ==="
+          # Try to connect to AI agent
+          timeout 30 bash -c 'until curl -f http://localhost:8030/health 2>/dev/null || curl -f http://localhost:8030/ 2>/dev/null; do echo "Waiting for AI agent..."; sleep 2; done' || echo "AI Agent health check failed"
+
+      - name: Show service logs
+        run: |
           echo "=== Backend Logs ==="
           docker compose logs pullsightai-backend --tail=50
+          echo ""
           echo "=== Frontend Logs ==="
           docker compose logs pullsightai-frontend --tail=50
+          echo ""
+          echo "=== AI Agent Logs ==="
+          docker compose logs pullsightai-ai-agent --tail=50
+
+      - name: Clean up old Docker resources (on failure)
+        if: failure()
+        run: |
+          echo "Deployment failed, cleaning up..."
+          docker compose down --remove-orphans || true
+          docker system prune -f --volumes || true
+
+      - name: Clean up unused Docker resources (on success)
+        if: success()
+        run: |
+          # Only clean up dangling images and unused volumes, keep running containers
+          docker image prune -f || true
+          docker volume prune -f || true

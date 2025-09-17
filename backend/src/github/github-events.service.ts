@@ -4,16 +4,21 @@ import { createAppAuth } from '@octokit/auth-app'
 import { Octokit } from '@octokit/rest'
 import * as fs from 'fs'
 import * as path from 'path'
+import { mapPREventToState, PREvent } from 'src/common/enums/pr.enum'
 import { PRFile, StructuredPRData } from 'src/common/interfaces/pr.interface'
-import { PostReviewDto } from 'src/github/dto/post-review.dto'
-import { PostSummeryDto } from 'src/github/dto/post-summery.dto'
+import { DatabaseService } from 'src/database/database.service'
+import { PullRequestAnalysisComment } from 'src/database/schemas/pull-request-analysis-comment.schema'
+import { PullRequestAnalysis } from 'src/database/schemas/pull-request-analysis.schema'
 
 @Injectable()
 export class GithubEventService {
     private octokit: Octokit
     private privateKey: string
 
-    constructor(private readonly configService: ConfigService) {
+    constructor(
+        private readonly configService: ConfigService,
+        private readonly dataService: DatabaseService
+    ) {
         const pemPath = path.resolve(
             this.configService.get<string>('GITHUB_PRIVATE_KEY_PATH') || ''
         )
@@ -34,28 +39,53 @@ export class GithubEventService {
         return new Octokit({ auth: installationAuth.token })
     }
 
+    async appAuthenticationJWT() {
+        const auth = createAppAuth({
+            appId: Number(this.configService.get<string>('GITHUB_APP_ID')),
+            privateKey: this.privateKey,
+            clientId: this.configService.get<string>('GITHUB_CLIENT_ID'),
+            clientSecret: this.configService.get<string>('GITHUB_CLIENT_SECRET')
+        })
+        const { token } = await auth({ type: 'app' })
+        return new Octokit({ auth: token })
+    }
+
     // GitHub Pull Request Events
-    async handleGitHubPullRequest(payload) {
+    async handleGitHubPullRequest(payload, event: PREvent) {
         const { action, pull_request, repository, installation } = payload
-        if (['opened', 'synchronize', 'edited'].includes(action)) {
-            return await this.createComprehensivePRAnalysis(
-                repository.owner.login,
-                repository.name,
-                pull_request.number,
-                installation?.id
-            )
-        } else {
-            return false
+        return await this.createComprehensivePRAnalysis(
+            repository.owner.login,
+            repository.name,
+            pull_request.number,
+            installation?.id,
+            event
+        )
+    }
+
+    async removeInstallationIdFromWorkspace(installationId: number) {
+        return this.dataService.workspaces.updateOne(
+            { installationId },
+            { $set: { installationId: null } }
+        )
+    }
+
+    async handleGitHubInstallation(payload) {
+        const { action, installation } = payload
+        switch (action) {
+            case 'deleted':
+                return await this.removeInstallationIdFromWorkspace(
+                    installation.id
+                )
         }
     }
 
-    async addPRSummery(postSummeryDto: PostSummeryDto) {
-        const octokit = await this.initOctokitApp(postSummeryDto.installationId)
+    async addPRSummery(analysis: PullRequestAnalysis) {
+        const octokit = await this.initOctokitApp(+analysis.installationId)
         await octokit.issues.createComment({
-            owner: postSummeryDto.owner,
-            repo: postSummeryDto.repo,
-            issue_number: postSummeryDto.prNumber,
-            body: postSummeryDto.body
+            owner: analysis.workspaceSlug,
+            repo: analysis.repositorySlug,
+            issue_number: +analysis.prNumber,
+            body: analysis.summary
         })
         return {}
     }
@@ -63,10 +93,13 @@ export class GithubEventService {
     // Fetch PR files and changes
     async fetchPRFiles(owner, repo, prNumber, installationId) {
         const octokit = await this.initOctokitApp(installationId)
-        const { data: files } = await octokit.pulls.listFiles({
+
+        // Use paginate to get ALL files, not just the first 30
+        const files = await octokit.paginate(octokit.pulls.listFiles, {
             owner,
             repo,
-            pull_number: prNumber
+            pull_number: prNumber,
+            per_page: 100 // Fetch 100 files per page for efficiency
         })
         return files
     }
@@ -76,7 +109,8 @@ export class GithubEventService {
         owner: string,
         repo: string,
         prNumber: number,
-        installationId: number
+        installationId: number,
+        event: PREvent
     ): Promise<StructuredPRData> {
         const octokit = await this.initOctokitApp(installationId)
 
@@ -95,7 +129,14 @@ export class GithubEventService {
         )
 
         const prFiles: PRFile[] = []
-
+        const totalPrLineAdditions = files.reduce(
+            (sum, file) => sum + (file.additions || 0),
+            0
+        )
+        const totalPrLineDeletion = files.reduce(
+            (sum, file) => sum + (file.deletions || 0),
+            0
+        )
         // Process each file to get before/after content
         for (let i = 0; i < files.length; i++) {
             const file = files[i]
@@ -116,61 +157,73 @@ export class GithubEventService {
                 prData.head.sha,
                 installationId
             )
-
             prFiles.push({
-                pr_file_name: file.filename,
-                pr_file_status: file.status,
-                pr_file_additions: file.additions,
-                pr_file_deletions: file.deletions,
-                pr_file_changes: file.changes,
-                pr_file_content_before:
+                prFileName: file.filename,
+                prFileStatus: file.status,
+                prFileAdditions: file.additions,
+                prFileDeletions: file.deletions,
+                prFileChanges: file.changes,
+                prFileContentBefore:
                     contentBefore || 'File not found in base branch',
-                pr_file_content_after:
+                prFileContentAfter:
                     contentAfter || 'File not found in head branch',
-                pr_file_diff: file.patch || 'No diff available',
-                pr_file_blob_url: file.blob_url
+                prFileDiff: file.patch || 'No diff available',
+                prFileDiffHunks: this.parseDiffHunks(file.patch || ''),
+                prFileBlobUrl: file.blob_url
             })
         }
 
         // Create the comprehensive structure
         const comprehensiveAnalysis: StructuredPRData = {
-            pull_request: {
-                pr_id: prData.id.toString(),
-                pr_user: prData.user.login,
+            pullRequest: {
+                provider: 'github',
+                prId: prData.id.toString(),
+                prUser: prData.user.login,
+                prUserAvatar: prData.user.avatar_url || '',
+                prUrl: prData.html_url || '',
                 owner: owner,
                 repo: repo,
                 prNumber: prNumber.toString(),
                 installationId: installationId?.toString() || 'not_provided',
-                pr_repo_name: `${owner}/${repo}`,
-                pr_number: prNumber,
-                pr_title: prData.title,
-                pr_body: prData.body || '',
-                pr_state: prData.state,
-                pr_created_at: prData.created_at,
-                pr_updated_at: prData.updated_at,
-                pr_head_branch: prData.head.ref,
-                pr_base_branch: prData.base.ref,
-                pr_head_sha: prData.head.sha,
-                pr_base_sha: prData.base.sha,
-                pr_files_changed: files.length,
-                pr_files: prFiles
+                prRepoName: `${owner}/${repo}`,
+                prTitle: prData.title,
+                prBody: prData.body || '',
+                prState: mapPREventToState(event),
+                prCreatedAt: prData.created_at,
+                prUpdatedAt: prData.updated_at,
+                prClosedAt: prData.closed_at || '',
+                prMergedAt: prData.merged_at || '',
+                prHeadBranch: prData.head.ref,
+                prBaseBranch: prData.base.ref,
+                prHeadSha: prData.head.sha,
+                prBaseSha: prData.base.sha,
+                prFilesChanged: files.length,
+                prTotalLineAddition: totalPrLineAdditions,
+                prTotalLineDeletion: totalPrLineDeletion,
+                prFiles: prFiles
             }
         }
         return comprehensiveAnalysis
     }
 
     // Add review comments to specific lines in PR files
-    async addPRReviewComments(postReviewDto: PostReviewDto) {
-        const octokit = await this.initOctokitApp(postReviewDto.installationId)
-
-        // Create a review with multiple line comments
+    async addPRReviewComments(
+        analysis: PullRequestAnalysis,
+        comments: PullRequestAnalysisComment[]
+    ) {
+        const commentsFormatted = comments.map((comment) => ({
+            path: comment.filePath,
+            line: comment.lineEnd,
+            body: comment.content
+        }))
+        const octokit = await this.initOctokitApp(+analysis.installationId)
         const reviewData: any = {
-            owner: postReviewDto.owner,
-            repo: postReviewDto.repo,
-            pull_number: postReviewDto.prNumber,
+            owner: analysis.workspaceSlug,
+            repo: analysis.repositorySlug,
+            pull_number: analysis.prNumber,
             body: '🤖 **Automated Code Review by Pullsight-AI**',
             event: 'COMMENT',
-            comments: postReviewDto.comments
+            comments: commentsFormatted
         }
 
         await octokit.pulls.createReview(reviewData)
@@ -179,18 +232,37 @@ export class GithubEventService {
 
     // Fetch full file content from GitHub repository
     async fetchFileContent(owner, repo, filePath, sha, installationId) {
-        const octokit = await this.initOctokitApp(installationId)
-        const { data } = await octokit.repos.getContent({
-            owner,
-            repo,
-            path: filePath,
-            ref: sha
-        })
+        try {
+            const octokit = await this.initOctokitApp(installationId)
+            const { data } = await octokit.repos.getContent({
+                owner,
+                repo,
+                path: filePath,
+                ref: sha
+            })
 
-        // Decode base64 content
-        if (data['content']) {
-            return Buffer.from(data['content'], 'base64').toString('utf8')
+            // Decode base64 content
+            if (data['content']) {
+                return Buffer.from(data['content'], 'base64').toString('utf8')
+            }
+            return null
+        } catch (error) {
+            return null
         }
-        return null
+    }
+
+    // Parse diff into structured hunks
+    private parseDiffHunks(diff: string): string[] {
+        if (!diff) return []
+
+        const hunks: string[] = []
+        const hunkRegex = /@@[^@]*@@.*?(?=@@|$)/gs
+
+        let match
+        while ((match = hunkRegex.exec(diff)) !== null) {
+            hunks.push(match[0])
+        }
+
+        return hunks
     }
 }

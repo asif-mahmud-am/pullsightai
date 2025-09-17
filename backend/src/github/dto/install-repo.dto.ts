@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator'
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator'
 
 export class InstallRepoDto {
     @IsString()
@@ -18,6 +18,28 @@ export class GetPRDto {
     @IsString()
     @IsNotEmpty()
     repo: string
+
+    @IsString()
+    @IsOptional()
+    status: string = 'open'
+
+    @IsString()
+    @IsOptional()
+    limit: string
+}
+
+export class GetPRGitLabDto {
+    @IsString()
+    @IsNotEmpty()
+    repo: string
+
+    @IsString()
+    @IsOptional()
+    status: string = 'opened'
+
+    @IsString()
+    @IsOptional()
+    limit: string
 }
 
 export class PRReviewDto {
@@ -28,4 +50,14 @@ export class PRReviewDto {
     @IsString()
     @IsNotEmpty()
     prNumber: string
+}
+
+export class InstallCallbackDto {
+    @IsString()
+    @IsNotEmpty()
+    installation_id: string
+
+    @IsString()
+    @IsNotEmpty()
+    state: string
 }

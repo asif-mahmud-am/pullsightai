@@ -1,24 +1,13 @@
-import { HttpService } from '@nestjs/axios'
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { firstValueFrom } from 'rxjs'
-
-export interface BitbucketRepository {
-    name: string
-    fullName: string
-    createdOn: string
-    updatedOn: string
-    id: string
-    author: {
-        username: string
-        displayName: string
-        type: string
-    }
-}
-
-export interface BitbucketRepositoriesResponse {
-    repositories: BitbucketRepository[]
-}
+import { PaginateDto } from 'src/common/dto/paginate.dto'
+import { OrgType } from 'src/common/enums/org.enum'
+import { HttpService } from 'src/common/http/http.service'
+import {
+    PullRequestResponse,
+    Repository
+} from 'src/common/interfaces/repository.interface'
+import { Workspace } from 'src/database/schemas/workspace.schema'
 
 @Injectable()
 export class BitbucketApiService {
@@ -42,171 +31,69 @@ export class BitbucketApiService {
     }
 
     /**
-     * Generic method to make API calls to Bitbucket
-     */
-    private async makeApiCall<T>(
-        endpoint: string,
-        accessToken: string,
-        method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
-        data?: any
-    ): Promise<T> {
-        try {
-            const url = `${this.baseUrl}${endpoint}`
-            const headers = this.getAuthHeaders(accessToken)
-
-            const response = await firstValueFrom(
-                this.httpService.request({
-                    method,
-                    url,
-                    headers,
-                    data
-                })
-            )
-
-            return response.data
-        } catch (error) {
-            console.error(
-                `❌ Bitbucket API Error:`,
-                error.response?.data || error.message
-            )
-
-            if (error.response?.status === 401) {
-                throw new HttpException(
-                    'Invalid or expired access token',
-                    HttpStatus.UNAUTHORIZED
-                )
-            }
-
-            if (error.response?.status === 403) {
-                throw new HttpException(
-                    'Insufficient permissions',
-                    HttpStatus.FORBIDDEN
-                )
-            }
-
-            if (error.response?.status === 404) {
-                throw new HttpException(
-                    'Resource not found',
-                    HttpStatus.NOT_FOUND
-                )
-            }
-
-            throw new HttpException(
-                error.response?.data?.error?.message ||
-                    'Bitbucket API request failed',
-                error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR
-            )
-        }
-    }
-
-    /**
-     * Get all repositories for the authenticated user with pagination
-     */
-    async getAllRepositories(
-        accessToken: string
-    ): Promise<BitbucketRepositoriesResponse> {
-        try {
-            let allRepositories: BitbucketRepository[] = []
-            let nextUrl = '/repositories?role=member&pagelen=100'
-
-            // Fetch all pages of repositories
-            while (nextUrl) {
-                const response = await this.makeApiCall<any>(
-                    nextUrl,
-                    accessToken
-                )
-
-                const repositories = response.values.map((repo) =>
-                    this.mapRepositoryResponse(repo)
-                )
-                allRepositories = allRepositories.concat(repositories)
-
-                // Check if there's a next page (remove base URL if present)
-                nextUrl = response.next
-                    ? response.next.replace(this.baseUrl, '')
-                    : null
-            }
-
-            return {
-                repositories: allRepositories
-            }
-        } catch (error) {
-            console.error('❌ Error fetching repositories:', error)
-            throw error
-        }
-    }
-
-    /**
-     * Get a specific repository by full name
-     */
-    async getRepository(
-        accessToken: string,
-        fullName: string
-    ): Promise<BitbucketRepository> {
-        try {
-            const response = await this.makeApiCall<any>(
-                `/repositories/${fullName}`,
-                accessToken
-            )
-            return this.mapRepositoryResponse(response)
-        } catch (error) {
-            console.error(`❌ Error fetching repository ${fullName}:`, error)
-            throw error
-        }
-    }
-
-    /**
-     * Get user profile information
-     */
-    async getUserProfile(accessToken: string): Promise<any> {
-        try {
-            return await this.makeApiCall<any>('/user', accessToken)
-        } catch (error) {
-            console.error('❌ Error fetching user profile:', error)
-            throw error
-        }
-    }
-
-    /**
      * Get all workspaces for the authenticated user
      */
-    async getAllWorkspaces(accessToken: string): Promise<any> {
-        try {
-            let allWorkspaces = []
-            let nextUrl = '/workspaces?pagelen=100'
+    async getAllWorkspaces(accessToken: string): Promise<Workspace[]> {
+        let allWorkspaces: Workspace[] = []
+        let url = `${this.baseUrl}/user/permissions/workspaces?pagelen=100`
+        const response = await this.httpService.get(url, {
+            headers: this.getAuthHeaders(accessToken)
+        })
 
-            while (nextUrl) {
-                const response = await this.makeApiCall<any>(
-                    nextUrl,
-                    accessToken
-                )
-                const workspaces = response.values.map((workspace) => ({
-                    name: workspace.name,
-                    slug: workspace.slug,
-                    displayName: workspace.display_name,
-                    type: workspace.type,
-                    isPrivate: workspace.is_private,
-                    createdOn: workspace.created_on,
-                    updatedOn: workspace.updated_on,
-                    links: {
-                        html: workspace.links.html.href,
-                        repositories: `${this.baseUrl}/repositories/${workspace.slug}`,
-                        projects: workspace.links.projects?.href
-                    }
-                }))
+        await Promise.all(
+            response.values.map(async (data) => {
+                const { user } = data
+                let url = `${this.baseUrl}/workspaces/${data.workspace.slug}`
+                const workspace = await this.httpService.get(url, {
+                    headers: this.getAuthHeaders(accessToken)
+                })
+                if (data.permission == 'owner')
+                    allWorkspaces.push({
+                        id: workspace.uuid,
+                        name: workspace.name,
+                        slug: workspace.slug,
+                        provider: 'bitbucket',
+                        url: workspace.links.html.href,
+                        reposUrl: `${this.baseUrl}/repositories/${workspace.slug}`,
+                        avatarUrl: workspace.links.avatar?.href,
+                        type: OrgType.ORGANIZATION,
+                        nodeId: `BB_${workspace.uuid}`,
+                        description: workspace.description,
+                        isPrivate: workspace.is_private,
+                        createdOn: workspace.created_on
+                    })
+            })
+        )
+        return allWorkspaces
+    }
 
-                allWorkspaces = allWorkspaces.concat(workspaces)
-                nextUrl = response.next
-                    ? response.next.replace(this.baseUrl, '')
-                    : null
-            }
-
-            return {
-                workspaces: allWorkspaces
-            }
-        } catch (error) {
-            console.error('❌ Error fetching workspaces:', error)
-            throw error
+    /**
+     * Get single workspace by slug
+     * @param slug - The slug of the workspace to fetch
+     * @returns Workspace object or null if not found
+     */
+    async getSingleWorkspace(
+        accessToken: string,
+        slug: string
+    ): Promise<Workspace> {
+        let url = `${this.baseUrl}/workspaces/${slug}`
+        const workspace = await this.httpService.get(url, {
+            headers: this.getAuthHeaders(accessToken)
+        })
+        return {
+            id: workspace.uuid,
+            name: workspace.name,
+            slug: workspace.slug,
+            provider: 'bitbucket',
+            url: workspace.links.html.href,
+            reposUrl: `${this.baseUrl}/repositories/${workspace.slug}`,
+            avatarUrl: workspace.links.avatar?.href,
+            type:
+                workspace.type == 'user' ? OrgType.USER : OrgType.ORGANIZATION,
+            nodeId: `BB_${workspace.uuid}`,
+            description: workspace.description,
+            isPrivate: workspace.is_private,
+            createdOn: workspace.created_on
         }
     }
 
@@ -216,44 +103,57 @@ export class BitbucketApiService {
     async getWorkspaceRepositories(
         accessToken: string,
         workspace: string
-    ): Promise<BitbucketRepositoriesResponse> {
-        try {
-            let allRepositories: BitbucketRepository[] = []
-            let nextUrl = `/repositories/${workspace}?pagelen=100`
+    ): Promise<Repository[]> {
+        let allRepositories: Repository[] = []
+        let url = `${this.baseUrl}/repositories/${workspace}?pagelen=100`
 
-            while (nextUrl) {
-                console.log(
-                    `🔄 Fetching repositories for workspace ${workspace} from: ${this.baseUrl}${nextUrl}`
-                )
+        // Paginate through all repositories
+        while (url) {
+            const response = await this.httpService.get(url, {
+                headers: this.getAuthHeaders(accessToken)
+            })
 
-                const response = await this.makeApiCall<any>(
-                    nextUrl,
-                    accessToken
-                )
-
+            // Add repositories from current page
+            if (response.values && Array.isArray(response.values)) {
                 const repositories = response.values.map((repo) =>
                     this.mapRepositoryResponse(repo)
                 )
-                allRepositories = allRepositories.concat(repositories)
-
-                nextUrl = response.next
-                    ? response.next.replace(this.baseUrl, '')
-                    : null
+                allRepositories.push(...repositories)
             }
 
-            console.log(
-                `✅ Found ${allRepositories.length} repositories in workspace ${workspace}`
-            )
+            // Check if there's a next page
+            url = response.next || null
+        }
 
-            return {
-                repositories: allRepositories
-            }
-        } catch (error) {
-            console.error(
-                `❌ Error fetching repositories for workspace ${workspace}:`,
-                error
-            )
-            throw error
+        return allRepositories
+    }
+
+    /**
+     * Get repositories for a specific workspace with pagination
+     */
+    async getWorkspaceRepositoriesPaginated(
+        accessToken: string,
+        workspace: string,
+        paginate: PaginateDto
+    ): Promise<any> {
+        const url = `${this.baseUrl}/repositories/${workspace}?pagelen=${paginate.limit}&page=${paginate.page}`
+
+        const response = await this.httpService.get(url, {
+            headers: this.getAuthHeaders(accessToken)
+        })
+
+        // Transform repositories to match the expected format
+        const repositories =
+            response.values?.map((repo) => this.mapRepositoryResponse(repo)) ||
+            []
+
+        return {
+            values: repositories,
+            size: response.size || repositories.length,
+            page: response.page || paginate.page,
+            pagelen: response.pagelen || paginate.limit,
+            next: response.next || null,
+            previous: response.previous || null
         }
     }
 
@@ -267,141 +167,248 @@ export class BitbucketApiService {
         webhookUrl: string,
         events: string[]
     ): Promise<any> {
-        try {
-            console.log(`🔄 Adding webhook to ${workspace}/${repository}...`)
+        const webhookPayload = {
+            description:
+                'PullSight AI Webhook - Automated webhook for pull request and issue analysis',
+            url: webhookUrl,
+            active: true,
+            events: events
+        }
 
-            const webhookPayload = {
-                description:
-                    'PullSight AI Webhook - Automated webhook for pull request and issue analysis',
-                url: webhookUrl,
-                active: true,
-                events: events
+        const response = await this.httpService.post(
+            `${this.baseUrl}/repositories/${workspace}/${repository}/hooks`,
+            webhookPayload,
+            {
+                headers: this.getAuthHeaders(accessToken)
             }
+        )
 
-            const response = await this.makeApiCall<any>(
-                `/repositories/${workspace}/${repository}/hooks`,
-                accessToken,
-                'POST',
-                webhookPayload
-            )
-
-            console.log(
-                `✅ Successfully created webhook for ${workspace}/${repository}`
-            )
-            console.log(`🔗 Webhook URL: ${response.url}`)
-            console.log(`📋 Webhook ID: ${response.uuid}`)
-
-            return {
-                message: 'Webhook successfully added!',
-                repository: {
-                    workspace: workspace,
-                    name: repository,
-                    fullName: `${workspace}/${repository}`
-                },
-                webhook: {
-                    id: response.uuid,
-                    url: response.url,
-                    description: response.description,
-                    active: response.active,
-                    events: response.events,
-                    createdAt: response.created_at,
-                    links: response.links
-                }
+        return {
+            message: 'Webhook successfully added!',
+            repository: {
+                workspace: workspace,
+                name: repository,
+                fullName: `${workspace}/${repository}`
+            },
+            webhook: {
+                id: response.uuid,
+                url: response.url,
+                description: response.description,
+                active: response.active,
+                events: response.events,
+                createdAt: response.created_at,
+                links: response.links
             }
-        } catch (error) {
-            console.error(
-                `❌ Error adding webhook to ${workspace}/${repository}:`,
-                error
-            )
-
-            if (error.response?.status === 403) {
-                throw new HttpException(
-                    'You do not have permission to add webhooks to this repository. Make sure you have admin access.',
-                    HttpStatus.FORBIDDEN
-                )
-            } else if (error.response?.status === 404) {
-                throw new HttpException(
-                    `Repository ${workspace}/${repository} not found or you don't have access to it.`,
-                    HttpStatus.NOT_FOUND
-                )
-            }
-
-            throw error
         }
     }
 
     /**
      * Map Bitbucket API repository response to our interface
      */
-    private mapRepositoryResponse(repo: any): BitbucketRepository {
+    private mapRepositoryResponse(repo: any): Repository {
         return {
+            id: repo.uuid,
             name: repo.name,
             fullName: repo.full_name,
+            slug: repo.slug,
             createdOn: repo.created_on,
             updatedOn: repo.updated_on,
-            id: repo.uuid,
             author: {
-                username: repo.owner?.username,
-                displayName: repo.owner?.display_name,
-                type: repo.owner?.type
-            }
-        }
+                username: repo?.owner?.username || repo?.owner?.nickname,
+                avatarUrl: repo.owner?.links?.avatar?.href
+            },
+            private: repo.is_private,
+            openIssues: repo.open_issues_count || 0
+        } as Repository
     }
 
     /**
-     * Exchange authorization code for access token (OAuth flow)
+     * Get pull requests for a specific repository
      */
-    async exchangeCodeForToken(code: string): Promise<any> {
-        try {
-            const redirectUri = `${this.configService.get<string>('BASE_URL')}/v1/auth/bitbucket/callback`
-            console.log('🔄 Token exchange redirect_uri:', redirectUri)
+    async getPullRequests(
+        accessToken: string,
+        workspace: string,
+        repository: string,
+        state?: string,
+        limit?: number
+    ): Promise<PullRequestResponse[]> {
+        let allPullRequests: PullRequestResponse[] = []
+        const pageLimit = 50
+        let nextUrl = `${this.baseUrl}/repositories/${workspace}/${repository}/pullrequests?pagelen=${pageLimit}`
 
-            // Exchange code for access token
-            const tokenResponse = await firstValueFrom(
-                this.httpService.post(
-                    `${this.oauthBaseUrl}/access_token`,
-                    `grant_type=authorization_code&code=${code}&client_id=${this.configService.get<string>('BITBUCKET_CLIENT_ID')}&client_secret=${this.configService.get<string>('BITBUCKET_CLIENT_SECRET')}&redirect_uri=${encodeURIComponent(redirectUri)}`,
-                    {
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            Accept: 'application/json'
-                        }
-                    }
-                )
-            )
+        // Add state filter if provided
+        if (state) {
+            nextUrl += `&state=${state.toUpperCase()}`
+        }
 
-            const tokens = tokenResponse.data
+        // Paginate through all results
+        while (nextUrl) {
+            const response = await this.httpService.get(nextUrl, {
+                headers: this.getAuthHeaders(accessToken)
+            })
 
-            // Get user profile using the new token
-            const userResponse = await firstValueFrom(
-                this.httpService.get(`${this.baseUrl}/user`, {
-                    headers: {
-                        Authorization: `Bearer ${tokens.access_token}`,
-                        Accept: 'application/json'
-                    }
+            // Process current page
+            if (response.values && Array.isArray(response.values)) {
+                response.values.forEach((pr) => {
+                    allPullRequests.push({
+                        provider: 'bitbucket',
+                        prId: pr.id,
+                        prNumber: pr.id,
+                        prTitle: pr.title,
+                        prState: pr.state.toLowerCase(),
+                        prUser: pr.author?.nickname || 'unknown',
+                        prUserAvatar: pr.author?.links?.avatar?.href || '',
+                        prCreatedAt: pr.created_on,
+                        prUpdatedAt: pr.updated_on,
+                        prClosedAt:
+                            pr.state === 'DECLINED' || pr.state === 'SUPERSEDED'
+                                ? pr.updated_on
+                                : null,
+                        prMergedAt:
+                            pr.state === 'MERGED' ? pr.updated_on : null,
+                        prUrl: pr.links?.html?.href || ''
+                    })
                 })
-            )
-
-            const result = {
-                user: userResponse.data,
-                tokens: tokens
             }
 
-            console.log(
-                '✅ Bitbucket OAuth Success:',
-                JSON.stringify(result, null, 2)
-            )
+            // Check if there's a next page
+            nextUrl = response.next || null
+        }
+        return allPullRequests
+    }
 
-            return result
-        } catch (error) {
-            console.log(
-                '❌ Bitbucket OAuth error:',
-                error.response?.data || error.message
-            )
-            throw new HttpException(
-                'OAuth token exchange failed',
-                HttpStatus.BAD_REQUEST
-            )
+    /**
+     * Get workspace members for Bitbucket
+     */
+    async getOrgMembers(accessToken: string, workspace: string) {
+        let allMembers: any[] = []
+        let url = `${this.baseUrl}/workspaces/${workspace}/members?pagelen=100`
+
+        const response = await this.httpService.get(url, {
+            headers: this.getAuthHeaders(accessToken)
+        })
+
+        if (response.values && Array.isArray(response.values)) {
+            response.values.forEach((member) => {
+                allMembers.push({
+                    provider: 'bitbucket',
+                    providerId: member.user?.uuid.toString(),
+                    username: member.user?.nickname,
+                    displayName:
+                        member.user?.display_name || member.display_name,
+                    avatarUrl:
+                        member.user?.links?.avatar?.href ||
+                        member.links?.avatar?.href
+                })
+            })
+        }
+        return allMembers
+    }
+
+    async refreshAccessToken(refreshToken: string): Promise<{
+        access_token: string
+        refresh_token?: string
+        expires_in: number
+    } | null> {
+        const bitbucketTokenUrl =
+            this.configService.get('BITBUCKET_TOKEN_URL') ||
+            'https://bitbucket.org/site/oauth2/access_token'
+        const clientId = this.configService.get('BITBUCKET_CLIENT_ID')
+        const clientSecret = this.configService.get('BITBUCKET_CLIENT_SECRET')
+        const response = await this.httpService.post(
+            bitbucketTokenUrl,
+            {
+                grant_type: 'refresh_token',
+                refresh_token: refreshToken
+            },
+            {
+                auth: {
+                    username: clientId,
+                    password: clientSecret
+                },
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+        )
+        return response
+    }
+
+    async getBitbucketPRAndRepo(
+        accessToken: string,
+        workspace: string,
+        repo: string,
+        prId: number
+    ) {
+        const pullrequest = await this.httpService.get(
+            `${this.baseUrl}/repositories/${workspace}/${repo}/pullrequests/${prId}`,
+            {
+                headers: this.getAuthHeaders(accessToken)
+            }
+        )
+        const repository = await this.httpService.get(
+            `${this.baseUrl}/repositories/${workspace}/${repo}`,
+            {
+                headers: this.getAuthHeaders(accessToken)
+            }
+        )
+        return {
+            pullrequest,
+            repository
+        }
+    }
+
+    async fetchPRDiff(
+        workspace: string,
+        repository: string,
+        pullRequestId: number,
+        accessToken: string
+    ): Promise<string | null> {
+        const apiUrl = `${this.baseUrl}/repositories/${workspace}/${repository}/pullrequests/${pullRequestId}/diff`
+        return await this.httpService.get(apiUrl, {
+            headers: this.getAuthHeaders(accessToken)
+        })
+    }
+
+    extractFileDiff(fullDiff: string | null, filePath: string): string {
+        if (!fullDiff || !filePath) {
+            return 'No diff available'
+        }
+
+        const escapedFileName = filePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        const filePattern = new RegExp(
+            `diff --git a/${escapedFileName} b/${escapedFileName}[\\s\\S]*?(?=diff --git|$)`,
+            'g'
+        )
+        const fileDiffMatch = fullDiff.match(filePattern)
+        return fileDiffMatch
+            ? fileDiffMatch[0].trim()
+            : 'No diff available for this file'
+    }
+
+    /**
+     * Remove webhook from a specific repository
+     */
+    async removeWebhook(
+        accessToken: string,
+        workspace: string,
+        repository: string,
+        webhookId: string
+    ): Promise<any> {
+        const apiEndpoint = `${this.baseUrl}/repositories/${workspace}/${repository}/hooks/${webhookId}`
+
+        await this.httpService.delete(apiEndpoint, {
+            headers: this.getAuthHeaders(accessToken)
+        })
+
+        return {
+            message: 'Webhook successfully removed!',
+            repository: {
+                workspace,
+                name: repository,
+                fullName: `${workspace}/${repository}`
+            },
+            webhookId
         }
     }
 }

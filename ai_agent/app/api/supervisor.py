@@ -303,7 +303,7 @@ async def process_pr_review_background(extracted_data: dict):
             # Create chunks for review generation
             review_chunks, ignored_review_files = create_review_chunks(
                 files=extracted_data["prFiles"],
-                max_chunk_tokens=130000,  # LLM limit for reviews
+                max_chunk_tokens=100000,  # LLM limit for reviews
                 max_file_tokens=100000    # File size limit
             )
             
@@ -365,8 +365,6 @@ async def process_pr_review_background(extracted_data: dict):
                         "usageInfo": review_usage,
                         "completed": 1 if chunk_index == total_chunks - 1 else 0
                     }
-
-                    print(review_payload)
 
                     logger.info(f"Posting {len(chunk_comments)} comments for chunk {chunk_index + 1} to backend...")
 

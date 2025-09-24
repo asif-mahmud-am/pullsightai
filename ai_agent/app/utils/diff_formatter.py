@@ -186,6 +186,113 @@ class DiffFormatterService:
         except Exception as e:
             logger.error(f"Error formatting diff for LLM: {str(e)}")
             return f"# File: {file_path}\n\nError formatting diff: {str(e)}\n"
+
+    def format_diff_for_llm_raw_diff(self, pr_diff: str, file_path: str = "") -> str:
+        """
+        Format raw git diff string into LLM-friendly format with clear line numbers.
+        
+        Args:
+            pr_diff: Raw git diff string (like prFileDiff from test.json)
+            file_path: Path to the file being reviewed
+            
+        Returns:
+            Formatted diff for LLM review
+        """
+        try:
+            if not pr_diff or not pr_diff.strip():
+                return f"# File: {file_path}\n\nNo changes found in this file.\n"
+            
+            # Split the raw diff into individual hunks
+            diff_hunks = self._split_diff_into_hunks(pr_diff)
+            
+            if not diff_hunks:
+                return f"# File: {file_path}\n\nNo changes found in this file.\n"
+            
+            formatted_output = []
+            formatted_output.append(f"# File: {file_path}")
+            formatted_output.append("=" * 80)
+            formatted_output.append("")
+            
+            for hunk_index, hunk in enumerate(diff_hunks):
+                parsed = self.parse_diff_hunk(hunk)
+                
+                if not parsed.is_valid:
+                    formatted_output.append(f"## Hunk {hunk_index + 1} - Error")
+                    formatted_output.append(f"Error: {parsed.error_message}")
+                    formatted_output.append("")
+                    continue
+                
+                # Hunk header
+                formatted_output.append(f"## Hunk {hunk_index + 1}")
+                old_end = parsed.old_start + parsed.old_count - 1 if parsed.old_count > 0 else parsed.old_start
+                new_end = parsed.new_start + parsed.new_count - 1 if parsed.new_count > 0 else parsed.new_start
+                formatted_output.append(f"**Changes:** Lines {parsed.old_start}-{old_end} → {parsed.new_start}-{new_end}")
+                formatted_output.append("")
+                
+                # Combine all lines and sort by line number
+                all_lines = self._combine_and_sort_diff_lines(parsed)
+                
+                # Format lines
+                formatted_output.append("```diff")
+                for diff_line in all_lines:
+                    line_num = f"{diff_line.line_num:4d}"
+                    formatted_output.append(f"{line_num} {diff_line.marker}{diff_line.content}")
+                
+                formatted_output.append("```")
+                formatted_output.append("")
+                
+                # Summary of changes in this hunk
+                if parsed.old_lines or parsed.new_lines:
+                    formatted_output.append("**Summary of changes in this hunk:**")
+                    if parsed.old_lines:
+                        formatted_output.append(f"- {len(parsed.old_lines)} line(s) deleted")
+                    if parsed.new_lines:
+                        formatted_output.append(f"- {len(parsed.new_lines)} line(s) added")
+                    formatted_output.append("")
+            
+            return "\n".join(formatted_output)
+            
+        except Exception as e:
+            logger.error(f"Error formatting diff for LLM: {str(e)}")
+            return f"# File: {file_path}\n\nError formatting diff: {str(e)}\n"
+    
+    def _split_diff_into_hunks(self, pr_diff: str) -> List[str]:
+        """
+        Split a raw git diff string into individual hunks.
+        
+        Args:
+            pr_diff: Raw git diff string
+            
+        Returns:
+            List of individual hunk strings
+        """
+        try:
+            lines = pr_diff.split('\n')
+            hunks = []
+            current_hunk = []
+            
+            for line in lines:
+                # Check if this line starts a new hunk
+                if line.startswith('@@'):
+                    # If we have a current hunk, save it
+                    if current_hunk:
+                        hunks.append('\n'.join(current_hunk))
+                        current_hunk = []
+                    # Start new hunk with the header line
+                    current_hunk.append(line)
+                elif current_hunk:  # We're inside a hunk
+                    current_hunk.append(line)
+                # Skip lines before the first hunk (like diff --git, index, ---, +++)
+            
+            # Don't forget the last hunk
+            if current_hunk:
+                hunks.append('\n'.join(current_hunk))
+            
+            return hunks
+            
+        except Exception as e:
+            logger.error(f"Error splitting diff into hunks: {str(e)}")
+            return []
     
     def _combine_and_sort_diff_lines(self, parsed: ParsedHunk) -> List[DiffLine]:
         """
@@ -327,6 +434,13 @@ def format_diff_for_llm(diff_hunks: List[str], file_path: str = "") -> str:
     Use DiffFormatterService.format_diff_for_llm() for new code.
     """
     return _formatter_service.format_diff_for_llm(diff_hunks, file_path)
+
+def format_diff_for_llm_raw_diff(pr_diff: str, file_path: str = "") -> str:
+    """
+    Legacy function - Format git diff hunks into LLM-friendly format.
+    Use DiffFormatterService.format_diff_for_llm() for new code.
+    """
+    return _formatter_service.format_diff_for_llm_raw_diff(pr_diff, file_path)
 
 
 def create_llm_review_context(file_path: str, diff_hunks: List[str], file_content_before: str = "") -> str:

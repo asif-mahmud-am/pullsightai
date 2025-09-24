@@ -375,10 +375,15 @@ class ChunkPreparationService:
                 
                 # Format diff for LLM
                 try:
-                    from .diff_formatter import format_diff_for_llm
+                    from .diff_formatter import format_diff_for_llm, format_diff_for_llm_raw_diff
                     pr_diff_hunks = file_info.get("prFileDiffHunks", [])
-                    pr_diff_processed = format_diff_for_llm(pr_diff_hunks, file_name)
-                    pr_diff_chunk += f"\n\n--- File: {file_name} ---\n{pr_diff_processed}"
+                    if pr_diff_hunks==[]:
+                        logger.info(f"No diff hunks found for {file_name}, using raw diff")
+                        pr_diff_processed = format_diff_for_llm_raw_diff(file_info.get('prFileDiff', ''), file_name)
+                        pr_diff_chunk += f"\n\n--- File: {file_name} ---\n{pr_diff_processed}"
+                    else:
+                        pr_diff_processed = format_diff_for_llm(pr_diff_hunks, file_name)
+                        pr_diff_chunk += f"\n\n--- File: {file_name} ---\n{pr_diff_processed}"
                 except Exception as e:
                     logger.warning(f"Error formatting diff for {file_name}: {str(e)}, using raw diff")
                     pr_diff_chunk += f"\n\n--- File: {file_name} ---\n{file_info.get('prFileDiff', '')}"

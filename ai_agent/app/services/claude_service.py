@@ -51,7 +51,7 @@ class ClaudeService(BaseLLMService):
                 temperature=0.3,
                 system=(
                     "You are a code review assistant. Provide actionable, line-by-line feedback on code changes. "
-                    "Output must be ONLY a JSON array (no prose) with items containing: lineStart, lineEnd, issue, "
+                    "Output must be ONLY a JSON array (no prose) with items containing: fileName,lineStart, lineEnd, issue, "
                     "codeSnippet, codeSnippetLineStart, severity, category, suggestion."
                 ),
                 messages=[{"role": "user", "content": prompt}],

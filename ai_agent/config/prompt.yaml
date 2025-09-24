@@ -344,6 +344,7 @@ review: |
     ```
 
     **CRITICAL FORMATTING RULES:**
+    - You must provide the exact file name in the fileName field for each issue.
     - Use plain markdown code blocks WITHOUT language specifiers: ```code``` not ```python code```
     - Consolidate multiple issues on the same line into ONE comment
     - Provide exact line numbers from the diff
@@ -353,6 +354,7 @@ review: |
     **QUALITY ASSURANCE CHECKLIST:**
     Before submitting your response, verify:
     ✅ Every issue has clear impact and is actionable
+    ✅ Every issue has the exact file name in the fileName field
     ✅ Line numbers are accurate and relative to the file's diff section
     ✅ Severity levels match the actual risk/impact
     ✅ Code suggestions are syntactically correct and solve the issue

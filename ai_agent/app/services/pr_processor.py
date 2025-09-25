@@ -14,7 +14,8 @@ from app.utils.chunking_strategy import (
 )
 from app.utils.summary_aggregator import aggregate_chunk_summaries
 from app.utils.line_perser import extract_summary_info
-from app.core.setup import Config, setup_logger
+from app.core.setup import setup_logger
+from config.settings import Settings
 
 logger = setup_logger(__name__)
 
@@ -23,6 +24,7 @@ class PRProcessor:
     """Handles the main PR processing workflow"""
     
     def __init__(self):
+        Config = Settings()
         self.summary_endpoint = Config.BACKEND_SUMMARY_ENDPOINT
         self.review_endpoint = Config.BACKEND_REVIEW_ENDPOINT
     
@@ -192,10 +194,6 @@ class PRProcessor:
             "summary_info": summary_result["info"]
         }
 
-        with open("logs/summary_payload.json", "w", encoding="utf-8") as f:
-            import json
-            json.dump(summary_payload, f, ensure_ascii=False, indent=4)
-
         try:
             summary_post_start = time.time()
             async with httpx.AsyncClient() as client:
@@ -295,10 +293,6 @@ class PRProcessor:
                         "usageInfo": review_usage,
                         "completed": 1 if chunk_index == total_chunks - 1 else 0
                     }
-
-                    with open("logs/review_payload"+str(chunk_index)+".json", "w", encoding="utf-8") as f:
-                        import json
-                        json.dump(review_payload, f, ensure_ascii=False, indent=4)
 
                     logger.info(f"Posting {len(chunk_comments)} comments for chunk {chunk_index + 1} to backend...")
 

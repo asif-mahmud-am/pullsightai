@@ -1,14 +1,7 @@
 import os
 import logging
 from logging.handlers import RotatingFileHandler
-from typing import Literal
 
-
-class Config:
-    """Centralized configuration management"""
-    BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://backend")
-    BACKEND_REVIEW_ENDPOINT = os.getenv("BACKEND_REVIEW_ENDPOINT", "http://backend/reviews") 
-    BACKEND_SUMMARY_ENDPOINT = os.getenv("BACKEND_SUMMARY_ENDPOINT", "http://backend/summary")
 
 
 def setup_logger(name: str) -> logging.Logger:
@@ -50,20 +43,3 @@ def setup_logger(name: str) -> logging.Logger:
     logger.addHandler(console_handler)
     
     return logger
-
-
-def get_backend_url(provider: str, endpoint: Literal["summary", "reviews"]) -> str:
-    """
-    Get backend URL for specific provider and endpoint.
-    
-    Args:
-        provider: The git provider (github, gitlab, bitbucket)
-        endpoint: The endpoint type (summary or reviews)
-        
-    Returns:
-        Complete backend URL
-    """
-    provider = provider.lower()
-    if provider not in ["github", "gitlab", "bitbucket"]:
-        provider = "github"  # Default fallback
-    return f"{Config.BACKEND_BASE_URL}/v1/{provider}/{endpoint}"
